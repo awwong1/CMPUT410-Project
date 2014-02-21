@@ -8,5 +8,6 @@ urlpatterns = patterns('',
     # url(r'^$', 'dogenode.views.home', name='home'),
     # url(r'^blog/', include('blog.urls')),
 
+    url(r'^login/', include('login.urls')),
     url(r'^admin/', include(admin.site.urls)),
 )
