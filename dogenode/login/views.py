@@ -1,10 +1,11 @@
 from django.shortcuts import get_object_or_404, render
 from django.http import HttpResponse
+from django.template import RequestContext
 from login.models import Author
 
 # Create your views here.
 def index(request):
-    context = None
+    context = RequestContext(request)
 
     if request.method == 'POST':
         username = request.POST['username']
