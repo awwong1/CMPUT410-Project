@@ -4,9 +4,11 @@ from django.template import RequestContext
 
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
+from django.contrib.auth.models import Group
 
 # Create your views here.
 def index(request):
+
     context = RequestContext(request)
 
     if request.method == 'POST':
@@ -29,15 +31,25 @@ def index(request):
     return render(request, 'login/index.html', context)
 
 def register(request):
+
     context = RequestContext(request)
 
     if request.method == 'POST':
         username = request.POST['username']
         password = request.POST['password1']
 
-        if username and password:
-            user = User.objects.create_user(username=username,
-                                            password=password)
-            user.save()
+        # Check if username already exists
+        if len(User.objects.filter(username=username)) > 0:
+            context = RequestContext(request, {'registrationStatus':
+                "This username is taken!"})
+        else:
+            if username and password:
+                user = User.objects.create_user(username=username,
+                                                password=password)
+                user.save()
+                pendingGroup = Group.objects.get(name='PendingUsers')
+                pendingGroup.user_set.add(user)
+                context = RequestContext(request, {'registrationStatus':
+                    "Registration successful!"})
 
     return render(request, 'login/register.html', context)
