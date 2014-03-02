@@ -1,0 +1,40 @@
+{% extends "user_base.html" %}
+
+{% block body %}
+<section>
+  <header>
+    <h1> Doge </h1>  <!-- {  USERNAME }  -->
+  </header>
+
+  <div class="profile-img">
+    <img src="{{STATIC_URL}}images/doge.jpeg" alt="dogey"/>
+  </div>
+
+  <h2 class="content-title"> 
+    About Me
+  </h2> 
+
+  <p>
+    Hello. You are probably not reading this. Why? Because why would you? But if this was an alternate universe
+      and you were actually reading this, you should know, that the computer science building gets very creepy
+      at night...very sketchy.
+  </p>
+
+ <!-- GRAB STUFF FROM DATABASE HERE -->
+  <table class="table table-bordered">
+   <thead>
+    <tr>
+      <th> Content </th>
+      <th> Date </th>
+    </tr>
+   </thead>
+   <tbody>
+    <tr> 
+      <td>I love pie </td>
+      <td> March 1, 2014 </td>
+    </tr>
+   </tbody>
+  </table>
+
+</section>
+{% endblock %}

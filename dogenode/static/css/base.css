@@ -4,11 +4,28 @@ html, body {
     padding-top: 0%;
 }
 
+/* General classes styling */
+.clear-left {
+    clear: left;
+}
+
+.clear-right { 
+    clear: right;
+}
+
+.float-left {
+    float: left;
+}
+
+.float-right {
+    float: right;
+}
+
 /* side nav styling */
 div.side-nav {
     float: left;
     width: 18%;
-    min-width: 228px;
+    /*min-width: 228px;*/
     height: 100%;
     background-color: rgb(223, 229, 184); /* nav background color, light cream */
 }
@@ -63,10 +80,42 @@ h1, h2, h3, h4, h5, h6 {
 
 
 /* Main section, "content", styling */
-.content {
+div.content {
     font-color: black;
-    width: 85%;
+    width: 78%;
     float: left;
+}
+
+div.content section {
+    padding: 2% 2% 2% 2%;
+}
+ 
+div.content .content-title, 
+div.content header h1 {
+    padding: 2% 0 2% 0;
+}
+
+div.content header h1 {
+    display: inline;
+    float: left;
+}
+
+
+div.profile-img {
+    margin: 0 4% 4% 0;
+}
+
+div.profile-img img{
+    width: 200pt;
+    height: 200pt;
+}
+
+div.content div {
+    float: left;
+}
+
+div.content {
+
 }
 
 /* Search box styling */
