@@ -1,20 +1,24 @@
 {% extends "user_base.html" %}
 
 {% block body %}
-    <h2>Found Friends</h2>
-    <p>Optional: </br>
-        With the search phrase "Pellentesque"...
-    </p>
+    <section>
+    <h1 class="content-title">Found Friends</h1>
+    <p>(Optional) With the search phrase "Pellentesque"...</p>
 
-    <table>
-        <tr>
-            <td>Friend</td>
-        </tr>
+    <table class="table table-hover">
+        <tbody>
             <!-- for friend in friends or something -->
             <tr> <!-- should it link to their profile page? -->
                 <td><a href="#">Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Vestibulum tortor quam, feugiat vitae, ultricies eget, tempor sit amet, ante. Donec eu libero sit amet quam egestas semper. Aenean ultricies mi vitae est. Mauris placerat eleifend leo.</a></td>
             </tr>
+            <tr> <!-- should it link to their profile page? -->
+                <td><a href="#">Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Vestibulum tortor quam, feugiat vitae, ultricies eget, tempor sit amet, ante. Donec eu libero sit amet quam egestas semper. Aenean ultricies mi vitae est. Mauris placerat eleifend leo.</a></td>
+            </tr>
+            <tr> <!-- should it link to their profile page? -->
+                <td><a href="#">Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Vestibulum tortor quam, feugiat vitae, ultricies eget, tempor sit amet, ante. Donec eu libero sit amet quam egestas semper. Aenean ultricies mi vitae est. Mauris placerat eleifend leo.</a></td>
+            </tr>
             <!-- endfor -->
+        </tbody>
     </table>
-
+    </section>
 {% endblock %}
