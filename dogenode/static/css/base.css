@@ -21,6 +21,23 @@ html, body {
     float: right;
 }
 
+.form-group {
+    padding-right: 2%;
+}
+
+.inline {
+    display: block;
+}
+
+.span {
+    width: 100%;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    margin-top: 0%;
+}
+
+
 /* side nav styling */
 div.side-nav {
     float: left;
@@ -55,11 +72,6 @@ li.active > a:focus {
     margin-left: 3%;
 }
 
-h1, h2, h3, h4, h5, h6 {
-    margin-top: 0;
-    padding-top: 0;
-}
-
 /* Header styling */
 .page-header {
     margin-bottom: 0;
@@ -72,6 +84,7 @@ h1, h2, h3, h4, h5, h6 {
 .page-header h1 {
     color: rgb(250, 249, 239); /* Light not pink colour */
     padding-top: 2%;
+    margin-top: 0;
 }
 
 .page-header h1 small {
@@ -90,16 +103,22 @@ div.content section {
     padding: 2% 2% 2% 2%;
 }
  
-div.content .content-title, 
-div.content header h1 {
-    padding: 2% 0 2% 0;
-}
 
 div.content header h1 {
-    display: inline;
     float: left;
+    clear: right;
 }
 
+div.content div {
+    margin-bottom: 2%;
+}
+
+textarea {
+    -webkit-box-sizing: border-box;
+       -moz-box-sizing: border-box;
+            box-sizing: border-box;
+    width: 250px;
+}
 
 div.profile-img {
     margin: 0 4% 4% 0;

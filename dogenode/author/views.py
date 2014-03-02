@@ -5,13 +5,13 @@ from django.template import RequestContext
 def index(request):
     context = RequestContext(request)
     
-    return render(request, 'author/stream.html', context)
+    return render(request, 'author/profile.html', context)
 
 
-def profile(request):
+def stream(request):
     context = RequestContext(request)
     
-    return render(request, 'author/profile.html', context)
+    return render(request, 'author/stream.html', context)
 
 def edit_profile(request):
     context = RequestContext(request)

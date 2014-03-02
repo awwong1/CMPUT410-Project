@@ -1,8 +1,37 @@
 {% extends "user_base.html" %}
 
 {% block body %}
-<table class="table-hover">
+ <header>
+   <h3 class="span"> Your Stream! </h3>
+ </header>
 
-</table>
+ <form role="form">
+  <div class="form-group">
+    <input type="text" class="form-control" name="newPost"
+           placeholder="Make a new post...">
+  </div>
+  
+  <label for="privacy">Post viewable by: </label>
+  <select name="privacy" id="privacy">
+    <option>Friends</option>
+  </select>
+
+ </form>
+ <!-- GRAB STUFF FROM DATABASE HERE -->
+  <table class="table table-bordered table-hover">
+   <thead>
+    <tr>
+      <th> Content </th>
+      <th> Date </th>
+      <th> 
+    </tr>
+   </thead>
+   <tbody>
+    <tr> 
+      <td> Penguins are the best </td>
+      <td> March 1, 2014 </td>
+    </tr>
+   </tbody>
+  </table>
 
 {% endblock %}

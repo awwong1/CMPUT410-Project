@@ -4,7 +4,7 @@
 <section>
   <form>
   <header>
-    <h1> Doge </h1>  <!-- {  USERNAME }  -->
+    <h1 class="inline"> Doge </h1>  <!-- {  USERNAME }  -->
       <input type="submit" value="Save" class="float-right"/>
   </header>
 
@@ -12,49 +12,41 @@
     <img src="{{STATIC_URL}}images/doge.jpeg" alt="dogey"/>
   </div>
 
-<!-- GET DATA FROM DATABASE HERE -->
-  <div class="user-info-form">
     <div class="form-group">
-      <label for="username">Username</label>
-      <input type="text" class="form-control" name="username"
-      placeholder="GET NAME FROM DATAEBASE"/>
-    </div>
-    <br/>
-    <div class="form-group">
-      <label for="oldPassword">Current Password</label>
-      <input type="text" class="form-control" name="oldPassword"
-      placeholder="GET NAME FROM DATAEBASE"/>
-    </div>
-    <br/>
-    <div class="form-group">
-      <label for="newPassword">New Password</label>
-      <input type="text" class="form-control" name="newPassword"
-      placeholder="GET NAME FROM DATAEBASE"/>
-    </div>
-    <br/>
-</div>
+      <label for="aboutMe"><h2 class="content-title">
+      About Me</h2></label>
+      <textarea  class="form-control" name="aboutMe" id="aboutMe"
+      cols="40" rows="10">
 
-  <h2 class=" clear-left content-title"> 
-    About Me
-  </h2> 
-
-  <p>
     Hello. You are probably not reading this. Why? Because why would you? But if this was an alternate universe
       and you were actually reading this, you should know, that the computer science building gets very creepy
       at night...very sketchy.
-  </p>
+      </textarea>
+    </div>
 
- <!-- GRAB STUFF FROM DATABASE HERE -->
-  <table class="table table-bordered">
-    <tr>
-      <th> Content </th>
-      <th> Date </th>
-    </tr>
-    <tr> 
-      <td>I love pie </td>
-      <td> March 1, 2014 </td>
-    </tr>
-  </table>
+
+<!-- GET DATA FROM DATABASE HERE -->
+  <div class=" clear-left user-info-form">
+    <h3> Account Information </h3>
+    <div class="form-group">
+      <label for="username">Username</label>
+      <input type="text" class="form-control" name="username" id="username"
+      placeholder="GET NAME FROM DATAEBASE"/>
+    </div>
+ 
+    <div class="form-group">
+      <label for="oldPassword">Current Password</label>
+      <input type="text" class="form-control" name="oldPassword" id="oldPassword"
+      placeholder="GET NAME FROM DATAEBASE"/>
+    </div>
+
+    <div class="form-group">
+      <label for="newPassword">New Password</label>
+      <input type="text" class="form-control" name="newPassword" id="newPassword"
+      placeholder="GET NAME FROM DATAEBASE"/>
+    </div>
+    
+  </div>
 
 </form>
 </section>

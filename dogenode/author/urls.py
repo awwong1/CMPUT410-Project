@@ -4,7 +4,7 @@ from author import views
 
 urlpatterns = patterns('',
     url(r'^$', views.index),
-    url(r'^profile/$', views.profile),
+    url(r'^stream/$', views.stream),
     #url(r'^profile/(?P<author_name>\w+)/$', views.get_author),
     url(r'^profile/edit_profile$', views.edit_profile),
     url(r'^posts/$', views.posts),
