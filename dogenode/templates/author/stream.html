@@ -1,37 +1,80 @@
 {% extends "user_base.html" %}
 
 {% block body %}
+ <section> 
  <header>
    <h3 class="span"> Your Stream! </h3>
  </header>
 
- <form role="form">
-  <div class="form-group">
+ <form class="newPost" role="form">
+  <div class="form-group span">
     <input type="text" class="form-control" name="newPost"
-           placeholder="Make a new post...">
+           placeholder="Make a new post..."/>
   </div>
   
-  <label for="privacy">Post viewable by: </label>
-  <select name="privacy" id="privacy">
-    <option>Friends</option>
-  </select>
+ <div class="form-group clear-left" id="privacyOptions">
+   <label for="privacy">Post viewable by: </label>
+   <select name="privacy" id="privacy">
+     <option>All friends</option>
+     <option>Only friends on my hub</option>
+     <option>Friends of friends</option>
+     <option>Everyone</option>
+     <option>Only me</option>
+   </select>
+
+   <label for="others">and</label>
+   <input type="text" name="others" id="others" placeholder="Enter names(s)"/> 
+  </div> 
+   
+  <div class="form-group">
+    <label for="format">Format: </label>
+    <select name="format" id="format">
+      <option>Plaint Text</option>
+      <option>HTML</option>
+      <option>Markdown</option>
+    </select>
+  </div>
+
+  <input type="submit" value="Post" class="float-right"/>
 
  </form>
  <!-- GRAB STUFF FROM DATABASE HERE -->
-  <table class="table table-bordered table-hover">
-   <thead>
-    <tr>
-      <th> Content </th>
-      <th> Date </th>
-      <th> 
-    </tr>
-   </thead>
-   <tbody>
-    <tr> 
-      <td> Penguins are the best </td>
-      <td> March 1, 2014 </td>
-    </tr>
-   </tbody>
-  </table>
 
+ <div class="post">   
+ <div class="panel panel-default clear-left">
+   <!-- Default panel contents -->
+   <div class="panel-heading span"><p>The Cow says:</p>
+     <span class="date"> March 2, 2014</span>
+   </div>
+   <div class="panel-body span">
+     <p>This is the best post evvvvvaaaa</p>
+   </div>
+
+   <!-- QUERY DATABASE HERE -->
+   <table class="table">
+     <tbody>
+       <tr>
+	 <td>{NAME} says: This should be replaced by a for loop</td>
+       </tr>
+       <tr>
+	 <td>{NAME2} says: This one just needs to be long enough for testing purposes, so
+	   sadly, it is actually kinda boring. I wonder when it iwll hit the end
+	   of the page on the browser...
+	   I nnnneeeeedd this to be lloooonnnngg</td>
+       </tr>
+       <tr>
+	 <td> 
+	   <form role="form">
+	     <div class="form-group span">
+	       <input type="text" class="form-control" name="newPost"
+		      placeholder="Make a new post..."/>	       
+	       <input type="submit" value="Post" class="float-right"/>
+	     </div>
+	  </form>
+     </tbody>
+   </table>
+ </div>
+ </div>
+
+</section>
 {% endblock %}

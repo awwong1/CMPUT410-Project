@@ -21,16 +21,16 @@ html, body {
     float: right;
 }
 
-.form-group {
-    padding-right: 2%;
-}
-
 .inline {
-    display: block;
+    display: inline;
 }
 
 .span {
     width: 100%;
+}
+
+.form-group {
+    margin-right: 2%;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -133,8 +133,28 @@ div.content div {
     float: left;
 }
 
-div.content {
+div#privacyOptions {
+    margin-right: 2%;
+}
 
+div.post {
+    text-align: left;
+    width: 100%;
+    float: left;
+    clear: left;
+}
+
+div.post p, div.post {
+    float: left;
+    clear: left;
+}
+
+div.post .date {
+    float: right;
+}
+
+.panel-heading {
+    padding-bottom: 0;
 }
 
 /* Search box styling */
@@ -163,9 +183,6 @@ div.search-box input:focus {
     
 }
 
-.table, th, td, tbody{
-    margin: 1% 1% 1% 1%;
-}
 
 /* Overridding Bootstraps' CSS  */
 .table > thead > tr > th {
