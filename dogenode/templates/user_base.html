@@ -1,6 +1,14 @@
 {% extends "base.html" %}
 
 {% block side-nav %}
+    <div class="search-box">
+        <form method = "post" action="" class = "pull-down  navbar-search">
+                <input name="username" type="search" placeholder="find friend" />
+                <button type ="button"><span class="glyphicon glyphicon-search"></span></button>
+        </form>
+    </div>
+    <hr class="search-hr" /> 
+    <h3 class="nav-title"> My Panel </h3>
     <ul class="nav nav-pills nav-stacked">
         <li class="active"><a href="#">My Stream</a></li>
         <li><a href="#">My Profile</a></li>
