@@ -1,9 +1,9 @@
 from django.shortcuts import get_object_or_404, render
 from django.http import HttpResponse
 from django.template import RequestContext
-from login.models import Author
 
 from django.contrib.auth import authenticate
+from django.contrib.auth.models import User
 
 # Create your views here.
 def index(request):
@@ -27,3 +27,17 @@ def index(request):
             return HttpResponse("The username and password were incorrect.")
 
     return render(request, 'login/index.html', context)
+
+def register(request):
+    context = RequestContext(request)
+
+    if request.method == 'POST':
+        username = request.POST['username']
+        password = request.POST['password1']
+
+        if username and password:
+            user = User.objects.create_user(username=username,
+                                            password=password)
+            user.save()
+
+    return render(request, 'login/register.html', context)

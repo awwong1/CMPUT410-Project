@@ -1,6 +1,17 @@
+<!doctype html>
+<html>
+<head>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+</head>
+
+<body>
 <form method="POST" action="/login/">
     {% csrf_token %}
     Username: <input type="text" name="username" size="20" /><br />
     Password: <input type="password" name="password" size="20" /><br />
     <input type="submit" value="Login" />
+
 </form>
+<a href="/login/register/">Register</a>
+</body>
+</html>
