@@ -1,16 +1,18 @@
 from django.db import models
 
+from django.contrib.auth.models import User
+from django.db.models.signals import post_save
+
 # Create your models here.
 class Author(models.Model):
 
-    username = models.CharField(max_length=20)
-    #TODO: password should be hashed and salted (mmm...)
-    password = models.CharField(max_length=20)
+    user = models.OneToOneField(User)
+    accepted = models.BooleanField(default=False)
 
-    def __unicode__(self):
-        return self.username
+# Post-save stuff from:
+# http://stackoverflow.com/questions/44109/extending-the-user-model-with-custom-fields-in-django
+def addAcceptedAttribute(sender, instance, created, **kwargs):
+    if created:
+        _, _ = Author.objects.get_or_create(user=instance)
 
-    # This is redundant right now (just used for making a unit test)
-    # We may need this later to unhash our passwords
-    def getPassword(self):
-        return self.password
+post_save.connect(addAcceptedAttribute, sender=User)

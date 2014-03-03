@@ -4,7 +4,16 @@ from django.template import RequestContext
 
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
-from django.contrib.auth.models import Group
+
+from login.models import Author
+
+def isUserAccepted(user):
+
+    author = Author.objects.filter(user=user)
+    if len(author) > 0:
+        return author[0].accepted
+
+    return False
 
 # Create your views here.
 def index(request):
@@ -19,11 +28,14 @@ def index(request):
         user = authenticate(username=username, password=password)
 
         if user is not None:
-            # the password verified for the user
-            if user.is_active:
+                
+
+            # the password verified for the user and the user is accepted
+            if isUserAccepted(user):
                 return HttpResponse("User is valid, active and authenticated")
             else:
-                return HttpResponse("Account disabled (password correct)!")
+                return HttpResponse("Server admin has not accepted your"
+                                    " registration yet!")
         else:
             # Incorrect username and password
             return HttpResponse("The username and password were incorrect.")
@@ -47,8 +59,6 @@ def register(request):
                 user = User.objects.create_user(username=username,
                                                 password=password)
                 user.save()
-                pendingGroup = Group.objects.get(name='PendingUsers')
-                pendingGroup.user_set.add(user)
                 context = RequestContext(request, {'registrationStatus':
                     "Registration successful!"})
 
