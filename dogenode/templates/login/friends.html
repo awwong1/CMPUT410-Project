@@ -1,0 +1,42 @@
+<!doctype html>
+<html>
+<head>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+</head>
+
+<body>
+<p>
+    Welcome {{ user.username }}!
+</p>
+
+<div>
+    These authors want you to be their friend, but you haven't accepted their friend request yet!
+    {% for pr in pendingReceived %}
+        <p>{{ pr.user.username }}</p>
+    {% endfor %}
+    
+</div>
+
+<div>
+    You want to be the friends of these authors (but they haven't accepted your friend request yet)!
+    {% for ps in pendingSent %}
+        <p>{{ ps.user.username }}</p>
+    {% endfor %}
+</div>
+
+<div>
+    Your friends!
+    {% for friend in friends %}
+        <p>{{ friend.user.username }}</p>
+    {% endfor %}
+</div>
+
+<form method="POST" action="/login/friends/">
+    {% csrf_token %}
+    {% for user in allUsers %}
+        <input type="checkbox" name="friend" value="{{ user.username }}">{{ user.username }}<br />
+    {% endfor %}
+    <input type="submit" value="Add Friend" />
+</form>
+</body>
+</html>

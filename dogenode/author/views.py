@@ -5,7 +5,7 @@ from django.template import RequestContext
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 
-from author.models import Author
+from author.models import Author, Relationship
 
 def isUserAccepted(user):
 
@@ -28,10 +28,10 @@ def index(request):
         user = authenticate(username=username, password=password)
 
         if user is not None:
-                
 
             # the password verified for the user and the user is accepted
             if isUserAccepted(user):
+                login(request, user)
                 return HttpResponse("User is valid, active and authenticated")
             else:
                 return HttpResponse("Server admin has not accepted your"
@@ -85,11 +85,29 @@ def posts(request):
     return render(request, 'author/posts.html', context)
 
 def friends(request):
+
     context = RequestContext(request)
-    
+
+    if not request.user.is_authenticated():
+        return render(request, 'login/index.html', context)
+
+    author, _ = Author.objects.get_or_create(user=request.user)
+
+    noRelationshipsAuthors = []
+
+    allUsers = User.objects.all().exclude(username=request.user.username)
+
+    context = RequestContext(request,
+                     { "user" : request.user,
+                       "friends": author.getFriends(),
+                       "pendingSent": author.getPendingSentRequests(),
+                       "pendingReceived": author.getPendingReceivedRequests(),
+                       "allUsers": allUsers})
+
     return render(request, 'author/friends.html', context)
 
 def search(request):
     context = RequestContext(request)
     
     return render(request, 'author/search_results.html', context)
+
