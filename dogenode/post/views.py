@@ -12,11 +12,13 @@ from author.models import Author
 
 def posts(request):
     """
-
+    Returns all posts of the user.
     """
     context = RequestContext(request)
     
-    return render(request, 'post/posts.html', context)
+    author = Author.objects.filter(user=request.user)[0]
+    posts = Post.objects.filter(author=author)
+    return render_to_response('post/posts.html', {"posts":posts}, context)
 
 def post(request):
     """
