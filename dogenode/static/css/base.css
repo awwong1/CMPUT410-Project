@@ -33,6 +33,10 @@ html, body {
     margin-right: 2%;
 }
 
+.input-group {
+   margin-right: 2%;
+}
+
 h1, h2, h3, h4, h5, h6 {
     margin-top: 0%;
 }
@@ -96,7 +100,7 @@ div.content {
 }
 
 div.content section {
-    padding: 2% 2% 2% 2%;
+    padding: 1% 2% 2% 2%;
 }
  
 
@@ -124,6 +128,13 @@ div.profile-img img{
 
 div.content div {
     float: left;
+}
+
+/* Id element stlying */
+.button-links {
+    z-index: -1;
+    float: right;
+    margin: 1% 2% 0 0;
 }
 
 div#privacyOptions {
