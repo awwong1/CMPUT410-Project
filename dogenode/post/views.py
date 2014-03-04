@@ -38,10 +38,11 @@ def add_post(request):
         content = request.POST.get("content", "")
         privacy = request.POST.get("privacy", "")
         allowed_readers = request.POST.get("others", "")
-        format = request.POST.get("format", "")
+        post_format = request.POST.get("format", "")
 
     author = Author.objects.filter(user=request.user)[0]    
-    Post.objects.get_or_create(content=content, author=author, privacy=privacy) 
+    Post.objects.get_or_create(content=content, author=author, privacy=privacy,
+                                post_format=post_format) 
     posts = Post.objects.all()
 
     return render_to_response('author/stream.html', {'posts':posts},  context)

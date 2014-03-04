@@ -8,6 +8,7 @@ class Post(models.Model):
     content = models.TextField()
     privacy = models.CharField(max_length=32)
     #privacy_exceptions = models.ManyToManyField("author.Author")
+    post_format = models.CharField(max_length=16)
     date_created = models.DateTimeField(auto_now_add=True)
     date_modified = models.DateTimeField(auto_now=True)
 
