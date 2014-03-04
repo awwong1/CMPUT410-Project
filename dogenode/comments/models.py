@@ -1,6 +1,6 @@
 from django.db import models
 from author.models import Author
-#from post.models import Post
+from post.models import Post
 
 # Create your models here.
 class Comment(models.Model):
@@ -10,7 +10,7 @@ class Comment(models.Model):
     id = models.AutoField(primary_key=True)
     comment_auth = models.ForeignKey('author.Author')
     comment_text = models.TextField()
-    #post_ref = models.ForeignKey('post.Post')
+    post_ref = models.ForeignKey('post.Post')
     date_created = models.DateTimeField(auto_now_add=True)
     date_modified = models.DateTimeField(auto_now=True)
     

@@ -2,22 +2,16 @@
 
 {% block body %}
     <section>
-    <h1 class="content-title">Found Friends</h1>
-    <p>(Optional) With the search phrase "Pellentesque"...</p>
+    <h1 class="content-title">Found Authors</h1>
+    <p>With the search phrase "{{ searchphrase }}"...</p>
 
     <table class="table table-hover">
         <tbody>
-            <!-- for friend in friends or something -->
+            {% for user in results %}
             <tr> <!-- should it link to their profile page? -->
-                <td><a href="#">Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Vestibulum tortor quam, feugiat vitae, ultricies eget, tempor sit amet, ante. Donec eu libero sit amet quam egestas semper. Aenean ultricies mi vitae est. Mauris placerat eleifend leo.</a></td>
+                <td><a href="#">{{ user.username }}</a></td>
             </tr>
-            <tr> <!-- should it link to their profile page? -->
-                <td><a href="#">Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Vestibulum tortor quam, feugiat vitae, ultricies eget, tempor sit amet, ante. Donec eu libero sit amet quam egestas semper. Aenean ultricies mi vitae est. Mauris placerat eleifend leo.</a></td>
-            </tr>
-            <tr> <!-- should it link to their profile page? -->
-                <td><a href="#">Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Vestibulum tortor quam, feugiat vitae, ultricies eget, tempor sit amet, ante. Donec eu libero sit amet quam egestas semper. Aenean ultricies mi vitae est. Mauris placerat eleifend leo.</a></td>
-            </tr>
-            <!-- endfor -->
+            {% endfor %}
         </tbody>
     </table>
     </section>
