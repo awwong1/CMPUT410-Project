@@ -63,3 +63,33 @@ def register(request):
                     "Registration successful!"})
 
     return render(request, 'login/register.html', context)
+
+def profile(request):
+    context = RequestContext(request)
+    
+    return render(request, 'author/profile.html', context)
+
+def stream(request):
+    context = RequestContext(request)
+    
+    return render(request, 'author/stream.html', context)
+
+def edit_profile(request):
+    context = RequestContext(request)
+    
+    return render(request, 'author/edit_profile.html', context)
+
+def posts(request):
+    context = RequestContext(request)
+    
+    return render(request, 'author/posts.html', context)
+
+def friends(request):
+    context = RequestContext(request)
+    
+    return render(request, 'author/friends.html', context)
+
+def search(request):
+    context = RequestContext(request)
+    
+    return render(request, 'author/search_results.html', context)
