@@ -95,14 +95,11 @@ def friends(request):
 
     noRelationshipsAuthors = []
 
-    allUsers = User.objects.all().exclude(username=request.user.username)
-
     context = RequestContext(request,
                      { "user" : request.user,
                        "friends": author.getFriends(),
-                       "pendingSent": author.getPendingSentRequests(),
-                       "pendingReceived": author.getPendingReceivedRequests(),
-                       "allUsers": allUsers})
+                       "follows": author.getPendingSentRequests(),
+                       "followers": author.getPendingReceivedRequests() })
 
     return render(request, 'author/friends.html', context)
 
