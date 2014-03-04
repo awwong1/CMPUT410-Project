@@ -5,7 +5,7 @@ from django.template import RequestContext
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 
-from Post.models import Post
+from post.models import Post
 # Create your views here.
 
 def posts(request):
@@ -31,7 +31,7 @@ def add_post(request):
     DELETE: delete post
     """
     context = RequestContext(request)
-
+   
     if request.method == "POST":
         content = request.POST.get("content", "")
         privacy = request.POST.get("privacy", "")
@@ -39,8 +39,9 @@ def add_post(request):
         format = request.POST.get("format", "")
     
     post = Post.objects.get_or_create()
- 
-    return render(request, 'post/stream.html', context)
+     
+    posts = Post.objects.all()
+    return render_to_response('author/stream.html', {'posts':posts},  context)
 
 def delete_post(request):
     pass

@@ -1,11 +1,11 @@
 <div class="post">   
 <div class="panel panel-default clear-left">
     <!-- Default panel contents -->
-    <div class="panel-heading span"><p>The Cow</p>
-        <span class="date"> March 2, 2014</span>
+    <div class="panel-heading span"><p> {{ str(post.author)}}</p>
+        <span class="date"> {{ post.date_created}} </span>
     </div>
     <div class="panel-body span">
-        <p>This is the best post evvvvvaaaa</p>
+        <p> {{ post.content }} </p>
     </div>
 
     <!-- QUERY DATABASE HERE -->

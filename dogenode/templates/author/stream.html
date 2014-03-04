@@ -43,10 +43,13 @@
 
      </form>
      </div>
-</div>
+ </div>
 
+ {% for post in posts %}
  {% include 'fragments/post_content.html' %}
  <!-- GRAB STUFF FROM DATABASE HERE -->
+
+ {% endfor %}
 
 </section>
 {% endblock %}
