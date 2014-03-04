@@ -1,8 +1,8 @@
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, render, redirect
 from django.http import HttpResponse
 from django.template import RequestContext
 
-from django.contrib.auth import authenticate
+from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 
 from author.models import Author, Relationship
@@ -32,14 +32,24 @@ def index(request):
             # the password verified for the user and the user is accepted
             if isUserAccepted(user):
                 login(request, user)
-                return HttpResponse("User is valid, active and authenticated")
+                return redirect('/author/stream/')
             else:
-                return HttpResponse("Server admin has not accepted your"
-                                    " registration yet!")
+                context = RequestContext(request,
+                                {'message': ("Server admin has not accepted"
+                                             " your registration yet!") })
+                return render(request, 'login/index.html', context)
         else:
             # Incorrect username and password
-            return HttpResponse("The username and password were incorrect.")
+            context = RequestContext(request,
+                            {'message': "Incorrect username and password." })
+            return render(request, 'login/index.html', context)
 
+    return render(request, 'login/index.html', context)
+
+def logUserOut(request):
+
+    context = RequestContext(request)
+    logout(request)
     return render(request, 'login/index.html', context)
 
 def register(request):
