@@ -200,29 +200,48 @@ input {
     background-color: #FCF5CA;
 }
 
-/* Based off of: http://hellohappy.org/css3-buttons/ */
+/*  Button Sets!
+    Based off of: http://hellohappy.org/css3-buttons/ 
+    Modified to give warning buttons a red-ish theme instead of a blue theme
+    Also split up to make different coloured buttons
+
+    By default, some yellow-creamy colour
+*/
 input[type=submit] {
-    background-color: rgb(215, 229, 245);
-    background-image: -moz-linear-gradient(center top , rgb(215, 229, 245), rgb(203, 224, 245));
+    background-color: #E6CC6F;
+    background-image: -moz-linear-gradient(center top, #E6D38E, #E6CC6F);
     border-width: 1px;
     border-style: solid;
-    border-color: rgb(171, 187, 204) rgb(167, 182, 199) rgb(161, 175, 191);
-    border-radius: 12px;
-    box-shadow: 0px 1px 0px 0px white inset;
-    color: rgb(26, 62, 102);
-    font: 11px/1 "Lucida Grande","Lucida Sans Unicode","Lucida Sans",Geneva,Verdana,sans-serif;
-    padding: 6px 0px 7px;
+    border-radius: 12pt;
+    border-color: #957D24 #8F7820 #856D20; /* top, side, bottom border */
+    box-shadow: 0px 4px 0px 0px #F6E39E inset; /* Create top button hilight */
+    font: 10pt "Lucida Grande","Lucida Sans Unicode","Lucida Sans",Geneva,Verdana,sans-serif;
+    color: black;
     text-align: center;
     text-shadow: 0px 1px 1px rgb(255, 255, 255);
-    width: 150px;
+    padding: 5pt 10pt 5pt 10pt;
 }
 
 input[type=submit]:hover {
-    background-color: rgb(204, 217, 232);
-    background-image: -moz-linear-gradient(center top , rgb(204, 217, 232), rgb(193, 212, 232));
+    background-color: #CDAF3F;
+    background-image: -moz-linear-gradient(center top, #E6CC6F, #CDAF3F);
     border-width: 1px;
     border-style: solid;
-    border-color: rgb(161, 175, 191) rgb(156, 170, 186) rgb(150, 163, 179);
-    box-shadow: 0px 1px 0px 0px rgb(242, 242, 242) inset;
-    color: rgb(22, 54, 89);
+    border-color: #904D3D #864737 #804131;
+    box-shadow: 0px 4px 0px 0px #F0E090 inset; /* Create top button hilight */
+}
+
+/* Dangerous buttons are...dangerously red coloured! */
+input[type=submit].danger {
+    background-color: #CD5A3F;
+    background-image: -moz-linear-gradient(center top, #E69B6F, #CD5A3F);
+    border-color: #9C5A4A #935040 #904D3D; /* top, side, bottom border */
+    box-shadow: 0px 4px 0px 0px #FAB19F inset; /* Create top button hilight */
+}
+
+input[type=submit].danger:hover {
+    background-color: #CD5A3F;
+    background-image: -moz-linear-gradient(center top, #E5966A, #C05030);
+    border-color: #904D3D #864737 #804131;
+    box-shadow: 0px 4px 0px 0px #FAb19F inset; /* Create top button hilight */
 }
