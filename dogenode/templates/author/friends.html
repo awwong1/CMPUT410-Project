@@ -13,9 +13,9 @@
             </tr>
         </thead>
         <tbody>  
-            <!-- for friend in friends or something -->
+            {% for friend in friends %}
             <tr>
-                <td><a href="#">Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Vestibulum tortor quam, feugiat vitae, ultricies eget, tempor sit amet, ante. Donec eu libero sit amet quam egestas semper. Aenean ultricies mi vitae est. Mauris placerat eleifend leo.</a></td>
+                <td><a href="#">{{ friend.user.username }}</a></td>
                 <td>
                     <form> <!-- action, method -->
                         <input type="hidden" name="authorid" value="actualaid">
@@ -23,7 +23,7 @@
                     </form>
                 </td>
             </tr>
-            <!-- endfor -->
+            {% endfor %}
         </tbody>
     </table>
 
@@ -36,9 +36,9 @@
             </tr>
         </thead>
         <tbody>
-            <!-- for follow in follows or something -->
+            {% for follow in follows %}
             <tr>
-                <td><a href="#">Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Vestibulum tortor quam, feugiat vitae, ultricies eget, tempor sit amet, ante. Donec eu libero sit amet quam egestas semper. Aenean ultricies mi vitae est. Mauris placerat eleifend leo.</a></td>
+                <td><a href="#">{{ follow }}</a></td>
                 <td>
                     <form> <!-- action, method -->
                         <input type="hidden" name="authorid" value="actualaid">
@@ -46,7 +46,7 @@
                     </form>
                 </td>
             </tr>
-            <!-- endfor -->
+            {% endfor %}
         </tbody>
     </table>
 
@@ -59,11 +59,11 @@
             </tr>
         </thead>
         <tbody>
-            <!-- for follower in followers or something -->
+            {% for follower in followers %}
             <tr>
-                <td><a href="#">Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Vestibulum tortor quam, feugiat vitae, ultricies eget, tempor sit amet, ante. Donec eu libero sit amet quam egestas semper. Aenean ultricies mi vitae est. Mauris placerat eleifend leo.</a></td>
+                <td><a href="#">{{ follower }}</a></td>
             </tr>
-            <!-- endfor -->
+            {% endfor %}
         </tbody>
     </table>
     </section>
