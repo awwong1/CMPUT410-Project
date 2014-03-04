@@ -43,7 +43,6 @@ def index(request):
     return render(request, 'login/index.html', context)
 
 def register(request):
-
     context = RequestContext(request)
 
     if request.method == 'POST':
@@ -65,31 +64,45 @@ def register(request):
     return render(request, 'login/register.html', context)
 
 def profile(request):
+    """
+    GET: Returns the profile page / information of an author.
+    POST: Creates a new profile for an author, i.e. an new author.
+    PUT: Updates an author's information.
+    """
     context = RequestContext(request)
     
     return render(request, 'author/profile.html', context)
 
 def stream(request):
+    """
+    GET: Returns the stream of an author (all posts by followers)
+    """
     context = RequestContext(request)
     
     return render(request, 'author/stream.html', context)
 
-def edit_profile(request):
-    context = RequestContext(request)
-    
-    return render(request, 'author/edit_profile.html', context)
-
 def posts(request):
+    """
+    GET: Retrieves all posts (of an author?)
+    """
     context = RequestContext(request)
     
-    return render(request, 'author/posts.html', context)
+    return render(request, 'post/posts.html', context)
 
 def friends(request):
+    """
+    GET: Retrieves all friends of an author
+    PUT: ??
+    POST: ??
+    """
     context = RequestContext(request)
     
     return render(request, 'author/friends.html', context)
 
 def search(request):
+    """
+    GET: Returns author profile based on username search
+    """
     context = RequestContext(request)
     
     return render(request, 'author/search_results.html', context)
