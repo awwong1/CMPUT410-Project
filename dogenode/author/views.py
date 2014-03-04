@@ -136,5 +136,13 @@ def search(request):
     """
     context = RequestContext(request)
     
+    if request.method == 'POST':
+        username = request.POST['username']
+
+        users = User.objects.filter(username__contains=username)
+
+        context = RequestContext(request, {'searchphrase': username,
+                                           'results': users})
+
     return render(request, 'author/search_results.html', context)
 

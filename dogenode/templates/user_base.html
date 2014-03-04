@@ -2,9 +2,10 @@
 
 {% block side-nav %}
     <div class="search-box">
-        <form method = "post" action="" class = "pull-down  navbar-search">
-                <input name="username" type="search" placeholder="find friend" />
-                <button type ="button"><span class="glyphicon glyphicon-search"></span></button>
+        <form method = "post" action="/author/search_results/" class = "pull-down  navbar-search">
+            {%  csrf_token %}
+                <input name="username" type="search" placeholder="find author" />
+                <button type ="submit"><span class="glyphicon glyphicon-search"></span></button>
         </form>
     </div>
     <hr class="search-hr" /> 
