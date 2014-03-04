@@ -73,6 +73,14 @@ def profile(request):
     
     return render(request, 'author/profile.html', context)
 
+def edit_profile(request):
+    """
+    Renders html page to allow for editing of profile in web browser.
+    """
+    context = RequestContext(request)
+    
+    return render(request, 'author/edit_profile.html', context)
+
 def stream(request):
     """
     GET: Returns the stream of an author (all posts by followers)

@@ -1,0 +1,34 @@
+{% extends "user_base.html" %}
+
+{% block body %}
+    <section>
+    <h1 class="content-title">Your Posts</h1>
+
+    <table class="table table-hover">
+        <thead>
+        <tr>
+            <th>Content</th>
+            <th>Date</th>
+            <th>Delete?</th>
+        </tr>
+        </thead>
+        <tbody>
+            <!-- for post in posts or something -->
+            <tr>
+                <td>Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Vestibulum tortor quam, feugiat vitae, ultricies eget, tempor sit amet, ante. Donec eu libero sit amet quam egestas semper. Aenean ultricies mi vitae est. Mauris placerat eleifend leo.</td>
+                <td>03/05/10</td>
+                <td>
+                    <form> <!-- action, method -->
+                        <input type="hidden" name="pid" value="actualpid">
+                        <input type="submit" class="danger" value="Delete Post">
+                    </form>
+                </td>
+            </tr>
+            <!-- endfor -->
+        </tbody>
+    </table>
+
+       
+
+    </section>
+{% endblock %}

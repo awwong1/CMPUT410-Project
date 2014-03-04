@@ -14,4 +14,5 @@ urlpatterns = patterns('',
     #url(r'^(?P<author_id>\w)/posts/$', views.posts),
     #url(r'^posts/post/$', views.post),
     #url(r'^posts/(?P<post_id>\w)/$', views.post),
+    url(r'^edit_profile/$', views.edit_profile),
 )
