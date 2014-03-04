@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, render_to_response
 from django.http import HttpResponse
 from django.template import RequestContext
 
@@ -6,6 +6,8 @@ from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 
 from post.models import Post
+from author.models import Author
+
 # Create your views here.
 
 def posts(request):
@@ -37,10 +39,11 @@ def add_post(request):
         privacy = request.POST.get("privacy", "")
         allowed_readers = request.POST.get("others", "")
         format = request.POST.get("format", "")
-    
-    post = Post.objects.get_or_create()
-     
+
+    author = Author.objects.filter(user=request.user)[0]    
+    Post.objects.get_or_create(content=content, author=author, privacy=privacy) 
     posts = Post.objects.all()
+
     return render_to_response('author/stream.html', {'posts':posts},  context)
 
 def delete_post(request):

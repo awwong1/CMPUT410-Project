@@ -1,4 +1,4 @@
-from django.shortcuts import get_object_or_404, render, redirect
+from django.shortcuts import get_object_or_404, render, redirect, render_to_response
 from django.http import HttpResponse
 from django.template import RequestContext
 
@@ -6,6 +6,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 
 from author.models import Author, Relationship
+from post.models import Post
 
 def isUserAccepted(user):
 
@@ -96,8 +97,9 @@ def stream(request):
     GET: Returns the stream of an author (all posts by followers)
     """
     context = RequestContext(request)
+    posts = Post.objects.all()
     
-    return render(request, 'author/stream.html', context)
+    return render_to_response('author/stream.html', {"posts":posts}, context)
 
 def posts(request):
     """

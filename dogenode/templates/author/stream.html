@@ -8,8 +8,8 @@
 
 <div class="panel panel-default">
     <div class="panel-body">
-     <form class="newPost" role="form" method="POST" action="/post/add_post/">
-
+     <form class="newPost" role="form" method="POST" action="/posts/add_post/">
+      {% csrf_token %}
       <div class="form-group span">
         <input type="text" class="form-control" name="content"
                placeholder="Make a new post..."/>

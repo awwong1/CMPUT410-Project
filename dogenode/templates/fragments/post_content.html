@@ -1,8 +1,8 @@
 <div class="post">   
 <div class="panel panel-default clear-left">
     <!-- Default panel contents -->
-    <div class="panel-heading span"><p> {{ str(post.author)}}</p>
-        <span class="date"> {{ post.date_created}} </span>
+    <div class="panel-heading span"><p> {{ post.author.user.username }}</p>
+        <span class="date"> {{ post.date_created }} </span>
     </div>
     <div class="panel-body span">
         <p> {{ post.content }} </p>
