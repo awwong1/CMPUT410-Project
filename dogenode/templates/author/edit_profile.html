@@ -1,11 +1,11 @@
 {% extends "user_base.html" %}
 
 {% block body %}
+<form>  
+  <input type="submit" value="Save Changes" class="button-links"/>
 <section>
-  <form>
   <header>
-    <h1 class="inline"> Doge </h1>  <!-- {  USERNAME }  -->
-      <input type="submit" value="Save" class="float-right"/>
+    <h1> Doge </h1>  <!-- {  USERNAME }  -->
   </header>
 
   <div class="profile-img clear-left">
@@ -33,19 +33,14 @@
       <input type="text" class="form-control" name="username" id="username"
       placeholder="GET NAME FROM DATAEBASE"/>
     </div>
- 
-    <div class="form-group">
-      <label for="oldPassword">Current Password</label>
-      <input type="text" class="form-control" name="oldPassword" id="oldPassword"
-      placeholder="GET NAME FROM DATAEBASE"/>
-    </div>
 
-    <div class="form-group">
-      <label for="newPassword">New Password</label>
-      <input type="text" class="form-control" name="newPassword" id="newPassword"
-      placeholder="GET NAME FROM DATAEBASE"/>
+    <div class="form-group"> 
+        <label for="oldPassword">Current Password</label>
+        <input type="text" class="form-control" name="oldPassword" id="oldPassword"/>
+	<br />
+        <label for="newPassword">New Password</label>
+        <input type="text" class="form-control" name="newPassword" id="newPassword"/>
     </div>
-    
   </div>
 
 </form>
