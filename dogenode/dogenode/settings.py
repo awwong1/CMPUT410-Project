@@ -39,6 +39,7 @@ INSTALLED_APPS = (
     'south',
     'author',
     'comments',
+    'post',
 )
 
 MIDDLEWARE_CLASSES = (
