@@ -1,5 +1,0 @@
-{% extends "user_base.html" %}
-
-{% block body %}
-
-{% endblock %}
