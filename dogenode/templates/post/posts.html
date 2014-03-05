@@ -1,7 +1,6 @@
 {% extends "user_base.html" %}
 
 {% block body %}
-    <section>
     <h1 class="content-title">Your Posts</h1>
     {% if posts %}
     <table class="table table-hover">
@@ -33,6 +32,4 @@
         <p>You have no posts! Go make a new post in your <a href="/author/stream">Stream!</a>
         </p>
     {% endif %}       
-
-    </section>
 {% endblock %}
