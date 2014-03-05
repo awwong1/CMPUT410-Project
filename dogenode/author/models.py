@@ -22,9 +22,9 @@ class Author(models.Model):
 
         for r in relationships:
             if r.author1 == self:
-                friends.append(author2)
+                friends.append(r.author2)
             else:
-                friends.append(author1)
+                friends.append(r.author1)
 
         return friends
 
