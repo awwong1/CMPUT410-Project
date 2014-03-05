@@ -8,6 +8,7 @@ class Author(models.Model):
 
     user = models.OneToOneField(User)
     accepted = models.BooleanField(default=False)
+    about_me = models.TextField()
 
     def __str__(self):
         return self.user.username

@@ -89,8 +89,32 @@ def edit_profile(request):
     Renders html page to allow for editing of profile in web browser.
     """
     context = RequestContext(request)
-    
-    return render(request, 'author/edit_profile.html', context)
+
+    if request.user.is_authenticated():
+        if request.method == 'POST':
+            user = request.user
+            oldPassword = request.POST['oldPassword']
+            newPassword = request.POST['newPassword']
+            newAboutMe = request.POST['aboutMe']
+
+            if user.check_password(oldPassword):
+                author = Author.objects.get(user=request.user)
+
+                author.about_me = newAboutMe
+                author.save()
+
+                user.set_password(newPassword)
+                user.save()
+
+                context = RequestContext(request,
+                    {'message': "Profile updated."})
+            else:
+                context = RequestContext(request,
+                    {'message': "Incorrect old password."})
+
+        return render(request, 'author/edit_profile.html', context)
+    else:
+        return redirect('/login/')
 
 def stream(request):
     """
