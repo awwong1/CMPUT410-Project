@@ -28,28 +28,22 @@ def posts(request):
 
     return render_to_response('post/posts.html', context)
 
-def post(request):
+def post(request, post_id):
     """
     Returns a post and displays it
     """
+
     if request.user.is_authenticated():
         user = request.user
         author = Author.objects.get(user=request.user)   
-    
-        post_id = request.POST.get("post_id")
-
+        
         post = Post.objects.get(id=post_id)
 
         if (post.author == author):
-            context = RequestContext(request, 
-                        { "posts" : posts })
             
-            return render_to_response('post/post.html', context)
+            context = RequestContext(request)
+            return render_to_response('post/post.html', {"post":post}, context)
 
-        # Maybe a message saying post does not exist, somehow?
-        else:
-            pass
-    
     else:
         return redirect('/login/')
 
