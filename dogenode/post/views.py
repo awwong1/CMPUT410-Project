@@ -12,11 +12,21 @@ from author.models import Author
 
 def posts(request):
     """
-
+    Shows all the User's Posts
     """
     context = RequestContext(request)
-    
-    return render(request, 'post/posts.html', context)
+
+    if not request.user.is_authenticated():
+        return render(request, 'login/index.html', context)
+
+    author = Author.objects.filter(user=request.user)[0]    
+
+    posts = Post.objects.filter(author=author)
+
+    context = RequestContext(request, 
+                    { "posts" : posts })
+
+    return render_to_response('post/posts.html', context)
 
 def post(request):
     """
@@ -48,7 +58,8 @@ def add_post(request):
     return render_to_response('author/stream.html', {'posts':posts},  context)
 
 def delete_post(request):
+    """
+    Deletes the Post based on the post id given in the request.
+    Returns the user back to their posts page.
+    """
     pass
-
-
-

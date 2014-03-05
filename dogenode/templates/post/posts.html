@@ -3,7 +3,7 @@
 {% block body %}
     <section>
     <h1 class="content-title">Your Posts</h1>
-
+    {% if posts %}
     <table class="table table-hover">
         <thead>
         <tr>
@@ -13,22 +13,27 @@
         </tr>
         </thead>
         <tbody>
-            <!-- for post in posts or something -->
+            {% for post in posts %}
             <tr>
-                <td>Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Vestibulum tortor quam, feugiat vitae, ultricies eget, tempor sit amet, ante. Donec eu libero sit amet quam egestas semper. Aenean ultricies mi vitae est. Mauris placerat eleifend leo.</td>
-                <td>03/05/10</td>
+                <td>{{ post.content }}</td>
+                <td>{{ post.date_created }}</td>
                 <td>
-                    <form> <!-- action, method -->
-                        <input type="hidden" name="pid" value="actualpid">
+                    <!-- <form action="/posts/delete_post/" method="POST"> -->
+                    <form>
+                    {% csrf_token %}
+                        <input type="hidden" name="post_id" value={{ post.id }}>
                         <input type="submit" class="danger" value="Delete Post">
                     </form>
                 </td>
             </tr>
-            <!-- endfor -->
+            {% endfor %}
         </tbody>
     </table>
 
-       
+    {% else %}
+        <p>You have no posts! Go make a new post in your <a href="/author/stream">Stream!</a>
+        </p>
+    {% endif %}       
 
     </section>
 {% endblock %}
