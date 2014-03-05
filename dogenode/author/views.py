@@ -77,12 +77,21 @@ def register(request):
 def profile(request):
     """
     GET: Returns the profile page / information of an author.
-    POST: Creates a new profile for an author, i.e. an new author.
-    PUT: Updates an author's information.
     """
-    context = RequestContext(request)
-    
-    return render(request, 'author/profile.html', context)
+    if request.user.is_authenticated():
+        user = request.user
+        author = Author.objects.get(user=request.user)
+        payload = { } # This is what we send in the RequestContext
+
+        payload['firstName'] = user.first_name or ""
+        payload['lastName'] = user.last_name or ""
+        payload['username'] = user.username
+        payload['aboutMe'] = author.about_me or ""
+
+        context = RequestContext(request, payload)
+        return render(request, 'author/profile.html', context)
+    else:
+        return redirect('/login/')
 
 def edit_profile(request):
     """
