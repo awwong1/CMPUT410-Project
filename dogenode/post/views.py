@@ -21,7 +21,7 @@ def posts(request):
 
     author = Author.objects.filter(user=request.user)[0]    
 
-    posts = Post.objects.filter(author=author)
+    posts = Post.objects.filter(author=author).order_by('-date_created')
 
     context = RequestContext(request, 
                     { "posts" : posts })

@@ -144,7 +144,7 @@ def stream(request):
     GET: Returns the stream of an author (all posts by followers)
     """
     context = RequestContext(request)
-    posts = Post.objects.all()
+    posts = Post.objects.all().order_by('-date_created')
     
     return render_to_response('author/stream.html', {"posts":posts}, context)
 
