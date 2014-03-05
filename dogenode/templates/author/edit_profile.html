@@ -5,15 +5,16 @@
 <section>
   <form method="post" action="/author/edit_profile/">
     {% csrf_token %}
-    <input type="submit" value="Save Changes" class="button-links"/>
 
     {% if successMessage %}
-    <div id="divMessage" class="alert alert-success">{{ successMessage }}</div>
+    <div id="divMessage" class="alert alert-success span">{{ successMessage }}</div>
     {% elif failureMessage %}
-    <div id="divMessage" class="alert alert-danger">{{ failureMessage }}</div>
+    <div id="divMessage" class="alert alert-danger span">{{ failureMessage }}</div>
     {% endif %}
 
-    <header class="clear-left">
+    <input type="submit" value="Save Changes" class="button-links"/>
+
+    <header>
       {% if firstName %}
       <h1>{{ firstName }} {{ lastName}}</h1>
       {% else %}
@@ -21,19 +22,21 @@
       {% endif %}
     </header>
 
-    <div class="profile-img clear-left">
-      <img src="{{ STATIC_URL }}images/doge.jpeg" alt="dogey"/>
+    <div class="span">
+      <div class="profile-img">
+        <img src="{{ STATIC_URL }}images/doge.jpeg" alt="dogey"/>
+      </div>
+
+      <div class="form-group">
+        <label for="aboutMe">
+          <h2 class="content-title">About Me</h2>
+        </label>
+        <textarea id="aboutMe" class="form-control" name="aboutMe"
+          cols="50" rows="10">{{ aboutMe }}</textarea>
+      </div>
     </div>
 
-    <div class="form-group">
-      <label for="aboutMe">
-        <h2 class="content-title">About Me</h2>
-      </label>
-      <textarea id="aboutMe" class="form-control" name="aboutMe"
-        cols="50" rows="10">{{ aboutMe }}</textarea>
-    </div>
-
-    <div class="clear-left">
+    <div>
       <h2> Account Information </h2>
       <p>Leave fields blank and/or unmodified if you do not want to change them.</p>
       <div class="form-group"> 
