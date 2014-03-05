@@ -30,9 +30,9 @@ def posts(request):
 
 def post(request, post_id):
     """
-    Returns a post and displays it
+    Returns a post and displays it in the web browser.
     """
-
+    
     if request.user.is_authenticated():
         user = request.user
         author = Author.objects.get(user=request.user)   
@@ -49,9 +49,7 @@ def post(request, post_id):
 
 def add_post(request):
     """
-    GET: retrieve post matching postid
-    POST: create a new post
-    DELETE: delete post
+    Adds a new post and displays 
     """
     context = RequestContext(request)
    
