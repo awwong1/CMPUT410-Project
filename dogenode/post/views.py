@@ -32,9 +32,26 @@ def post(request):
     """
     Returns a post and displays it
     """
-    context = RequestContext(request)
+    if request.user.is_authenticated():
+        user = request.user
+        author = Author.objects.get(user=request.user)   
     
-    return render(request, 'post/post.html', context)
+        post_id = request.POST.get("post_id")
+
+        post = Post.objects.get(id=post_id)
+
+        if (post.author == author):
+            context = RequestContext(request, 
+                        { "posts" : posts })
+            
+            return render_to_response('post/post.html', context)
+
+        # Maybe a message saying post does not exist, somehow?
+        else:
+            pass
+    
+    else:
+        return redirect('/login/')
 
 def add_post(request):
     """
@@ -62,4 +79,31 @@ def delete_post(request):
     Deletes the Post based on the post id given in the request.
     Returns the user back to their posts page.
     """
+    if request.user.is_authenticated():
+        context = RequestContext(request)
+        user = request.user
+        author = Author.objects.get(user=request.user)   
+ 
+        if request.method == "POST":
+            post_id = request.POST["post_id"]
+
+            post = Post.objects.get(id=post_id)
+
+            if (post.author == author):
+                # Delete post and its comments?
+                post.delete();
+            # else: send a message?
+
+            # Go back tgo your posts!
+            posts = Post.objects.filter(author=author)
+
+            context = RequestContext(request, 
+                            { "posts" : posts })
+
+            return render_to_response('post/posts.html', context)
+
+    else:
+        return redirect('/login/')
+
+def delete_comment():
     pass
