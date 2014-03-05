@@ -1,6 +1,7 @@
 from django.shortcuts import get_object_or_404, render, redirect
 from django.http import HttpResponse
 from django.template import RequestContext
+from django.db.models import Q
 
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
@@ -135,14 +136,100 @@ def search(request):
     GET: Returns author profile based on username search
     """
     context = RequestContext(request)
-    
+
+    # TODO: This should be a GET
     if request.method == 'POST':
         username = request.POST['username']
 
         users = User.objects.filter(username__contains=username)
+        usersAndStatus = []
+
+        author, _ = Author.objects.get_or_create(user=request.user)
+
+        for u in users:
+            a, _ = Author.objects.get_or_create(user=u)
+            r = Relationship.objects.filter(
+                    (Q(author1=author) & Q(author2=a))
+                   |(Q(author2=author) & Q(author1=a)))
+
+            # These 2 authors have a relationship
+            if len(r) > 0:
+
+                if (r[0].relationship): # They are friends
+                    usersAndStatus.append([u.username, "Friend"])
+
+                else:
+                    if r[0].author1 == author:
+                        usersAndStatus.append([u.username, "Following"])
+                    else:
+                        usersAndStatus.append([u.username, "Follower"])
+            else:
+                usersAndStatus.append([u.username, "No Relationship"])
+
 
         context = RequestContext(request, {'searchphrase': username,
-                                           'results': users})
+                                           'results': usersAndStatus})
 
     return render(request, 'author/search_results.html', context)
+
+def updateRelationship(request, username):
+    """
+    POST: Updates the relationship of the current user with <username>
+    """
+    #context = RequestContext(request)
+
+    if request.method == 'POST' and request.is_ajax:
+
+        currentRelationship = request.POST["relationship"]
+        requestAuthor, _ = Author.objects.get_or_create(user=request.user)
+
+        # assume the user exists
+        user = User.objects.get(username=username)
+
+        author, _ = Author.objects.get_or_create(user=user)
+
+        status = currentRelationship
+
+        if currentRelationship == "Friend":
+            # Unfriend
+            relationship = Relationship.objects.get(
+                                ((Q(author1=author) & Q(author2=requestAuthor))
+                                |(Q(author2=author) & Q(author1=requestAuthor)))
+                                &Q(relationship=True))
+            relationship.delete()
+            Relationship.objects.get_or_create(
+                                        author1=author,
+                                        author2=requestAuthor,
+                                        relationship=False)
+            status = "Unfriended"
+
+        elif currentRelationship == "Following":
+            # Unfollow
+            relationship, _ = Relationship.objects.get_or_create(
+                                               author1=requestAuthor,
+                                               author2=author,
+                                               relationship=False)
+            relationship.delete()
+            status = "Unfollowed"
+
+        elif currentRelationship == "Follower":
+            # Befriend
+            relationship, _ = Relationship.objects.get_or_create(
+                                               author1=author,
+                                               author2=requestAuthor)
+            relationship.relationship = True
+            relationship.save()
+            status = "Befriended"
+
+        elif currentRelationship == "No Relationship":
+            # Follow
+            _, _ = Relationship.objects.get_or_create(
+                                               author1=requestAuthor,
+                                               author2=author,
+                                               relationship=False)
+            status = "Followed"
+
+        return HttpResponse(status)
+
+    return HttpResponse("success!")
 
