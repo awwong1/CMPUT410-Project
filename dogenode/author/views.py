@@ -87,31 +87,44 @@ def profile(request):
 def edit_profile(request):
     """
     Renders html page to allow for editing of profile in web browser.
+    GET: Renders the page, populating the necessary fields.
+    POST: Updates an author's information.
     """
-    context = RequestContext(request)
-
     if request.user.is_authenticated():
+        user = request.user
+        author = Author.objects.get(user=request.user)
+        payload = { } # This is what we send in the RequestContext
+
         if request.method == 'POST':
-            user = request.user
+
+            newFirstName = request.POST['firstName']
+            newLastName = request.POST['lastName']
             oldPassword = request.POST['oldPassword']
             newPassword = request.POST['newPassword']
             newAboutMe = request.POST['aboutMe']
 
-            if user.check_password(oldPassword):
-                author = Author.objects.get(user=request.user)
+            user.first_name = newFirstName or user.first_name
+            user.last_name = newLastName or user.last_name
+            user.save()
 
-                author.about_me = newAboutMe
-                author.save()
+            author.about_me = newAboutMe
+            author.save()
 
-                user.set_password(newPassword)
-                user.save()
+            payload['successMessage'] = "Profile updated."
 
-                context = RequestContext(request,
-                    {'message': "Profile updated."})
-            else:
-                context = RequestContext(request,
-                    {'message': "Incorrect old password."})
+            if newPassword:
+                if user.check_password(oldPassword):
+                    user.set_password(newPassword)
+                    user.save()
+                else:
+                    payload['failureMessage'] = "Old password incorrect."
 
+        payload['firstName'] = user.first_name or ""
+        payload['lastName'] = user.last_name or ""
+        payload['username'] = user.username
+        payload['aboutMe'] = author.about_me or ""
+
+        context = RequestContext(request, payload)
         return render(request, 'author/edit_profile.html', context)
     else:
         return redirect('/login/')

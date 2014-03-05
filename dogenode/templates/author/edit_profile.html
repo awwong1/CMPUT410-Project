@@ -1,48 +1,60 @@
 {% extends "user_base.html" %}
 
 {% block body %}
-<form>  
-  <input type="submit" value="Save Changes" class="button-links"/>
+
 <section>
-  <header>
-    <h1> Doge </h1>  <!-- {  USERNAME }  -->
-  </header>
+  <form method="post" action="/author/edit_profile/">
+    {% csrf_token %}
+    <input type="submit" value="Save Changes" class="button-links"/>
 
-  <div class="profile-img clear-left">
-    <img src="{{STATIC_URL}}images/doge.jpeg" alt="dogey"/>
-  </div>
+    {% if successMessage %}
+    <div id="divMessage" class="alert alert-success">{{ successMessage }}</div>
+    {% elif failureMessage %}
+    <div id="divMessage" class="alert alert-danger">{{ failureMessage }}</div>
+    {% endif %}
+
+    <header class="clear-left">
+      {% if firstName %}
+      <h1>{{ firstName }} {{ lastName}}</h1>
+      {% else %}
+      <h1>{{ username }}</h1>
+      {% endif %}
+    </header>
+
+    <div class="profile-img clear-left">
+      <img src="{{ STATIC_URL }}images/doge.jpeg" alt="dogey"/>
+    </div>
 
     <div class="form-group">
-      <label for="aboutMe"><h2 class="content-title">
-      About Me</h2></label>
-      <textarea  class="form-control" name="aboutMe" id="aboutMe"
-      cols="40" rows="10">
-
-    Hello. You are probably not reading this. Why? Because why would you? But if this was an alternate universe
-      and you were actually reading this, you should know, that the computer science building gets very creepy
-      at night...very sketchy.
-      </textarea>
+      <label for="aboutMe">
+        <h2 class="content-title">About Me</h2>
+      </label>
+      <textarea id="aboutMe" class="form-control" name="aboutMe"
+        cols="50" rows="10">{{ aboutMe }}</textarea>
     </div>
 
-
-<!-- GET DATA FROM DATABASE HERE -->
-  <div class=" clear-left user-info-form">
-    <h3> Account Information </h3>
-    <div class="form-group">
-      <label for="username">Username</label>
-      <input type="text" class="form-control" name="username" id="username"
-      placeholder="GET NAME FROM DATAEBASE"/>
+    <div class="clear-left">
+      <h2> Account Information </h2>
+      <p>Leave fields blank and/or unmodified if you do not want to change them.</p>
+      <div class="form-group"> 
+          <label for="firstName">First Name</label>
+          <input id="firstName" type="text" class="form-control" 
+            name="firstName" value="{{ firstName }}"/>
+      </div>
+      <div class="form-group"> 
+          <label for="lastName">Last Name</label>
+          <input id="lastName" type="text" class="form-control"
+            name="lastName" value="{{ lastName }}"/>
+      </div><br/>
+      <div class="form-group"> 
+          <label for="oldPassword">Current Password</label>
+          <input id="oldPassword" type="password" class="form-control" name="oldPassword"/>
+      </div>
+      <div class="form-group">
+          <label for="newPassword">New Password</label>
+          <input id="newPassword" type="password" class="form-control" name="newPassword"/>
+      </div>
     </div>
-
-    <div class="form-group"> 
-        <label for="oldPassword">Current Password</label>
-        <input type="text" class="form-control" name="oldPassword" id="oldPassword"/>
-	<br />
-        <label for="newPassword">New Password</label>
-        <input type="text" class="form-control" name="newPassword" id="newPassword"/>
-    </div>
-  </div>
-
-</form>
+  </form>
 </section>
 {% endblock %}
