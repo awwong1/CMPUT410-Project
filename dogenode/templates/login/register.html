@@ -1,22 +1,24 @@
-<!doctype html>
-<html>
-<head>
-    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
-</head>
+{% extends "user_base.html" %}
 
-<body>
-<form method="POST" action="/login/register/">
-    {% csrf_token %}
-    Username: <input type="text" name="username" size="20" /><br />
-    Password: <input type="password" name="password1" size="20" /><br />
-    Confirm Password: <input type="password" name="password2" size="20" /><br />
-    <div id="divRegistrationStatus">{{ registrationStatus }}</div>
-    <input type="submit" value="Register" />
-</form>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+{% block side-nav %} {% endblock %}
+
+{% block body %}
+<div class="regist"> 
+    <form method="POST" action="/login/register/">
+        {% csrf_token %}
+        <p>Username:</p> <input type="text" name="username" size="20" /><br />
+        <p>Password:</p> <input type="password" name="password1" size="20" /><br />
+        <p>Confirm Password:</p> <input type="password" name="password2" size="20" /><br />
+        <div id="divRegistrationStatus">{{ registrationStatus }}</div>
+        <input type="submit" value="Register" />
+    </form>
+</div>
+
 <script>
     function checkPasswordsMatch() {
         if ($("[name='password1']").val() != $("[name='password2']").val())
-            $("#divRegistrationStatus").html("Passwords don't match!");
+            /$("#divRegistrationStatus").html("Passwords don't match!");
         else
             $("#divRegistrationStatus").html("Passwords match!");
     }
@@ -26,5 +28,5 @@
         $("[name='password1']").keyup(checkPasswordsMatch);
     });
 </script>
-</body>
-</html>
+
+{% endblock %}

@@ -25,7 +25,8 @@
     <div class="page-header">
       <h1>DogeNode <small> The only real way to live in the virtual world</small></h1>
     </div>
-    
+
+    {% block side-nav %}    
     <div class="side-nav">
         <div class="search-box">
             <form method = "post" action="/author/search_results/" class = "pull-down  navbar-search">
@@ -45,6 +46,7 @@
             <li><a href="/login/logout">Logout</a></li>
         </ul>
     </div>
+    {% endblock %}
 
     <div class="content">
         <section>
