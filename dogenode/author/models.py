@@ -43,11 +43,15 @@ class Author(models.Model):
 
 # Post-save stuff from:
 # http://stackoverflow.com/questions/44109/extending-the-user-model-with-custom-fields-in-django
-def addAcceptedAttribute(sender, instance, created, **kwargs):
-    if created:
-        _, _ = Author.objects.get_or_create(user=instance)
+# Note: this is causing django to try and create a new author
+# twice (even though dispatch_uid should prevent this), so this is
+# being commented out.
+#def addAcceptedAttribute(sender, instance, created, **kwargs):
+#    if created:
+#        _, _ = Author.objects.get_or_create(user=instance)
 
-post_save.connect(addAcceptedAttribute, sender=User)
+#post_save.connect(addAcceptedAttribute, sender=User,
+#                  dispatch_uid="asdf")
 
 class Relationship(models.Model):
 
