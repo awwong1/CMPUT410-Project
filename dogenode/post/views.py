@@ -7,7 +7,7 @@ from django.contrib.auth.models import User
 
 from post.models import Post
 from author.models import Author
-
+from comments.models import Comment
 # Create your views here.
 
 def posts(request):
@@ -20,12 +20,12 @@ def posts(request):
         return render(request, 'login/index.html', context)
 
     author = Author.objects.filter(user=request.user)[0]    
-
-    posts = Post.objects.filter(author=author).order_by('-date_created')
-
-    context = RequestContext(request, 
-                    { "posts" : posts })
-
+    rawposts = Post.objects.filter(author=author).order_by('-date_created')
+    posts = {}
+    for post in rawposts:
+        comments = Comment.objects.filter(post_ref=post)
+        posts[post] =  comments
+    context["posts"] = posts
     return render_to_response('post/posts.html', context)
 
 def post(request, post_id):
@@ -36,13 +36,13 @@ def post(request, post_id):
     if request.user.is_authenticated():
         user = request.user
         author = Author.objects.get(user=request.user)   
-        
         post = Post.objects.get(id=post_id)
 
-        if (post.author == author):
-            
+        if (post.author == author):            
             context = RequestContext(request)
-            return render_to_response('post/post.html', {"post":post}, context)
+            comments = Comment.objects.filter(post_ref=post)
+            context["posts"] = {post:comments}
+            return render_to_response('post/post.html', context)
 
     else:
         return redirect('/login/')

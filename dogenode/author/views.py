@@ -8,6 +8,7 @@ from django.contrib.auth.models import User
 
 from author.models import Author, Relationship
 from post.models import Post
+from comments.models import Comment
 
 def isUserAccepted(user):
 
@@ -144,9 +145,13 @@ def stream(request):
     GET: Returns the stream of an author (all posts by followers)
     """
     context = RequestContext(request)
-    posts = Post.objects.all().order_by('-date_created')
-    
-    return render_to_response('author/stream.html', {"posts":posts}, context)
+    rawposts = Post.objects.all().order_by('-date_created')
+    posts = {}
+    for post in rawposts:
+        comments = Comment.objects.filter(post_ref=post)
+        posts[post] = comments
+    context["posts"] = posts
+    return render_to_response('author/stream.html', context)
 
 def posts(request):
     """

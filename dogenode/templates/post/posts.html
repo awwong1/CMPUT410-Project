@@ -1,35 +1,38 @@
 {% extends "user_base.html" %}
 
 {% block body %}
-    <h1 class="content-title">Your Posts</h1>
-    {% if posts %}
-    <table class="table table-hover">
-        <thead>
-        <tr>
-            <th>Content</th>
-            <th>Date</th>
-            <th>Delete?</th>
-        </tr>
-        </thead>
-        <tbody>
-            {% for post in posts %}
-            <tr>
-                <td><a href="/posts/{{ post.id }}/">{{ post.content }}</a></td>
-                <td>{{ post.date_created }}</td>
-                <td>
-                    <form action="/posts/delete_post/" method="POST">
-                    {% csrf_token %}
-                        <input type="hidden" name="post_id" value={{ post.id }}>
-                        <input type="submit" class="danger" value="Delete Post">
-                    </form>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+<h1 class="content-title">Your Posts</h1>
+{% if posts %}
+<table class="table table-hover">
+  <thead>
+    <tr>
+      <th>Content</th>
+      <th>Date</th>
+      <th>Delete?</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for post, comments in posts.items %}
+    <tr>
+      <td><a href="/posts/{{ post.id }}/">
+	  {{ post.content }}</a></td>
+      <td>{{ post.date_created }}</td>
+      <td>
+        <form action="/posts/delete_post/" method="POST">
+          {% csrf_token %}
+          <input type="hidden" 
+		 name="post_id" value="{{ post.id }}">
+          <input type="submit" class="danger" value="Delete Post">
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
 
-    {% else %}
-        <p>You have no posts! Go make a new post in your <a href="/author/stream">Stream!</a>
-        </p>
-    {% endif %}       
+{% else %}
+<p>You have no posts! Go make a new post in your 
+  <a href="/author/stream">Stream!</a>
+</p>
+{% endif %}       
 {% endblock %}
