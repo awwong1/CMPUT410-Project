@@ -1,10 +1,100 @@
 {% extends "user_base.html" %}
 
 {% block body %}
+    <script type="text/javascript">
+
+        $(document).ready(function() {
+            /* the CSRF stuff is from:
+             * https://docs.djangoproject.com/en/1.6/ref/contrib/csrf/#ajax
+             * TODO: find a better way to do this cleanly...
+             */
+            function getCookie(name) {
+                var cookieValue = null;
+                if (document.cookie && document.cookie != '') {
+                    var cookies = document.cookie.split(';');
+                    for (var i = 0; i < cookies.length; i++) {
+                        var cookie = jQuery.trim(cookies[i]);
+                        // Does this cookie string begin with the name we want?
+                        if (cookie.substring(0, name.length + 1) == (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            }
+            var csrftoken = getCookie('csrftoken');
+            function csrfSafeMethod(method) {
+                // these HTTP methods do not require CSRF protection
+                return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+            }
+            $.ajaxSetup({
+                crossDomain: false, // obviates need for sameOrigin test
+                beforeSend: function(xhr, settings) {
+                    if (!csrfSafeMethod(settings.type)) {
+                        xhr.setRequestHeader("X-CSRFToken", csrftoken);
+                    }
+                }
+            });
+
+            /* Sends an AJAX request to the server to change the relationship
+             * of 2 authors. Removes and adds corresponding rows to front end
+             * relationship tables.
+             *
+             * Takes as event data:
+             * {currentRelationship: <"Friend"|"Following"|"Follower">
+             */
+            function changeRelationship(event) {
+                // Ugly jQuery to get the user off the table row
+                var user = $($(event.target).parent().parent().children()[0]).children()[0].innerHTML;
+                var relationship = event.data.currentRelationship;
+                $.ajax({
+                    type: "POST",
+                    url: "/author/relationship/" + user + "/",
+                    data: {"relationship": relationship},
+                    success: function(request) {
+                        $(event.target).parent().parent().remove();
+
+                        if (relationship !== "Following") {
+                            var newRowTable = '';
+                            var newRowClass = '';
+                            var newRowValue = '';
+
+                            if (relationship === "Friend") {
+                                newRowTable = "followersTable";
+                                newRowClass = "befriend";
+                                newRowValue = "Befriend";
+                            } else if (relationship === "Follower") {
+                                newRowTable = "friendsTable";
+                                newRowClass = "unfriend";
+                                newRowValue = "Un-befriend";
+                            }
+
+                            //TODO: the dynamically created hyperlink isn't brown
+                            $("#" + newRowTable + " tr:last").after('<tr><td><a href="#">' + user + '</a></td><td><input class="danger ' + newRowClass + '" type="submit" value="' + newRowValue + '"></td></tr>');
+
+                        }
+                    },
+                    error: function() {
+                        //console.log("error");
+                    }
+                });
+                return false;
+            }
+            //$(".unfriend").click({currentRelationship: "Friend"}, changeRelationship);
+            //$(".unfollow").click({currentRelationship: "Following"}, changeRelationship);
+            //$(".befriend").click({currentRelationship: "Follower"}, changeRelationship);
+            $(document).on("click", ".unfriend", {currentRelationship: "Friend"}, changeRelationship);
+            $(document).on("click", ".unfollow", {currentRelationship: "Following"}, changeRelationship);
+            $(document).on("click", ".befriend", {currentRelationship: "Follower"}, changeRelationship);
+        });
+
+    </script>
+    <section>
     <h1 class="content-title">Friends, Following & Followers</h1>
 
     <h2>Your Friends</h2>
-    <table class="table table-hover">
+    <table class="table table-hover" id="friendsTable">
         <thead>
             <tr>
                 <th>Friend</th>
@@ -16,10 +106,7 @@
             <tr>
                 <td><a href="#">{{ friend.user.username }}</a></td>
                 <td>
-                    <form> <!-- action, method -->
-                        <input type="hidden" name="authorid" value="actualaid">
-                        <input type="submit" class="danger" value="Un-befriend">
-                    </form>
+                    <input class="danger unfriend" type="submit" value="Un-befriend">
                 </td>
             </tr>
             {% endfor %}
@@ -27,7 +114,7 @@
     </table>
 
     <h2>Following</h2>
-    <table class="table table-hover">
+    <table class="table table-hover" id="followingsTable">
         <thead>
             <tr>
                 <th>Following</th>
@@ -39,10 +126,7 @@
             <tr>
                 <td><a href="#">{{ follow }}</a></td>
                 <td>
-                    <form> <!-- action, method -->
-                        <input type="hidden" name="authorid" value="actualaid">
-                        <input type="submit" class="danger" value="UnFollow">
-                    </form>
+                    <input class="danger unfollow" type="submit" value="UnFollow">
                 </td>
             </tr>
             {% endfor %}
@@ -51,7 +135,7 @@
 
 
     <h2>Followers</h2>
-    <table class="table table-hover">
+    <table class="table table-hover" id="followersTable">
         <thead>
             <tr>
                 <th>Follower</th>
@@ -61,6 +145,10 @@
             {% for follower in followers %}
             <tr>
                 <td><a href="#">{{ follower }}</a></td>
+                <!-- TODO: befriending someone shouldn't be "dangerous" -->
+                <td>
+                    <input class="danger befriend" type="submit" value="Befriend">
+                </td>
             </tr>
             {% endfor %}
         </tbody>
