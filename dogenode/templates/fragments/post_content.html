@@ -1,7 +1,8 @@
+{% for post, comments in posts.items %}
 <div class="post">   
   <div class="panel panel-default clear-left">
     <!-- Default panel contents -->
-    {% for post, comments in posts.items %}
+    <!-- this is a hack, I don't know how to get first post only -->
     <div class="panel-heading span"><p> {{ post.author.user.username }}</p>
       <span class="date"> {{ post.date_created }} </span>
     </div>
@@ -36,6 +37,6 @@
         </tr>
       </tbody>
     </table>
-    {% endfor %}
   </div>
 </div>
+{% endfor %}
