@@ -1,5 +1,5 @@
 from django.conf.urls import patterns, include, url
-
+from django.http import HttpResponseRedirect
 from django.contrib import admin
 admin.autodiscover()
 
@@ -8,6 +8,8 @@ urlpatterns = patterns('',
     # url(r'^$', 'dogenode.views.home', name='home'),
     # url(r'^blog/', include('blog.urls')),
 
+    # http://stackoverflow.com/a/7580365
+    url(r'^$', lambda r : HttpResponseRedirect('author/')),
     url(r'^login/', include('author.login_urls')),
     url(r'^admin/', include(admin.site.urls)),
     url(r'^comments/', include('comments.urls')),
