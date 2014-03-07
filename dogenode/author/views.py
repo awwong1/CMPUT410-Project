@@ -193,7 +193,8 @@ def search(request):
     if request.method == 'POST':
         username = request.POST['username']
 
-        users = User.objects.filter(username__contains=username)
+        users = User.objects.filter(
+                    Q(username__contains=username) & ~Q(username=request.user))
         usersAndStatus = []
 
         author, _ = Author.objects.get_or_create(user=request.user)
