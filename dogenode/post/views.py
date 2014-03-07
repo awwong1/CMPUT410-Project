@@ -1,4 +1,4 @@
-from django.shortcuts import render, render_to_response
+from django.shortcuts import render, render_to_response, redirect
 from django.http import HttpResponse
 from django.template import RequestContext
 
@@ -58,13 +58,11 @@ def add_post(request):
         privacy = request.POST.get("privacy", "")
         allowed_readers = request.POST.get("others", "")
         post_format = request.POST.get("format", "")
-
     author = Author.objects.filter(user=request.user)[0]    
     Post.objects.get_or_create(content=content, author=author, privacy=privacy,
                                 post_format=post_format) 
     posts = Post.objects.all()
-
-    return render_to_response('author/stream.html', {'posts':posts},  context)
+    return redirect('/author/stream')
 
 def delete_post(request):
     """
@@ -75,25 +73,15 @@ def delete_post(request):
         context = RequestContext(request)
         user = request.user
         author = Author.objects.get(user=request.user)   
- 
         if request.method == "POST":
             post_id = request.POST["post_id"]
-
             post = Post.objects.get(id=post_id)
-
             if (post.author == author):
                 # Delete post and its comments?
                 post.delete();
             # else: send a message?
 
-            # Go back tgo your posts!
-            posts = Post.objects.filter(author=author)
-
-            context = RequestContext(request, 
-                            { "posts" : posts })
-
-            return render_to_response('post/posts.html', context)
-
+            return redirect('/posts/')
     else:
         return redirect('/login/')
 
