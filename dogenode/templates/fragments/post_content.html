@@ -1,36 +1,42 @@
+
+{% for post, comments in posts %}
 <div class="post">   
-<div class="panel panel-default clear-left">
+  <div class="panel panel-default clear-left">
     <!-- Default panel contents -->
     <div class="panel-heading span"><p> {{ post.author.user.username }}</p>
-        <span class="date"> {{ post.date_created }} </span>
+      <span class="date"> {{ post.date_created }} </span>
     </div>
     <div class="panel-body span">
-        <p> {{ post.content }} </p>
+      <p>{{ post.content }} </p>
     </div>
-
-    <!-- QUERY DATABASE HERE -->
+    
     <table class="table">
-        <tbody>
-            <tr>
-	            <td>{NAME}: This should be replaced by a for loop</td>
-            </tr>
-            <tr>
-	            <td>{NAME2}: This one just needs to be long enough for testing purposes, so
-	   sadly, it is actually kinda boring. I wonder when it iwll hit the end
-	   of the page on the browser...
-	   I nnnneeeeedd this to be lloooonnnngg</td>
-            </tr>
-            <tr>
-                <td> 
-	                <form role="form" method="POST" action="">
-	                    <div class="form-group span">
-	                        <input type="text" class="form-control" name="newComment" placeholder="Make a new comment..."/>	       
-	                        <input type="submit" value="Comment" class="float-right"/>
-	                    </div>
-	                </form>
-                </td>
-            </tr>
-        </tbody>
+      <tbody>
+        {% for comment in comments %}
+	<tr>
+	  <td>{{comment.comment_auth.user.username}}: 
+	    {{comment.comment_text}}</td>
+        </tr>
+	{% endfor %}
+        <tr>
+          <td> 
+	    <form role="form" method="POST" action="/comments/add_comment/">
+	      <div class="form-group span">
+		{% csrf_token %}
+		<input type="hidden"
+		       name="post_id"
+		       value="{{post.id}}" />
+	        <input type="text" 
+		       class="form-control" 
+		       name="newComment" 
+		       placeholder="Make a new comment..."/>	       
+	        <input type="submit" value="Comment" class="float-right"/>
+	      </div>
+	    </form>
+          </td>
+        </tr>
+      </tbody>
     </table>
-    </div>
+  </div>
 </div>
+{% endfor %}

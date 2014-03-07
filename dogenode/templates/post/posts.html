@@ -1,35 +1,39 @@
 {% extends "user_base.html" %}
 
 {% block body %}
-    <section>
-    <h1 class="content-title">Your Posts</h1>
+<h1 class="content-title">Your Posts</h1>
+{% if posts %}
+<table class="table table-hover">
+  <thead>
+    <tr>
+      <th>Content</th>
+      <th>Date</th>
+      <th>Delete?</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for post, comments in posts %}
+    <tr>
+      <td><a href="/posts/{{ post.id }}/">
+	  {{ post.content }}</a></td>
+      <td>{{ post.date_created }}</td>
+      <td>
+        <form action="/posts/delete_post/" method="POST">
+          {% csrf_token %}
+          <input type="hidden" 
+		 name="post_id" value="{{ post.id }}">
+          <input type="submit" class="danger" value="Delete Post">
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
 
-    <table class="table table-hover">
-        <thead>
-        <tr>
-            <th>Content</th>
-            <th>Date</th>
-            <th>Delete?</th>
-        </tr>
-        </thead>
-        <tbody>
-            {%  %}
-            {% for post in posts %}
-            <tr>
-                <td> {{ post.content }} </td> 
-                <td> {{ post.date_created }} </td>
-                <td>
-                    <form method="post" action="/posts/delete_post/"> 
-                        {% csrf_token %} 
-                        <input type="hidden" name="pid" value="actualpid">
-                        <input type="submit" class="danger" value="Delete Post">
-                    </form>
-                </td>
-            </tr>
-            {% endfor %}
-
-        </tbody>
-    </table>
-
-    </section>
+{% else %}
+<p>You have no posts! Go make a new post in your 
+  <a href="/author/stream">Stream!</a>
+</p>
+{% endif %}       
+>>>>>>> d75908376485adb624204446897850d7ddd14e75
 {% endblock %}

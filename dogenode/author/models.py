@@ -8,6 +8,7 @@ class Author(models.Model):
 
     user = models.OneToOneField(User)
     accepted = models.BooleanField(default=False)
+    about_me = models.TextField(blank=True)
 
     def __str__(self):
         return self.user.username
@@ -22,9 +23,9 @@ class Author(models.Model):
 
         for r in relationships:
             if r.author1 == self:
-                friends.append(author2)
+                friends.append(r.author2)
             else:
-                friends.append(author1)
+                friends.append(r.author1)
 
         return friends
 
@@ -42,11 +43,15 @@ class Author(models.Model):
 
 # Post-save stuff from:
 # http://stackoverflow.com/questions/44109/extending-the-user-model-with-custom-fields-in-django
-def addAcceptedAttribute(sender, instance, created, **kwargs):
-    if created:
-        _, _ = Author.objects.get_or_create(user=instance)
+# Note: this is causing django to try and create a new author
+# twice (even though dispatch_uid should prevent this), so this is
+# being commented out.
+#def addAcceptedAttribute(sender, instance, created, **kwargs):
+#    if created:
+#        _, _ = Author.objects.get_or_create(user=instance)
 
-post_save.connect(addAcceptedAttribute, sender=User)
+#post_save.connect(addAcceptedAttribute, sender=User,
+#                  dispatch_uid="asdf")
 
 class Relationship(models.Model):
 

@@ -1,28 +1,32 @@
 {% extends "user_base.html" %}
 
 {% block body %}
-<a href="/author/edit_profile/"  class="button-links">Edit Profile</a>
-<section>
+<a href="/author/edit_profile/" class="button-links">Edit Profile</a>
   <header>
-    <h1 class="span"> Doge </h1>  <!-- {  USERNAME }  -->
+    {% if firstName %}
+    <h1>{{ firstName }} {{ lastName}}</h1>
+    {% else %}
+    <h1>{{ username }}</h1>
+    {% endif %}
   </header>
 
-  <br />
-  <div class="profile-img clear-left">
-    <img src="{{STATIC_URL}}images/doge.jpeg" alt="dogey"/>
+  <div class="span">
+    <div class="profile-img">
+      <img src="{{STATIC_URL}}images/doge.jpeg" alt="dogey"/>
+    </div>
+    <h2>About Me</h2>
+    {% if aboutMe %}
+    <p>{{ aboutMe }}</p>
+    {% else %}
+    <p class="text-muted">
+      Oh no! You haven't entered anything about yourself!  You should probably
+      <a href="/author/edit_profile/">edit your profile</a> so other shibes
+      know more about you!
+    </p>
+    {% endif %}
   </div>
 
-  <h2 class="content-title"> 
-    About Me
-  </h2> 
-
-  <p>
-    Hello. You are probably not reading this. Why? Because why would you? But if this was an alternate universe
-      and you were actually reading this, you should know, that the computer science building gets very creepy
-      at night...very sketchy.
-  </p>
-
- <!-- GRAB STUFF FROM DATABASE HERE -->
+  <!-- GRAB STUFF FROM DATABASE HERE -->
   <table class="table table-bordered">
    <thead>
     <tr>
@@ -38,5 +42,4 @@
    </tbody>
   </table>
 
-</section>
 {% endblock %}

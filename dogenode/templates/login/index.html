@@ -1,17 +1,27 @@
 
-{% extends "base.html" %}
+{% extends "user_base.html" %}
+
+{% block side-nav %} 
+
+    <div class="side-nav">
+        <div class="login"> 
+            <form method="POST" action="/login/">
+            {% csrf_token %}
+                <p>Username:</p> <input type="text" name="username" size="20" /><br />
+                <p>Password:</p> <input type="password" name="password" size="20" /><br />
+                <div>{{ message }}</div><br />
+                <input type="submit" value="Login" />
+
+            </form>
+
+            <a href="/login/register/">Register</a>
+        </div>
+    </div>
+
+{% endblock %}
 
 {% block body %}
-
-<form method="POST" action="/login/">
-    {% csrf_token %}
-    Username: <input type="text" name="username" size="20" /><br />
-    Password: <input type="password" name="password" size="20" /><br />
-    <div>{{ message }}</div><br />
-    <input type="submit" value="Login" />
-
-</form>
-
-<a href="/login/register/">Register</a>
-
+<header>
+    <h1>What is DogeNode?</h1>
+</header>
 {% endblock %}

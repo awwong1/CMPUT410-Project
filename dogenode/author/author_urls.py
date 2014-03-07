@@ -5,6 +5,7 @@ from author import views
 urlpatterns = patterns('',
     url(r'^$', views.profile, name='index'),
     #url(r'^(?P<author_id>\w+)/$', views.profile),
+    url(r'^relationship/(\w+)/$', views.updateRelationship),
     url(r'^stream/$', views.stream),
     #url(r'^(?P<author_id>\w)/stream/$', views.stream),  
     url(r'^friends/$', views.friends),
