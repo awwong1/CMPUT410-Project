@@ -10,7 +10,7 @@
         <p>Username:</p> <input type="text" name="username" size="20" /><br />
         <p>Password:</p> <input type="password" name="password1" size="20" /><br />
         <p>Confirm Password:</p> <input type="password" name="password2" size="20" /><br />
-        <div id="divRegistrationStatus">{{ registrationStatus }}</div>
+        <div id="divRegistrationStatus">{{ registrationStatus }}</div><br />
         <input type="submit" value="Register" />
     </form>
 </div>
@@ -18,7 +18,7 @@
 <script>
     function checkPasswordsMatch() {
         if ($("[name='password1']").val() != $("[name='password2']").val())
-            /$("#divRegistrationStatus").html("Passwords don't match!");
+            $("#divRegistrationStatus").html("Passwords don't match!");
         else
             $("#divRegistrationStatus").html("Passwords match!");
     }

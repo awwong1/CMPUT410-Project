@@ -65,14 +65,13 @@ def register(request):
         # Check if username already exists
         if len(User.objects.filter(username=username)) > 0:
             context = RequestContext(request, {'registrationStatus':
-                "This username is taken!"})
+                "The username '%s' is taken!" % username})
         else:
             if username and password:
                 user = User.objects.create_user(username=username,
                                                 password=password)
                 user.save()
-                context = RequestContext(request, {'registrationStatus':
-                    "Registration successful!"})
+                return redirect('/login/')
 
     return render(request, 'login/register.html', context)
 
