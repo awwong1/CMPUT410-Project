@@ -59,10 +59,10 @@ def add_post(request):
         allowed_readers = request.POST.get("others", "")
         post_format = request.POST.get("format", "")
     author = Author.objects.filter(user=request.user)[0]    
-    Post.objects.get_or_create(content=content, author=author, privacy=privacy,
+    Post.objects.create(content=content, author=author, privacy=privacy,
                                 post_format=post_format) 
     posts = Post.objects.all()
-    return redirect('/author/stream')
+    return redirect(request.META['HTTP_REFERER'])
 
 def delete_post(request):
     """
