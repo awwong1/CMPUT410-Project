@@ -28,7 +28,7 @@
 
     {% block side-nav %}    
     <div class="side-nav">
-        <div class="search-box">
+        <div class="search-box form-box">
             <form method = "post" action="/author/search_results/" class = "pull-down  navbar-search">
                 {%  csrf_token %}
                     <input name="username" type="search" placeholder="find author" />

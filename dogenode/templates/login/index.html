@@ -4,7 +4,7 @@
 {% block side-nav %} 
 
     <div class="side-nav">
-        <div class="login"> 
+        <div class="login form-box"> 
             <form method="POST" action="/login/">
             {% csrf_token %}
                 <p>Username:</p> <input type="text" name="username" size="20" /><br />

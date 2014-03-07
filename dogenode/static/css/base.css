@@ -41,10 +41,19 @@ html, body {
    margin-right: 2%;
 }
 
+input:focus {
+    outline: 0;
+}
+
 h1, h2, h3, h4, h5, h6 {
     margin-top: 0%;
 }
 
+.form-box input:not([type='submit']){
+    margin-bottom: 2%;
+    width: 78%;
+    border-radius: 15px;
+} 
 
 /* side nav styling */
 div.side-nav {
@@ -53,7 +62,6 @@ div.side-nav {
     /*min-width: 228px;*/
     height: 100%;
     background-color: rgb(228,199,143); /* nav background color, light cream */
-
 }
 
 div.side-nav li a{
@@ -80,11 +88,6 @@ li.active > a:focus {
 .login {
     padding: 5% 1% 1% 5%;
     width: 97%;
-}
-
-.login input[type=text] {
-    margin-bottom: 2%;
-    margin-top: 0;
 }
 
 .login p {
@@ -206,15 +209,13 @@ div.post .date {
 }
 
 /* Search box styling */
-div.search-box input{
-    margin: 5% 1% 10% 2%;;
-    width: 78%;
-    border-radius: 15px;
-    padding-left: 4%;
+.form-box {
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
 }
 
-div.search-box input:focus {
-    outline: 0;
+.form-box input[type='search'] {
+    margin: 8% 1% 8% 2%;;
 }
 
 .search-hr {

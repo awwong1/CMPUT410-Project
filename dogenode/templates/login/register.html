@@ -4,7 +4,7 @@
 {% block side-nav %} {% endblock %}
 
 {% block body %}
-<div class="regist"> 
+<div class="regist form-box"> 
     <form method="POST" action="/login/register/">
         {% csrf_token %}
         <p>Username:</p> <input type="text" name="username" size="20" /><br />
