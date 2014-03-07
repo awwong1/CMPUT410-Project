@@ -145,11 +145,11 @@ def stream(request):
     """
     context = RequestContext(request)
     rawposts = Post.objects.all().order_by('-date_created')
-    posts = {}
+    comments = []
     for post in rawposts:
-        comments = Comment.objects.filter(post_ref=post)
-        posts[post] = comments
-    context["posts"] = posts
+        comments.append(Comment.objects.filter(post_ref=post))
+    context["posts"] = zip(rawposts, comments)
+    
     return render_to_response('author/stream.html', context)
 
 def posts(request):

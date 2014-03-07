@@ -21,11 +21,11 @@ def posts(request):
 
     author = Author.objects.filter(user=request.user)[0]    
     rawposts = Post.objects.filter(author=author).order_by('-date_created')
-    posts = {}
+    comments = []
     for post in rawposts:
-        comments = Comment.objects.filter(post_ref=post)
-        posts[post] =  comments
-    context["posts"] = posts
+        comments.append(Comment.objects.filter(post_ref=post))
+    context["posts"] = zip(rawposts, comments)
+
     return render_to_response('post/posts.html', context)
 
 def post(request, post_id):
