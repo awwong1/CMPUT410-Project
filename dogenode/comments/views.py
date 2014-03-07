@@ -23,7 +23,7 @@ def get_post_comments(request, post_id):
 
 def add_comment(request):
     """
-    Adds a comment to a post
+    Adds a comment to a post, redirects back to calling page
     """
     if request.method == "POST" and request.user.is_authenticated():
         author = Author.objects.get(user=request.user)
@@ -34,4 +34,4 @@ def add_comment(request):
             comment_auth=author,
             comment_text=commentText,
             post_ref=post)
-    return redirect('/posts/'+post_id+'/')
+    return redirect(request.META['HTTP_REFERER'])
