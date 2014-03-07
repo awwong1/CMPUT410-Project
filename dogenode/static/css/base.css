@@ -55,11 +55,19 @@ h1, h2, h3, h4, h5, h6 {
     border-radius: 15px;
 } 
 
+button {
+        -webkit-box-sizing: border-box;
+       -moz-box-sizing: border-box;
+            box-sizing: border-box;
+    width: 14%;
+    
+}
+
 /* side nav styling */
 div.side-nav {
-    float: left;
-    width: 18%;
-    /*min-width: 228px;*/
+    position: absolute;
+    z-index: 1;
+    width: 150pt;
     height: 100%;
     background-color: rgb(228,199,143); /* nav background color, light cream */
 }
@@ -143,19 +151,17 @@ li.active > a:focus {
 /* Main section, "content", styling */
 div.content {
     font-color: black;
+        -webkit-box-sizing: border-box;
+       -moz-box-sizing: border-box;
+            box-sizing: border-box;
     width: 78%;
-    float: left;
+    margin-left: 160pt;
 }
 
 div.content section {
     padding: 1% 2% 2% 2%;
 }
  
-
-div.content header h1 {
-    float: left;
-    clear: right;
-}
 
 textarea {
     -webkit-box-sizing: border-box;
@@ -173,10 +179,6 @@ div.profile-img img{
     height: 200pt;
 }
 
-div.content div {
-    float: left;
-}
-
 /* Id element stlying */
 .button-links {
     z-index: -1;
@@ -191,17 +193,6 @@ div#privacyOptions {
 div.post {
     text-align: left;
     width: 100%;
-    float: left;
-    clear: left;
-}
-
-div.post p, div.post {
-    float: left;
-    clear: left;
-}
-
-div.post .date {
-    float: right;
 }
 
 .panel-heading {
@@ -307,3 +298,4 @@ input[type=submit].danger:hover {
     border-color: #904D3D #864737 #804131;
     box-shadow: 0px 4px 0px 0px #FAb19F inset; /* Create top button hilight */
 }
+
