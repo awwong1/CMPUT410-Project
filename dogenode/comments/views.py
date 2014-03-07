@@ -18,7 +18,7 @@ def get_post_comments(request, post_id):
     context = RequestContext(request)
     post = Post.objects.get(id=post_id)
     comments = Comment.objects.filter(post_ref=post)
-    context["posts"]={post:comments}
+    context["comments"] = comments
     return render_to_response("fragments/post_content.html", context)
 
 def add_comment(request):
@@ -34,4 +34,12 @@ def add_comment(request):
             comment_auth=author,
             comment_text=commentText,
             post_ref=post)
+    return redirect(request.META['HTTP_REFERER'])
+
+def remove_comment(request, comment_id):
+    """
+    Remove a comment, based on comment id
+    Currently, nothing calls this
+    """
+    Comment.objects.get(id=comment_id).delete()
     return redirect(request.META['HTTP_REFERER'])
