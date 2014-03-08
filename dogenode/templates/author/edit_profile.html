@@ -2,60 +2,65 @@
 
 {% block body %}
 
-  <form method="post" action="/author/edit_profile/">
-    {% csrf_token %}
-
     {% if successMessage %}
     <div id="divMessage" class="alert alert-success span">{{ successMessage }}</div>
     {% elif failureMessage %}
     <div id="divMessage" class="alert alert-danger span">{{ failureMessage }}</div>
     {% endif %}
 
-    <input type="submit" value="Save Changes" class="button-links"/>
 
-    <header>
-      {% if firstName %}
-      <h1>{{ firstName }} {{ lastName}}</h1>
-      {% else %}
-      <h1>{{ username }}</h1>
-      {% endif %}
-    </header>
+  <form method="post" action="/author/edit_profile/">
+    {% csrf_token %}
+  
+     {% if firstName %}
+    <h1 class="section-header">{{ firstName }} {{ lastName}}<span>
+        <input type="submit" value="Save Changes" class="button-links"/>
+        </span></h1>
+    {% else %}
+    <h1 class="section-header">{{ username }} <span>
+        <input type="submit" value="Save Changes" class="button-links"/>
+        </span></h1>
+    {% endif %}
 
-    <div class="span">
-      <div class="profile-img">
-        <img src="{{ STATIC_URL }}images/doge.jpeg" alt="dogey"/>
-      </div>
-
-      <div class="form-group">
-        <label for="aboutMe">
-          <h2 class="content-title">About Me</h2>
-        </label>
-        <textarea id="aboutMe" class="form-control" name="aboutMe"
-          cols="50" rows="10">{{ aboutMe }}</textarea>
-      </div>
+    <div class="row placeholder">
+            <div class="col-sm-3 placeholder">
+                <img id="doge" src="{{STATIC_URL}}images/doge.jpeg" class="img-responsive" alt="dogey"/>
+            </div>
+         
+            <div class="col-sm-9">
+                <h4>About Me</h4>
+                <div class="form-group">
+                    <textarea id="aboutMe" class="form-control" name="aboutMe"
+                     rows="5">{{ aboutMe }}</textarea>
+                </div>
+	    </div>
+    </div> 
+            <h2> Account Information </h2>
+            <p>Leave fields blank and/or unmodified if you do not want to change them.</p>
+            
+     <div class="row">
+	<div class="col-md-4">	
+	    <div class="form-group"> 
+               <label for="firstName">First Name</label>
+               <input id="firstName" type="text" class="form-control" 
+                 name="firstName" value="{{ firstName }}"/>
+            </div>
+            <div class="form-group"> 
+                <label for="lastName">Last Name</label>
+                <input id="lastName" type="text" class="form-control"
+                  name="lastName" value="{{ lastName }}"/>
+            </div>
+	</div>
+	<div class="col-md-4">
+            <div class="form-group"> 
+                <label for="oldPassword">Current Password</label>
+                <input id="oldPassword" type="password" class="form-control" name="oldPassword"/>
+            </div>
+            <div class="form-group">
+                <label for="newPassword">New Password</label>
+                <input id="newPassword" type="password" class="form-control" name="newPassword"/>
+            </div>
+        </div>
     </div>
-
-    <div>
-      <h2> Account Information </h2>
-      <p>Leave fields blank and/or unmodified if you do not want to change them.</p>
-      <div class="form-group"> 
-          <label for="firstName">First Name</label>
-          <input id="firstName" type="text" class="form-control" 
-            name="firstName" value="{{ firstName }}"/>
-      </div>
-      <div class="form-group"> 
-          <label for="lastName">Last Name</label>
-          <input id="lastName" type="text" class="form-control"
-            name="lastName" value="{{ lastName }}"/>
-      </div><br/>
-      <div class="form-group"> 
-          <label for="oldPassword">Current Password</label>
-          <input id="oldPassword" type="password" class="form-control" name="oldPassword"/>
-      </div>
-      <div class="form-group">
-          <label for="newPassword">New Password</label>
-          <input id="newPassword" type="password" class="form-control" name="newPassword"/>
-      </div>
-    </div>
-  </form>
+    </form>
 {% endblock %}

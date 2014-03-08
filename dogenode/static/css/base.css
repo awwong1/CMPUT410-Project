@@ -185,6 +185,12 @@ div.profile-img img{
 }
 
 /* Id element stlying */
+
+img#doge {
+    margin-left: auto;
+    margin-right: auto;
+}
+
 #edit-profile {
     font-size: 12pt;
 }
