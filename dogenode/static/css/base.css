@@ -2,35 +2,14 @@
     http://colorschemedesigner.com/#0P51TmapJw0w04A1-j
 */
 
-html, body {
-    height: 100%;
-    margin-top: 0%;
-    padding-top: 0%;
+body {
+    padding-top: 50px;
 }
 
 /* General classes styling */
-.clear-left {
-    clear: left;
-}
 
-.clear-right { 
-    clear: right;
-}
-
-.float-left {
-    float: left;
-}
-
-.float-right {
-    float: right;
-}
-
-.inline {
-    display: inline;
-}
-
-.span {
-    width: 100%;
+.placeholder {
+    margin-bottom: 15px;
 }
 
 .form-group {
@@ -51,7 +30,6 @@ h1, h2, h3, h4, h5, h6 {
 
 .form-box input:not([type='submit']){
     margin-bottom: 2%;
-    width: 78%;
     border-radius: 15px;
 } 
 
@@ -64,15 +42,32 @@ button {
 }
 
 /* side nav styling */
-div.side-nav {
-    position: absolute;
-    z-index: 1;
-    width: 150pt;
-    height: 100%;
-    background-color: rgb(228,199,143); /* nav background color, light cream */
+.sidebar {
+        background-color: rgb(228,199,143); /* nav background color, light cream */
 }
 
-div.side-nav li a{
+@media (min-width: 768px) {
+    div.sidebar {
+        position: absolute;
+        top: 51px;
+        left: 0;
+        z-index: 1000;
+	height: 100%;
+        display: block;
+        padding: 20px;
+        overflow-x: hidden;
+        overflow-y: auto;
+        background-color: rgb(228,199,143); /* nav background color, light cream */
+    }
+}
+
+.nav-sidebar {
+    margin-right: -21px;
+    margin-bottom: 20px;
+    margin-left: -20px;
+}
+
+div.sidebar li a{
     color: rgb(130, 75, 20);    /* Medium brown colour  */
     padding-left: 7%;
 }
@@ -81,8 +76,8 @@ li.active > a:focus {
     background-color: #D4B775; /* light cream  */
 }
 
-.nav-pills > li > a:hover,
-.nav-pills > li > a:focus {
+.sidebar li a:hover,
+.sidebar li a:focus {
     background-color: rgb(205, 151, 63); /* medium orange brown */
     color: white;
 }
@@ -92,63 +87,97 @@ li.active > a:focus {
     margin-left: 3%;
 }
 
-/* Login side nav styling */
-.login {
-    padding: 5% 1% 1% 5%;
-    width: 97%;
+/* Login styling */
+.form-signin {
+    max-wdith: 330px;
+    padding: 5% 0 0 0;
+    text-align: center;
+    margin: 0 auto;
 }
 
-.login p {
-    padding-top: 1%;
-    padding-bottom: 0;
-    margin-bottom: 0;
+.form-signin .form-signin-heading,
+.form-signin .checkbox {
+  margin-bottom: 10px;
+}
+.form-signin .checkbox {
+  font-weight: normal;
+}
+.form-signin .form-control {
+  position: relative;
+  height: auto;
+  -webkit-box-sizing: border-box;
+     -moz-box-sizing: border-box;
+          box-sizing: border-box;
+  padding: 10px;
+  font-size: 16px;
+}
+.form-signin .form-control:focus {
+  z-index: 2;
+}
+.form-signin input[type="email"] {
+  margin-bottom: -1px;
+  border-bottom-right-radius: 0;
+  border-bottom-left-radius: 0;
+}
+.form-signin input[type="password"] {
+  margin-bottom: 10px;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
 }
 
 /* Registration Page Styling - Centering the page  */
 
 .regist {
-    margin: 10% 0% 0% 50%;
-    padding: 2% 5% 2% 5%;
+    margin-top: 5%;
+    padding: 2% 2% 2% 2%;
     border: solid rgb(130, 75, 20) 2pt;    /* Medium brown colour  */
     background-color: rgb(228,199,143); /* nav background color, light cream */
 }
 
-.regist input[type=text] {
-    margin-bottom: 2%;
-    margin-top: 0;
-}
-
-.regist input {
-    margin-bottom: 3%;
-}
-
-.regist p {
-    padding-top: 1%;
-    padding-bottom: 0;
-    margin-bottom: 0;
-}
-
 /* Header styling */
-.page-header {
-    margin-bottom: 0;
-    margin-top: 0;
+.dogenode-header {
     background-color: #855A14;
     color: white;
-    padding-left: 1%;
+    position: absolute;
 }
 
-.page-header h1 {
+.dogenode-header p {
     color: white;
-    padding-top: 2%;
-    margin-top: 0;
+    float: left;
+    padding: 15px;
+    font-size: 20pt;
+    line-height: 20px;
+    height: 50px;
 }
 
-.page-header h1 small {
+.dogenode-header a, .dogenode-header a:visited {
+    color: white;
+}
+
+.dogenode-header small {
     color: #BC956A;
 }
 
+.main .section-header {
+    margin-top: 0;
+}
+
+.section-header {
+    padding-bottom: 9px;
+    margin: 40px 0 20px;
+    border-bottom: 1px solid #eee;
+}
+
+.sub-header {
+   padding-bottom: 10px;
+   border-bottom: 1px solid #eee;
+}
 
 /* Main section, "content", styling */
+.main {
+    padding: 20px;
+}
+
 div.content {
     font-color: black;
         -webkit-box-sizing: border-box;
@@ -180,8 +209,17 @@ div.profile-img img{
 }
 
 /* Id element stlying */
+
+img#doge {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+#edit-profile {
+    font-size: 12pt;
+}
+
 .button-links {
-    z-index: -1;
     float: right;
     margin: 1% 2% 0 0;
 }
@@ -190,9 +228,19 @@ div#privacyOptions {
     margin-right: 2%;
 }
 
-div.post {
-    text-align: left;
-    width: 100%;
+/* Styling a post */
+.post {
+    padding-left: 0;
+    padding-right: 0;
+}
+
+div.post input[type='submit']{
+    margin-top: 1%;
+    float: right;
+}
+
+div.post .date {
+    float: right;
 }
 
 .panel-heading {
@@ -200,18 +248,10 @@ div.post {
 }
 
 /* Search box styling */
-.form-box {
-    -moz-box-sizing: border-box;
-    box-sizing: border-box;
-}
-
-.form-box input[type='search'] {
-    margin: 8% 1% 8% 2%;;
-}
-
-.search-hr {
-    margin-top: 0;
-    width: 88%;
+input[type='search'] {
+    margin: 5% 2% 1% 2%;
+    width: 96%;
+    border-radius: 15px;
 }
 
 /* *** Tables *** */

@@ -1,43 +1,51 @@
 {% extends "user_base.html" %}
 
 {% block body %}
-<a href="/author/edit_profile/" class="button-links">Edit Profile</a>
-  <header>
+<div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
+
     {% if firstName %}
-    <h1>{{ firstName }} {{ lastName}}</h1>
+    <h1 class="section-header">{{ firstName }} {{ lastName}}<span>
+	<a href="/author/edit_profile/" id="edit-profile" 
+	class="button-links">Edit Profile</a>
+    	</span></h1>
     {% else %}
-    <h1>{{ username }}</h1>
+    <h1 class="section-header">{{ username }} <span>
+	<a href="/author/edit_profile/" id="edit-profile" 
+	class="button-links">Edit Profile</a>
+    	</span></h1>
     {% endif %}
-  </header>
-
-    <div class="profile-img">
-      <img src="{{STATIC_URL}}images/doge.jpeg" alt="dogey"/>
+   
+    <div class="row placeholder">
+        <div class="col-xs-6 col-sm-3 placeholder">
+            <img src="{{STATIC_URL}}images/doge.jpeg" class="img-responsive" alt="dogey"/>
+        </div>
+	 
+        <div class="col-s-6 col-m-4 placeholder">
+            <h4>About Me</h4>
+            {% if aboutMe %}
+                <p>{{ aboutMe }}</p>
+            {% else %}
+                <p class="text-muted">
+                  Oh no! You haven't entered anything about yourself!  You should probably
+                  <a href="/author/edit_profile/">edit your profile</a> so other shibes
+                  know more about you!
+                </p>
+            {% endif %}
+        </div>
     </div>
-    <h2>About Me</h2>
-    {% if aboutMe %}
-    <p>{{ aboutMe }}</p>
-    {% else %}
-    <p class="text-muted">
-      Oh no! You haven't entered anything about yourself!  You should probably
-      <a href="/author/edit_profile/">edit your profile</a> so other shibes
-      know more about you!
-    </p>
-    {% endif %}
 
-  <!-- GRAB STUFF FROM DATABASE HERE -->
-  <table class="table table-bordered">
-   <thead>
-    <tr>
-      <th> Content </th>
-      <th> Date </th>
-    </tr>
-   </thead>
-   <tbody>
-    <tr> 
-      <td>I love pie </td>
-      <td> March 1, 2014 </td>
-    </tr>
-   </tbody>
-  </table>
-
+    <h4 class="sub-header"> Posts by {{ username }} </h4>
+	<div class="table-responsive">  
+	    <table class="table table-bordered">
+   		<thead>
+    		    <tr>
+      			<th> Content </th>
+      			<th> Date </th>
+    		    </tr>
+   		</thead>
+   		<tbody>
+   		</tbody>
+  	    </table>
+	</div>
+</div>
 {% endblock %}
