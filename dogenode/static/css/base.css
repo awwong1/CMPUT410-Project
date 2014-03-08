@@ -121,25 +121,10 @@ li.active > a:focus {
 /* Registration Page Styling - Centering the page  */
 
 .regist {
-    margin: 10% 0% 0% 50%;
-    padding: 2% 5% 2% 5%;
+    margin-top: 5%;
+    padding: 2% 2% 2% 2%;
     border: solid rgb(130, 75, 20) 2pt;    /* Medium brown colour  */
     background-color: rgb(228,199,143); /* nav background color, light cream */
-}
-
-.regist input[type=text] {
-    margin-bottom: 2%;
-    margin-top: 0;
-}
-
-.regist input {
-    margin-bottom: 3%;
-}
-
-.regist p {
-    padding-top: 1%;
-    padding-bottom: 0;
-    margin-bottom: 0;
 }
 
 /* Header styling */

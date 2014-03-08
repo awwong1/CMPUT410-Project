@@ -7,15 +7,15 @@
 
 {% block body %}
 	<div class="col-md-4"></div>
-	<div class="col-md-4 form-signin">
+	<div class="col-md-4 form-signin regist">
         <form  method="POST" action="/login/">
             {% csrf_token %}
 		<h2 class="form-signin-header"> Welcome! </h2>
                 <input type="text" name="username" class="form-control" 
-		placeholder="Username" required autofocus/>
+		placeholder="Username" required autofocus/> <br/>
                 <input type="password" name="password" 
 		class="form-control" placeholder="Password" required/>
-                <div>{{ message }}</div> <br/>
+		<div>{{ message }}</div> <br/>
                 <input type="submit" value="Login" 
 		class="btn btn-lg btn-primary btn-block"/>
 		<br/>
