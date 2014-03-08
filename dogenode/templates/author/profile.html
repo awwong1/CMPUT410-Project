@@ -1,6 +1,8 @@
 {% extends "user_base.html" %}
 
 {% block body %}
+<div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
+
     {% if firstName %}
     <h1 class="section-header">{{ firstName }} {{ lastName}}<span>
 	<a href="/author/edit_profile/" id="edit-profile" 
@@ -42,11 +44,8 @@
     		    </tr>
    		</thead>
    		<tbody>
-    		    <tr> 
-      			<td>I love pie </td>
-      			<td> March 1, 2014 </td>
-    		    </tr>
    		</tbody>
   	    </table>
 	</div>
+</div>
 {% endblock %}

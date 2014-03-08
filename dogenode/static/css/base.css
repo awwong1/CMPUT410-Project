@@ -10,7 +10,6 @@ body {
 
 .placeholder {
     margin-bottom: 15px;
-    text-align: center;
 }
 
 .form-group {
@@ -81,16 +80,42 @@ li.active > a:focus {
     margin-left: 3%;
 }
 
-/* Login side nav styling */
-.login {
-    padding: 5% 1% 1% 5%;
-    width: 97%;
+/* Login styling */
+.form-signin {
+    max-wdith: 330px;
+    padding: 5% 0 0 0;
+    text-align: center;
+    margin: 0 auto;
 }
 
-.login p {
-    padding-top: 1%;
-    padding-bottom: 0;
-    margin-bottom: 0;
+.form-signin .form-signin-heading,
+.form-signin .checkbox {
+  margin-bottom: 10px;
+}
+.form-signin .checkbox {
+  font-weight: normal;
+}
+.form-signin .form-control {
+  position: relative;
+  height: auto;
+  -webkit-box-sizing: border-box;
+     -moz-box-sizing: border-box;
+          box-sizing: border-box;
+  padding: 10px;
+  font-size: 16px;
+}
+.form-signin .form-control:focus {
+  z-index: 2;
+}
+.form-signin input[type="email"] {
+  margin-bottom: -1px;
+  border-bottom-right-radius: 0;
+  border-bottom-left-radius: 0;
+}
+.form-signin input[type="password"] {
+  margin-bottom: 10px;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
 }
 
 /* Registration Page Styling - Centering the page  */
@@ -122,6 +147,15 @@ li.active > a:focus {
     background-color: #855A14;
     color: white;
     position: absolute;
+}
+
+.dogenode-header p {
+    color: white;
+    float: left;
+    padding: 15px;
+    font-size: 20pt;
+    line-height: 20px;
+    height: 50px;
 }
 
 .dogenode-header a, .dogenode-header a:visited {
