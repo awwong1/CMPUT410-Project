@@ -75,13 +75,13 @@ def register(request):
 
     return render(request, 'login/register.html', context)
 
-def profile(request):
+def profile(request, username):
     """
     GET: Returns the profile page / information of an author.
     """
     if request.user.is_authenticated():
-        user = request.user
-        author = Author.objects.get(user=request.user)
+        user = User.objects.get(username=username)
+        author = Author.objects.get(user=user)
         payload = { } # This is what we send in the RequestContext
 
         payload['firstName'] = user.first_name or ""
