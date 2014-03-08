@@ -2,35 +2,15 @@
     http://colorschemedesigner.com/#0P51TmapJw0w04A1-j
 */
 
-html, body {
-    height: 100%;
-    margin-top: 0%;
-    padding-top: 0%;
+body {
+    padding-top: 50px;
 }
 
 /* General classes styling */
-.clear-left {
-    clear: left;
-}
 
-.clear-right { 
-    clear: right;
-}
-
-.float-left {
-    float: left;
-}
-
-.float-right {
-    float: right;
-}
-
-.inline {
-    display: inline;
-}
-
-.span {
-    width: 100%;
+.placeholder {
+    margin-bottom: 15px;
+    text-align: center;
 }
 
 .form-group {
@@ -56,15 +36,32 @@ h1, h2, h3, h4, h5, h6 {
 } 
 
 /* side nav styling */
-div.side-nav {
-    float: left;
-    width: 18%;
-    /*min-width: 228px;*/
-    height: 100%;
-    background-color: rgb(228,199,143); /* nav background color, light cream */
+.sidebar {
+    display: none;
 }
 
-div.side-nav li a{
+@media (min-width: 768px) {
+    div.sidebar {
+        position: absolute;
+        top: 51px;
+        left: 0;
+        z-index: 1000;
+	height: 100%;
+        display: block;
+        padding: 20px;
+        overflow-x: hidden;
+        overflow-y: auto;
+        background-color: rgb(228,199,143); /* nav background color, light cream */
+    }
+}
+
+.nav-sidebar {
+    margin-right: -21px;
+    margin-bottom: 20px;
+    margin-left: -20px;
+}
+
+div.sidebar li a{
     color: rgb(130, 75, 20);    /* Medium brown colour  */
     padding-left: 7%;
 }
@@ -73,8 +70,8 @@ li.active > a:focus {
     background-color: #D4B775; /* light cream  */
 }
 
-.nav-pills > li > a:hover,
-.nav-pills > li > a:focus {
+.sidebar li a:hover,
+.sidebar li a:focus {
     background-color: rgb(205, 151, 63); /* medium orange brown */
     color: white;
 }
@@ -121,26 +118,40 @@ li.active > a:focus {
 }
 
 /* Header styling */
-.page-header {
-    margin-bottom: 0;
-    margin-top: 0;
+.dogenode-header {
     background-color: #855A14;
     color: white;
-    padding-left: 1%;
+    position: absolute;
 }
 
-.page-header h1 {
+.dogenode-header a, .dogenode-header a:visited {
     color: white;
-    padding-top: 2%;
-    margin-top: 0;
 }
 
-.page-header h1 small {
+.dogenode-header small {
     color: #BC956A;
 }
 
+.main .section-header {
+    margin-top: 0;
+}
+
+.section-header {
+    padding-bottom: 9px;
+    margin: 40px 0 20px;
+    border-bottom: 1px solid #eee;
+}
+
+.sub-header {
+   padding-bottom: 10px;
+   border-bottom: 1px solid #eee;
+}
 
 /* Main section, "content", styling */
+.main {
+    padding: 20px;
+}
+
 div.content {
     font-color: black;
     width: 78%;
@@ -173,13 +184,12 @@ div.profile-img img{
     height: 200pt;
 }
 
-div.content div {
-    float: left;
+/* Id element stlying */
+#edit-profile {
+    font-size: 12pt;
 }
 
-/* Id element stlying */
 .button-links {
-    z-index: -1;
     float: right;
     margin: 1% 2% 0 0;
 }
