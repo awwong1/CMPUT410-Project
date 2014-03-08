@@ -37,15 +37,16 @@
     	    {% block side-nav %}    
     	    <div class="col-sm-3 col-md-2 sidebar">
         	<ul class="nav nav-sidebar">
-		    <li><div class="form-box">
-            	        <form method="post" action="/author/search_results/" class="pull-down  navbar-search">
+		    <li>
+            	        <form method="post" action="/author/search_results/" 
+			class="pull-down  navbar-search">
                         {%  csrf_token %}
 			    <div class="form-group">
-                    	    <input name="username" type="search" placeholder="find author" />
-                    	    <button type="submit"><span class="glyphicon glyphicon-search"></span></button>
+                    	    <input name="username" type="search" 
+				class="form-control"placeholder="find author" />
             	            </div>
 			</form>
-        	        </div>
+        	        
 		    </li>       
         	    <li><a href="/author/stream/">My Stream</a></li>
             	    <li><a href="/author/">My Profile</a></li>

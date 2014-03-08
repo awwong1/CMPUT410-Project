@@ -90,70 +90,75 @@
         });
 
     </script>
-    <section>
-    <h1 class="content-title">Friends, Following & Followers</h1>
+    
+    <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
 
-    <h2>Your Friends</h2>
-    <div class="table-responsive">
-    <table class="table table-hover" id="friendsTable">
-        <thead>
-            <tr>
-                <th>Friend</th>
-                <th>Un-Befriend?</th>
-            </tr>
-        </thead>
-        <tbody>  
+        <h1 class="content-title">Friends, Following & Followers</h1>
+
+        <h2 class="sub-header">Your Friends</h2>
+        <div class="table-responsive">
+        <table class="table table-hover" id="friendsTable">
+            <thead>
+                <tr>
+                    <th>Friend</th>
+                    <th>Un-Befriend?</th>
+                </tr>
+            </thead>
+            <tbody>  
             {% for friend in friends %}
-            <tr>
-                <td><a href="#">{{ friend.user.username }}</a></td>
-                <td>
-                    <input class="danger unfriend" type="submit" value="Un-befriend">
-                </td>
-            </tr>
+                <tr>
+                    <td><a href="#">{{ friend.user.username }}</a></td>
+                    <td>
+                        <input class="danger unfriend" type="submit" value="Un-befriend">
+                    </td>
+                </tr>
             {% endfor %}
-        </tbody>
-    </table>
+            </tbody>
+        </table>
 
-    <h2>Following</h2>
-    <table class="table table-hover" id="followingsTable">
-        <thead>
-            <tr>
-                <th>Following</th>
-                <th>Be Independent!</th>
-            </tr>
-        </thead>
-        <tbody>
+        <h2 class="sub-header">Following</h2>
+	<div class="table-responsive">
+        <table class="table table-hover" id="followingsTable">
+            <thead>
+                <tr>
+                    <th>Following</th>
+                    <th>Be Independent!</th>
+                </tr>
+            </thead>
+            <tbody>
             {% for follow in follows %}
-            <tr>
-                <td><a href="#">{{ follow }}</a></td>
-                <td>
-                    <input class="danger unfollow" type="submit" value="UnFollow">
-                </td>
-            </tr>
+                <tr>
+                    <td><a href="#">{{ follow }}</a></td>
+                    <td>
+                        <input class="danger unfollow" type="submit" value="UnFollow">
+                    </td>
+                </tr>
             {% endfor %}
-        </tbody>
-    </table>
+            </tbody>
+        </table>
 
 
-    <h2>Followers</h2>
-    <table class="table table-hover" id="followersTable">
-        <thead>
-            <tr>
-                <th>Follower</th>
-		<th> Action? </th>
-            </tr>
-        </thead>
-        <tbody>
+        <h2 class="sub-header">Followers</h2>
+	<div class="table-responsive">
+        <table class="table table-hover" id="followersTable">
+            <thead>
+                <tr>
+                    <th>Follower</th>
+		    <th> Action? </th>
+                </tr>
+            </thead>
+            <tbody>
             {% for follower in followers %}
-            <tr>
-                <td><a href="#">{{ follower }}</a></td>
-                <!-- TODO: befriending someone shouldn't be "dangerous" -->
-                <td>
-                    <input class="danger befriend" type="submit" value="Befriend">
-                </td>
-            </tr>
+                <tr>
+                    <td><a href="#">{{ follower }}</a></td>
+                    <!-- TODO: befriending someone shouldn't be "dangerous" -->
+                    <td>
+                        <input class="danger befriend" type="submit" value="Befriend">
+                    </td>
+                </tr>
             {% endfor %}
-        </tbody>
-    </table>
+            </tbody>
+        </table>
+        </div>
     </div>
 {% endblock %}

@@ -30,7 +30,6 @@ h1, h2, h3, h4, h5, h6 {
 
 .form-box input:not([type='submit']){
     margin-bottom: 2%;
-    width: 78%;
     border-radius: 15px;
 } 
 
@@ -244,18 +243,10 @@ div.post .date {
 }
 
 /* Search box styling */
-.form-box {
-    -moz-box-sizing: border-box;
-    box-sizing: border-box;
-}
-
-.form-box input[type='search'] {
-    margin: 8% 1% 8% 2%;;
-}
-
-.search-hr {
-    margin-top: 0;
-    width: 88%;
+input[type='search'] {
+    margin: 5% 2% 1% 2%;
+    width: 96%;
+    border-radius: 15px;
 }
 
 /* *** Tables *** */
