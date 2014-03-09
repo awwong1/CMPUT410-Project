@@ -176,6 +176,23 @@ def posts(request):
     
     return render(request, 'post/posts.html', context)
 
+def areFriends(request, username1, username2):
+
+    user1 = User.objects.filter(username=username1)
+    user2 = User.objects.filter(username=username2)
+
+    if len(user1) != 0 and len(user2) != 0:
+        
+        author1, _ = Author.objects.get_or_create(user=user1)
+        author2, _ = Author.objects.get_or_create(user=user2)
+
+        if author2 in author1.getFriends():
+            return HttpResponse('{"query":"friends",'
+                    '"friends":[%s, %s]}' % (username1, username2))
+
+    return HttpResponse('{"query":"friends",'
+            '"friends":"NO"}')
+
 def friends(request):
     """
     GET: Retrieves all friends of an author
