@@ -32,28 +32,28 @@
 
     <div class="container-fluid">
       <div class="row">
-        {% block side-nav %}    
+        {% block side-nav %}
         <div class="col-sm-3 col-md-2 sidebar">
           <ul class="nav nav-sidebar">
             <li>
-              <form method="post" action="/author/search_results/" 
+              <form method="post" action="/author/search_results/"
                class="pull-down  navbar-search">
                 {%  csrf_token %}
                 <div class="form-group">
-                  <input name="username" type="search" 
+                  <input name="username" type="search"
                    class="form-control"placeholder="find author" />
                 </div>
-              </form>      
-            </li>       
-            <li><a href="/author/stream/">My Stream</a></li>
-            <li><a href="/author/profile/{{ user.username }}">My Profile</a></li>
-            <li><a href="/author/friends/">Manage Friends</a></li>
-            <li><a href="/posts/">Manage Posts</a></li>
-            <li><a href="/login/logout">Logout</a></li>
+              </form>
+            </li>
+            <li><a href="{% url 'author.views.stream' %}">My Stream</a></li>
+            <li><a href="{% url 'author.views.profile' user.username %}">My Profile</a></li>
+            <li><a href="{% url 'author.views.friends' %}">Manage Friends</a></li>
+            <li><a href="{% url 'post.views.posts' %}">Manage Posts</a></li>
+            <li><a href="{% url 'author.views.logUserOut' %}">Logout</a></li>
           </ul>
         </div>
         {% endblock %}
-          
+
         {% block body %}
 
         {% endblock %}
@@ -62,7 +62,7 @@
 
     <!-- Include all compiled plugins (below), or include individual fills as needed -->
 
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>    
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
     <script src="{{ STATIC_URL }}js/bootstrap.min.js"></script>
     <script src="../../assets/js/docs.min.js"></script>
   </body>
