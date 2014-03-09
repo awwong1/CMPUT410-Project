@@ -31,8 +31,8 @@ def add_comment(request):
         commentText = request.POST['newComment']
         post = Post.objects.get(id=post_id)
         Comment.objects.create(
-            comment_auth=author,
-            comment_text=commentText,
+            author=author,
+            comment=commentText,
             post_ref=post)
     return redirect(request.META['HTTP_REFERER'])
 

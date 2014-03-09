@@ -28,12 +28,12 @@ def posts(request):
 
     for post in posts:
         categoryIds = PostCategory.objects.filter(post = post)
-        postVisibilityExceptions = PostVisibilityException.objects.filter(post = post)
-
+        postVisibilityExceptions = PostVisibilityException.objects.filter(
+            post=post)
         comments.append(Comment.objects.filter(post_ref=post))
         categories.append(Category.objects.filter(id__in=categoryIds))
-        visibilityExceptions.append(Author.objects.filter(id__in=postVisibilityExceptions))
-
+        visibilityExceptions.append(Author.objects.filter(
+                id__in=postVisibilityExceptions))
         # Convert Markdown into HTML for web browser 
         # django.contrib.markup is deprecated in 1.6, so, workaround
         if post.contentType == post.MARKDOWN:
@@ -46,30 +46,28 @@ def posts(request):
 def post(request, post_id):
     """
     Returns a post and displays it in the web browser.
-    """
-    
+    """    
     if request.user.is_authenticated():
         user = request.user
         author = Author.objects.get(user=request.user)
-        post = Post.objects.get(id=post_id)
-        
+        post = Post.objects.get(id=post_id) 
         if (post.isAllowedToViewPost(author)):            
             context = RequestContext(request)
-
             categoryIds = PostCategory.objects.filter(post = post)
-            postVisibilityExceptions = PostVisibilityException.objects.filter(post = post)
-
+            postVisibilityExceptions = PostVisibilityException.objects.filter(
+                post = post)
             comments = Comment.objects.filter(post_ref=post)
-            visibilityExceptions = Author.objects.filter(id__in=postVisibilityExceptions)
+            visibilityExceptions = Author.objects.filter(
+                id__in=postVisibilityExceptions)
             categories = Category.objects.filter(id__in=categoryIds)
 
             # Convert Markdown into HTML for web browser 
             # django.contrib.markup is deprecated in 1.6, so, workaround
             if post.contentType == post.MARKDOWN:
                 post.content = markdown.markdown(post.content)
-            
-            context["posts"] = [(post, comments, categories, visibilityExceptions)]
-
+            context['posts'] = [(post, author, comments)]
+            context['visibilities'] = Post.VISIBILITY_CHOICES
+            context['contentTypes'] = Post.CONTENT_TYPE_CHOICES
             return render_to_response('post/post.html', context)
         else:
             return redirect('/posts/')

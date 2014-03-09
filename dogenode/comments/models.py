@@ -2,17 +2,19 @@ from django.db import models
 from author.models import Author
 from post.models import Post
 
+import uuid
+
 # Create your models here.
 class Comment(models.Model):
     """
     This is the comment which links a user comment to a post
     """
-    id = models.AutoField(primary_key=True)
-    comment_auth = models.ForeignKey('author.Author')
-    comment_text = models.TextField()
+    guid = models.CharField(max_length=36, default=uuid.uuid4())
+    author = models.ForeignKey('author.Author')
     post_ref = models.ForeignKey('post.Post')
-    date_created = models.DateTimeField(auto_now_add=True)
-    date_modified = models.DateTimeField(auto_now=True)
+    comment = models.TextField()
+    pub_date = models.DateTimeField(auto_now=True)
     
-    def __str__(self):
-        return self.comment_text
+    def __unicode__(self):
+        return "%i: [%s|%s|%s]"%(self.id,self.author,self.comment,
+                                 self.pub_date)

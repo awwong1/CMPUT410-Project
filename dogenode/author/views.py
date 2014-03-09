@@ -164,7 +164,6 @@ def stream(request):
         context['posts'] = zip(rawposts, authors, comments)
         context['visibilities'] = Post.VISIBILITY_CHOICES
         context['contentTypes'] = Post.CONTENT_TYPE_CHOICES
-
         return render_to_response('author/stream.html', context)
     else:
         return redirect('/login/')

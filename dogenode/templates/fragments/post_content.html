@@ -33,8 +33,10 @@
         <tbody>
           {% for comment in comments %}
           <tr>
-            <td>{{comment.comment_auth.user.username}}:
-                {{comment.comment_text}}
+            <td><a href="/author/profile/{{comment.author.user.username}}">
+		<strong>{{comment.author.user.username}}</strong></a> on 
+	      {{comment.pub_date}}:
+              {{comment.comment}}
             </td>
           </tr>
           {% endfor %}
