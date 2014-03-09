@@ -48,17 +48,31 @@ class Post(models.Model):
         from django.core.urlresolvers import reverse
         return reverse('post.views.post', args=[str(self.id)])
 
-    # TODO: Need to add FOAF logic.  I'm assuming Author model will have some
-    #       sort of method for this eventually.
+    # TODO: Need to add admin logic.
     def isAllowedToViewPost(self, author):
+        # Check if post was created by the specified author
         if AuthorPost.objects.filter(post=self, author=author).count() > 0:
             return True
-        elif self.visibility == Post.PUBLIC or self.visibility == Post.SERVERONLY:
+        # Check if post is public or server-only
+        elif (self.visibility == Post.PUBLIC or 
+              self.visibility == Post.SERVERONLY):
             return True
-        elif (author in AuthorPost.objects.get(post=self).author.getFriends() and
-              (self.visibility == Post.FRIENDS or self.visibility == Post.FOAF)):
+        # Check if this post's author is friends, and if the post is set to
+        # friends-only or friends of friends
+        elif (author in AuthorPost.objects.get(post=self).author.getFriends()
+              and
+              (self.visibility == Post.FRIENDS or 
+               self.visibility == Post.FOAF)):
             return True
-        elif PostVisibilityException.objects.filter(post=self, author=author).count() > 0:
+        # Check if this post's author is friends of friends with the specified
+        # author, and if the post is set to friends of friends
+        elif (author.isFriendOfAFriend(
+                AuthorPost.objects.get(post=self).author)
+              and self.visibility == Post.FOAF):
+            return True
+        # Check if the post has a visibility exception for the specified author
+        elif (PostVisibilityException.objects.filter(post=self, 
+                author=author).count() > 0):
             return True
         else:
             return False
@@ -69,6 +83,8 @@ class Post(models.Model):
     @staticmethod
     def getAllowedPosts(author):
         posts = []
+        # TODO: To save CPU cycles, can also check if a user is the admin.  If
+        # so, return all the posts.
         for post in Post.objects.all().order_by('pubDate'):
             if post.isAllowedToViewPost(author):
                 posts.insert(0, post)
