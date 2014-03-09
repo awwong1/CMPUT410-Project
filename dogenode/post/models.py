@@ -40,6 +40,10 @@ class Post(models.Model):
     origin = models.URLField(blank=True)
     pubDate = models.DateTimeField(auto_now_add=True)
     modifiedDate = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Post'
+        verbose_name_plural = 'Posts'
     
     def __unicode__(self):
         return "%i: [%s|%s|%s]" % (self.id, self.title, self.description, self.content)
@@ -93,6 +97,10 @@ class Post(models.Model):
 class Category(models.Model):
     name = models.CharField(max_length=80)
 
+    class Meta:
+        verbose_name = 'Category'
+        verbose_name_plural = 'Categories'
+
     def __unicode__(self):
         return self.name
 
@@ -100,6 +108,10 @@ class Category(models.Model):
 class PostCategory(models.Model):
     post = models.ForeignKey(Post)
     category = models.ForeignKey(Category)
+
+    class Meta:
+        verbose_name = 'Post Category'
+        verbose_name_plural = 'Post Categories'
 
     def __unicode__(self):
         return "%i: [%i|%s]" % (self.id, self.post.id, str(self.category))
@@ -109,6 +121,10 @@ class PostVisibilityException(models.Model):
     post = models.ForeignKey(Post)
     author = models.ForeignKey(Author)
 
+    class Meta:
+        verbose_name = 'Post Visibility Exception'
+        verbose_name_plural = 'Post Visibility Exceptions'
+
     def __unicode__(self):
         return "%i: [%i|%s]" % (self.id, self.post.id, str(self.author))
 
@@ -116,6 +132,10 @@ class PostVisibilityException(models.Model):
 class AuthorPost(models.Model):
     author = models.ForeignKey(Author)
     post = models.ForeignKey(Post)
+
+    class Meta:
+        verbose_name = 'Author Post'
+        verbose_name_plural = 'Author Posts'
 
     def __unicode__(self):
         return "%s | %s" % (str(self.author), str(self.post))
