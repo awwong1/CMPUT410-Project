@@ -10,7 +10,7 @@ class CommentTestCase(TestCase):
     def setUp(self):
         User.objects.create_user(username="utestuser", password="testpassword")
         user = User.objects.get(username="utestuser")
-        author = Author.objects.get(user=user)
+        author, _ = Author.objects.get_or_create(user=user)
         Post.objects.create(author=author, content="This post...")
         post = Post.objects.get(content="This post...")
         Comment.objects.create(

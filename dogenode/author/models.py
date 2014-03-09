@@ -45,6 +45,14 @@ class Author(models.Model):
                                                     relationship=False)
         return [r.author1 for r in relationships]
 
+    def isFriendOfAFriend(self, author):
+
+        if set(self.getFriends()) & set(author.getFriends()):
+            return True
+
+        return False
+
+
 # Post-save stuff from:
 # http://stackoverflow.com/questions/44109/extending-the-user-model-with-custom-fields-in-django
 # Note: this is causing django to try and create a new author

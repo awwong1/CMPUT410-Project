@@ -12,7 +12,7 @@ class PostTestCase(TestCase):
     def setUp(self):
         User.objects.create_user(username="mockuser", password="mockpassword")
         user = User.objects.get(username="mockuser")
-        author = Author.objects.get(user=user)
+        author, _ = Author.objects.get_or_create(user=user)
         Post.objects.create(author=author, content="This is a post") 
 
     def testFieldsExists(self):
