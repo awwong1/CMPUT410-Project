@@ -14,8 +14,16 @@
   <tbody>
     {% for post, comments in posts %}
     <tr>
-      <td><a href="/posts/{{ post.id }}/">
-	  {{ post.content }}</a></td>
+      <td>
+        <!-- Change how post content gets displayed depending on the type-->
+        <a href="/posts/{{ post.id }}/">
+        {% if post.post_format == "Plain Text" %}
+            {{ post.content }}
+        {% else %}
+            <!-- If not Plain Text, it's HTML or Markdown converted to HTML -->
+            {{ post.content|safe }}
+        {% endif %}
+        </a></td>
       <td>{{ post.date_created }}</td>
       <td>
         <form action="/posts/delete_post/" method="POST">
@@ -35,5 +43,4 @@
   <a href="/author/stream">Stream!</a>
 </p>
 {% endif %}       
->>>>>>> d75908376485adb624204446897850d7ddd14e75
 {% endblock %}

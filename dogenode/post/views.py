@@ -8,7 +8,8 @@ from django.contrib.auth.models import User
 from post.models import Post
 from author.models import Author
 from comments.models import Comment
-# Create your views here.
+
+import markdown
 
 def posts(request):
     """
@@ -46,6 +47,7 @@ def post(request, post_id):
     else:
         return redirect('/login/')
 
+
 def add_post(request):
     """
     Adds a new post and displays 
@@ -57,6 +59,11 @@ def add_post(request):
         privacy = request.POST.get("privacy", "")
         allowed_readers = request.POST.get("others", "")
         post_format = request.POST.get("format", "")
+
+    # Convert Markdown into HTML 
+    if post_format == "Markdown":
+        content = markdown.markdown(content)
+
     author = Author.objects.filter(user=request.user)[0]    
     Post.objects.create(content=content, author=author, privacy=privacy,
                                 post_format=post_format) 

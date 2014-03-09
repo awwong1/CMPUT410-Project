@@ -7,7 +7,13 @@
       <span class="date"> {{ post.date_created }} </span>
     </div>
     <div class="panel-body span">
-      <p>{{ post.content }} </p>
+        <!-- Change how post content gets displayed depending on the type-->
+        {% if post.post_format == "Plain Text" %}
+            <p>{{ post.content }}</p>
+        {% else %}
+            <!-- If not Plain Text, it's HTML or Markdown converted to HTML -->
+            <p>{{ post.content|safe }}</p>
+        {% endif %}
     </div>
     
     <table class="table">
