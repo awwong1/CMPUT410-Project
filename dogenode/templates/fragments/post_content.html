@@ -1,40 +1,60 @@
-
-{% for post, comments in posts %}
-  <div class="panel panel-default col-md-12 post">
-    <!-- Default panel contents -->
-    <div class="panel-heading"><p> {{ post.author.user.username }}
-      <span class="date"> {{ post.date_created }} </span></p>
+{% for post, author, comments in posts %}
+<div class="row">
+  <div class="col-md-12">
+    <div class="panel panel-default">
+      <div class="panel-heading">
+        {% if post.title %}
+        <h4><strong>{{ post.title }}</strong></h4>
+        {% endif %}
+        {% if post.description %}
+        <h5>{{ post.description }}</h5>
+        {% endif %}
+      </div>
+      <div class="panel-body">
+        {% if post.contentType == post.HTML %}
+          {% autoescape off %}
+            {{ post.content}}
+          {% endautoescape %}
+        {# {% elif post.contentType == post.MARKDOWN %} #}
+        {% else %}
+          {{ post.content|linebreaks }}
+        {% endif %}
+      </div>
+      <div class="panel-footer">
+        <div class="row">
+          <div class="col-sm-4">
+            by <a href="/author/profile/{{ author.user.username }}"><strong>{{ author.user.username }}</strong></a> on {{ post.pubDate }}
+          </div>
+          <div class="col-sm-8 text-right">
+            <a href="{{ post.origin }}" class="text-muted">{{ post.origin }}</a>
+          </div>
+        </div>
+      </div>
+      <table class="table">
+        <tbody>
+          {% for comment in comments %}
+          <tr>
+            <td>{{comment.comment_auth.user.username}}:
+                {{comment.comment_text}}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <div class="panel-footer">
+        <form role="form" method="POST" action="/comments/add_comment/">
+          {% csrf_token %}
+          <div class="form-group">
+            <input type="hidden" name="post_id" value="{{post.id}}" />
+            <input type="text" class="form-control" name="newComment"
+             placeholder="Make a new comment..."/>
+          </div>
+          <div class="form-group">
+            <input type="submit" value="Comment"/>
+          </div>
+        </form>
+      </div>
     </div>
-    <div class="panel-body">
-      <p>{{ post.content }} </p>
-    </div>
-    
-    <table class="table">
-      <tbody>
-        {% for comment in comments %}
-	<tr>
-	  <td>{{comment.comment_auth.user.username}}: 
-	    {{comment.comment_text}}</td>
-        </tr>
-	{% endfor %}
-        <tr>
-          <td> 
-	    <form role="form" method="POST" action="/comments/add_comment/">
-	      <div class="form-group span">
-		{% csrf_token %}
-		<input type="hidden"
-		       name="post_id"
-		       value="{{post.id}}" />
-	        <input type="text" 
-		       class="form-control" 
-		       name="newComment" 
-		       placeholder="Make a new comment..."/>	       
-	        <input type="submit" value="Comment"/>
-	      </div>
-	    </form>
-          </td>
-        </tr>
-      </tbody>
-    </table>
   </div>
+</div>
 {% endfor %}
