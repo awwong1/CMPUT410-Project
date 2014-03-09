@@ -1,20 +1,23 @@
 {% extends "user_base.html" %}
 
 {% block body %}
-<h1 class="content-title">Your Posts</h1>
-{% if posts %}
-<table class="table table-hover">
-  <thead>
-    <tr>
-      <th>Content</th>
-      <th>Date</th>
-      <th>Delete?</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for post, comments in posts %}
-    <tr>
-      <td>
+<div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
+
+    <h1 class="content-title">Your Posts</h1>
+    {% if posts %}
+    <div class="table-responsive">
+    <table class="table table-hover">
+      <thead>
+        <tr>
+          <th>Content</th>
+          <th>Date</th>
+          <th>Delete?</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for post, comments in posts %}
+        <tr>
+          <td>
         <!-- Change how post content gets displayed depending on the type-->
         <a href="/posts/{{ post.id }}/">
         {% if post.post_format == "Plain Text" %}
@@ -24,23 +27,26 @@
             {{ post.content|safe }}
         {% endif %}
         </a></td>
-      <td>{{ post.date_created }}</td>
-      <td>
-        <form action="/posts/delete_post/" method="POST">
-          {% csrf_token %}
-          <input type="hidden" 
+          <td>{{ post.date_created }}</td>
+          <td>
+            <form action="/posts/delete_post/" method="POST">
+              {% csrf_token %}
+              <input type="hidden" 
 		 name="post_id" value="{{ post.id }}">
-          <input type="submit" class="danger" value="Delete Post">
-        </form>
-      </td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
+              <input type="submit" class="danger" value="Delete Post">
+            </form>
+          </td>
+        </tr>
+       {% endfor %}
+       </tbody>
+    </table>
+    </div>
 
-{% else %}
-<p>You have no posts! Go make a new post in your 
-  <a href="/author/stream">Stream!</a>
-</p>
-{% endif %}       
+    {% else %}
+    <p>You have no posts! Go make a new post in your 
+      <a href="/author/stream">Stream!</a>
+    </p>
+    {% endif %}
+
+</div>       
 {% endblock %}

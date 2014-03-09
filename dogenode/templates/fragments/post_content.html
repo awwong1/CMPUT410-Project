@@ -1,10 +1,9 @@
 
 {% for post, comments in posts %}
-<div class="post">   
-  <div class="panel panel-default clear-left">
+  <div class="panel panel-default col-md-12 post">
     <!-- Default panel contents -->
-    <div class="panel-heading span"><p> {{ post.author.user.username }}</p>
-      <span class="date"> {{ post.date_created }} </span>
+    <div class="panel-heading"><p> {{ post.author.user.username }}
+      <span class="date"> {{ post.date_created }} </span></p>
     </div>
     <div class="panel-body span">
         <!-- Change how post content gets displayed depending on the type-->
@@ -36,7 +35,7 @@
 		       class="form-control" 
 		       name="newComment" 
 		       placeholder="Make a new comment..."/>	       
-	        <input type="submit" value="Comment" class="float-right"/>
+	        <input type="submit" value="Comment"/>
 	      </div>
 	    </form>
           </td>
@@ -44,5 +43,4 @@
       </tbody>
     </table>
   </div>
-</div>
 {% endfor %}

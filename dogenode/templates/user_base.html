@@ -7,7 +7,7 @@
     <title>DogeNode</title>
 
     <!-- Bootstrap -->
-    <link href="{{STATIC_URL}}css/bootstrap.css" rel="stylesheet"/>
+    <link href="{{STATIC_URL}}css/bootstrap.min.css" rel="stylesheet"/>
     <link href="{{STATIC_URL}}css/base.css" rel="stylesheet"/>
 
     <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
@@ -22,39 +22,49 @@
 
   </head>
   <body>
-    <div class="page-header">
-      <h1>DogeNode <small> The only real way to live in the virtual world</small></h1>
+    <div class="navbar navbar-inverse navbar-fixed-top dogenode-header">
+      	<div class="container-fluid">
+	    <div class="navbar-header">
+		<p>DogeNode
+		<small> The only real way to live in the virtual world</small>
+		</p>
+	    </div>
+	</div>
     </div>
 
-    {% block side-nav %}    
-    <div class="side-nav">
-        <div class="search-box form-box">
-            <form method = "post" action="/author/search_results/" class = "pull-down  navbar-search">
-                {%  csrf_token %}
-                    <input name="username" type="search" placeholder="find author" />
-                    <button type ="submit"><span class="glyphicon glyphicon-search"></span></button>
-            </form>
-        </div>
-        <hr class="search-hr" /> 
-        <h3 class="nav-title"> My Panel </h3>
-        <ul class="nav nav-pills nav-stacked">
-            <li><a href="/author/stream/">My Stream</a></li>
-            <li><a href="/author/">My Profile</a></li>
-            <!-- <li><a href="/author/<authorid>/">My Profile</a></li> -->
-            <li><a href="/author/friends/">Manage Friends</a></li>
-            <li><a href="/posts/">Manage Posts</a></li>
-            <li><a href="/login/logout">Logout</a></li>
-        </ul>
+    <div class="container-fluid">
+	<div class="row">
+    	    {% block side-nav %}    
+    	    <div class="col-sm-3 col-md-2 sidebar">
+        	<ul class="nav nav-sidebar">
+		    <li>
+            	        <form method="post" action="/author/search_results/" 
+			class="pull-down  navbar-search">
+                        {%  csrf_token %}
+			    <div class="form-group">
+                    	    <input name="username" type="search" 
+				class="form-control"placeholder="find author" />
+            	            </div>
+			</form>
+        	        
+		    </li>       
+        	    <li><a href="/author/stream/">My Stream</a></li>
+            	    <li><a href="/author/profile/{{ user.username }}">My Profile</a></li>
+            	    <li><a href="/author/friends/">Manage Friends</a></li>
+            	    <li><a href="/posts/">Manage Posts</a></li>
+            	    <li><a href="/login/logout">Logout</a></li>
+        	</ul>
+    	    </div>
+	    {% endblock %}
+	    
+          	{% block body %} {% endblock %}
+	</div>
     </div>
-    {% endblock %}
 
-    <div class="content">
-        <section>
-          {% block body %} {% endblock %}
-        </section>
-    </div>
+    <!-- Include all compiled plugins (below), or include individual fills as needed -->
 
-    <!-- Include all compiled plugins (below), or include individual files as needed -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>    
     <script src="{{ STATIC_URL }}js/bootstrap.min.js"></script>
+    <script src="../../assets/js/docs.min.js"></script>
   </body>
 </html>

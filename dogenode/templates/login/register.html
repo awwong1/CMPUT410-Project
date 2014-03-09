@@ -4,16 +4,22 @@
 {% block side-nav %} {% endblock %}
 
 {% block body %}
-<div class="regist form-box"> 
+    <div class="col-md-4"></div>
+    <div class="col-md-4 form-signin regist">
     <form method="POST" action="/login/register/">
         {% csrf_token %}
-        <p>Username:</p> <input type="text" name="username" size="20" /><br />
-        <p>Password:</p> <input type="password" name="password1" size="20" /><br />
-        <p>Confirm Password:</p> <input type="password" name="password2" size="20" /><br />
+	<h2 class="form-signin-header"> Registeration </h2>
+        <input type="text" name="username" placeholder="Username"
+	class="form-control" required autofocus/><br />
+        <input type="password" name="password1" placeholder="Password"
+	class="form-control" required/><br />
+        <input type="password" name="password2" placeholder="Confirm Password"
+	class="form-control" required/><br />
         <div id="divRegistrationStatus">{{ registrationStatus }}</div><br />
         <input type="submit" value="Register" />
     </form>
-</div>
+    </div>
+    <div class="col-md-4"></div>
 
 <script>
     function checkPasswordsMatch() {

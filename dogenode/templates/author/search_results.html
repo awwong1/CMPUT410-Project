@@ -74,28 +74,34 @@
             })});
 
     </script>
-    <h1 class="content-title">Found Authors</h1>
-    <p>With the search phrase "{{ searchphrase }}"...</p>
+    
+    <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
 
-    <table class="table table-hover">
-        <tbody>
-            {% for ur in results %}
-            <tr> <!-- should it link to their profile page? -->
-                <td><a href="#">{{ ur.0 }}</a></td>
-                <td>{{ ur.1 }}</td>
-                <td>
-                {% if ur.1 == "Friend" %}
-                    <input class="changeRelationship" type="submit" value="Unfriend" />
-                {% elif ur.1 == "Following" %}
-                    <input class="changeRelationship" type="submit" value="Unfollow" />
-                {% elif ur.1 == "Follower" %}
-                    <input class="changeRelationship" type="submit" value="Befriend" />
-                {% elif ur.1 == "No Relationship" %}
-                    <input class="changeRelationship" type="submit" value="Follow" />
-                {% endif %}
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+        <h1 class="content-title">Found Authors</h1>
+        <p>With the search phrase "{{ searchphrase }}"...</p>
+	
+        <div class="table-responsive">
+        <table class="table table-hover">
+            <tbody>
+                {% for ur in results %}
+                <tr> <!-- should it link to their profile page? -->
+                    <td><a href="/author/profile/{{ ur.0 }}">{{ ur.0 }}</a></td>
+                    <td>{{ ur.1 }}</td>
+                    <td>
+                    {% if ur.1 == "Friend" %}
+                        <input class="changeRelationship" type="submit" value="Unfriend" />
+                    {% elif ur.1 == "Following" %}
+                        <input class="changeRelationship" type="submit" value="Unfollow" />
+                    {% elif ur.1 == "Follower" %}
+                        <input class="changeRelationship" type="submit" value="Befriend" />
+                    {% elif ur.1 == "No Relationship" %}
+                        <input class="changeRelationship" type="submit" value="Follow" />
+                    {% endif %}
+                    </td>
+                 </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+    </div>
 {% endblock %}

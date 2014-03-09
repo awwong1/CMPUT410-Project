@@ -9,7 +9,7 @@ urlpatterns = patterns('',
     # url(r'^blog/', include('blog.urls')),
 
     # http://stackoverflow.com/a/7580365
-    url(r'^$', lambda r : HttpResponseRedirect('author/')),
+    url(r'^$', lambda r : HttpResponseRedirect('author/stream/')),
     url(r'^login/', include('author.login_urls')),
     url(r'^admin/', include(admin.site.urls)),
     url(r'^comments/', include('comments.urls')),
