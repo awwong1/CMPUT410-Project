@@ -2,19 +2,21 @@
 
 {% block body %}
 <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
-
+    
+    <h1 class="section-header">
     {% if firstName %}
-    <h1 class="section-header">{{ firstName }} {{ lastName}}<span>
-	<a href="/author/edit_profile/" id="edit-profile" 
-	class="button-links">Edit Profile</a>
-    	</span></h1>
+        {{ firstName }} {{ lastName}}
     {% else %}
-    <h1 class="section-header">{{ username }} <span>
-	<a href="/author/edit_profile/" id="edit-profile" 
-	class="button-links">Edit Profile</a>
-    	</span></h1>
+        {{ username }}
     {% endif %}
-   
+    {% if userIsAuthor %}
+        <span>
+	    <a href="/author/edit_profile/" id="edit-profile" 
+	    class="button-links">Edit Profile</a>
+    	</span>
+    {% endif %}
+        
+    </h1>
     <div class="row placeholder">
         <div class="col-xs-6 col-sm-3 placeholder">
             <img src="{{STATIC_URL}}images/doge.jpeg" class="img-responsive" alt="dogey"/>
@@ -25,11 +27,7 @@
             {% if aboutMe %}
                 <p>{{ aboutMe }}</p>
             {% else %}
-                <p class="text-muted">
-                  Oh no! You haven't entered anything about yourself!  You should probably
-                  <a href="/author/edit_profile/">edit your profile</a> so other shibes
-                  know more about you!
-                </p>
+                
             {% endif %}
         </div>
     </div>

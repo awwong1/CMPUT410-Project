@@ -88,7 +88,7 @@ def profile(request, username):
         payload['lastName'] = user.last_name or ""
         payload['username'] = user.username
         payload['aboutMe'] = author.about_me or ""
-
+        payload['userIsAuthor'] = (user.username == request.user)
         context = RequestContext(request, payload)
         return render(request, 'author/profile.html', context)
     else:
