@@ -2,7 +2,6 @@
 
 {% block body %}
 <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
-    
     <h1 class="section-header">
     {% if firstName %}
         {{ firstName }} {{ lastName}}
@@ -10,13 +9,14 @@
         {{ username }}
     {% endif %}
     {% if userIsAuthor %}
-        <span>
-	    <a href="/author/edit_profile/" id="edit-profile" 
-	    class="button-links">Edit Profile</a>
+      <span>
+        <a href="/author/edit_profile/" id="edit-profile" class="button-links">
+          Edit Profile
+        </a>
     	</span>
     {% endif %}
-        
     </h1>
+
     <div class="row placeholder">
         <div class="col-xs-6 col-sm-3 placeholder">
             <img src="{{STATIC_URL}}images/doge.jpeg" class="img-responsive" alt="dogey"/>
@@ -25,25 +25,33 @@
         <div class="col-s-6 col-m-4 placeholder">
             <h4>About Me</h4>
             {% if aboutMe %}
-                <p>{{ aboutMe }}</p>
+                {{ aboutMe|linebreaks }}
+            {% elif userIsAuthor %}
+                <p class="text-muted">
+                  Oh no! You haven't entered anything about yourself!  You should probably
+                  <a href="/author/edit_profile/">edit your profile</a> so other shibes
+                  know more about you!
+                </p>
             {% else %}
-                
+                <p class="text-muted">
+                  This shibe has not entered anything about him/herself. ='(
+                </p>
             {% endif %}
         </div>
     </div>
 
     <h4 class="sub-header"> Posts by {{ username }} </h4>
-	<div class="table-responsive">  
-	    <table class="table table-bordered">
-   		<thead>
-    		    <tr>
-      			<th> Content </th>
-      			<th> Date </th>
-    		    </tr>
-   		</thead>
-   		<tbody>
-   		</tbody>
-  	    </table>
-	</div>
+    <div class="table-responsive">  
+        <table class="table table-bordered">
+        <thead>
+              <tr>
+              <th> Content </th>
+              <th> Date </th>
+              </tr>
+        </thead>
+        <tbody>
+        </tbody>
+          </table>
+    </div>
 </div>
 {% endblock %}

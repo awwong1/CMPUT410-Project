@@ -10,8 +10,12 @@ class Author(models.Model):
     accepted = models.BooleanField(default=False)
     about_me = models.TextField(blank=True)
 
-    def __str__(self):
+    def __unicode__(self):
         return self.user.username
+
+    def get_absolute_url(self):
+        from django.core.urlresolvers import reverse
+        return reverse('author.views.profile', args=[str(self.id)])
 
     def getFriends(self):
 

@@ -7,8 +7,10 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 
 from author.models import Author, Relationship
-from post.models import Post
+from post.models import Post, Category, PostVisibilityException, AuthorPost, PostCategory
 from comments.models import Comment
+
+import markdown
 
 def isUserAccepted(user):
 
@@ -50,7 +52,6 @@ def index(request):
     return render(request, 'login/index.html', context)
 
 def logUserOut(request):
-
     context = RequestContext(request)
     logout(request)
     return render(request, 'login/index.html', context)
@@ -88,7 +89,7 @@ def profile(request, username):
         payload['lastName'] = user.last_name or ""
         payload['username'] = user.username
         payload['aboutMe'] = author.about_me or ""
-        payload['userIsAuthor'] = (user.username == request.user)
+        payload['userIsAuthor'] = (user.username == request.user.username)
         context = RequestContext(request, payload)
         return render(request, 'author/profile.html', context)
     else:
@@ -143,14 +144,30 @@ def stream(request):
     """
     GET: Returns the stream of an author (all posts by followers)
     """
-    context = RequestContext(request)
-    rawposts = Post.objects.all().order_by('-date_created')
-    comments = []
-    for post in rawposts:
-        comments.append(Comment.objects.filter(post_ref=post))
-    context["posts"] = zip(rawposts, comments)
-    
-    return render_to_response('author/stream.html', context)
+    if request.user.is_authenticated():
+        context = RequestContext(request)
+        author = Author.objects.get(user=request.user)
+        # rawposts = Post.objects.all().order_by('pubDate')
+        rawposts = Post.getAllowedPosts(author)
+        comments = []
+        authors = []
+
+        for post in rawposts:
+            authors.append(AuthorPost.objects.get(post=post).author)
+            comments.append(Comment.objects.filter(post_ref=post))
+
+            # Convert Markdown into HTML for web browser 
+            # django.contrib.markup is deprecated in 1.6, so, workaround
+            if post.contentType == post.MARKDOWN:
+                post.content = markdown.markdown(post.content)
+
+        context['posts'] = zip(rawposts, authors, comments)
+        context['visibilities'] = Post.VISIBILITY_CHOICES
+        context['contentTypes'] = Post.CONTENT_TYPE_CHOICES
+
+        return render_to_response('author/stream.html', context)
+    else:
+        return redirect('/login/')
 
 def posts(request):
     """
