@@ -17,7 +17,7 @@ body {
 }
 
 .input-group {
-   margin-right: 2%;
+    margin-right: 2%;
 }
 
 input:focus {
@@ -32,14 +32,6 @@ h1, h2, h3, h4, h5, h6 {
     margin-bottom: 2%;
     border-radius: 15px;
 } 
-
-button {
-        -webkit-box-sizing: border-box;
-       -moz-box-sizing: border-box;
-            box-sizing: border-box;
-    width: 14%;
-    
-}
 
 /* side nav styling */
 .sidebar {
@@ -89,19 +81,10 @@ li.active > a:focus {
 
 /* Login styling */
 .form-signin {
-    max-wdith: 330px;
     padding: 5% 0 0 0;
     text-align: center;
-    margin: 0 auto;
 }
 
-.form-signin .form-signin-heading,
-.form-signin .checkbox {
-  margin-bottom: 10px;
-}
-.form-signin .checkbox {
-  font-weight: normal;
-}
 .form-signin .form-control {
   position: relative;
   height: auto;
@@ -128,10 +111,11 @@ li.active > a:focus {
 /* Registration Page Styling - Centering the page  */
 
 .regist {
-    margin-top: 5%;
+    margin-top: 50pt;
     padding: 2% 2% 2% 2%;
     border: solid rgb(130, 75, 20) 2pt;    /* Medium brown colour  */
     background-color: rgb(228,199,143); /* nav background color, light cream */
+    overflow: hidden;
 }
 
 /* Header styling */
@@ -139,11 +123,11 @@ li.active > a:focus {
     background-color: #855A14;
     color: white;
     position: absolute;
+    overflow: hidden;
 }
 
 .dogenode-header p {
     color: white;
-    float: left;
     padding: 15px;
     font-size: 20pt;
     line-height: 20px;
@@ -180,17 +164,19 @@ li.active > a:focus {
 
 div.content {
     font-color: black;
-        -webkit-box-sizing: border-box;
-       -moz-box-sizing: border-box;
-            box-sizing: border-box;
     width: 78%;
-    margin-left: 160pt;
+    float: left;
 }
 
 div.content section {
     padding: 1% 2% 2% 2%;
 }
  
+
+div.content header h1 {
+    float: left;
+    clear: right;
+}
 
 textarea {
     -webkit-box-sizing: border-box;
@@ -338,4 +324,3 @@ input[type=submit].danger:hover {
     border-color: #904D3D #864737 #804131;
     box-shadow: 0px 4px 0px 0px #FAb19F inset; /* Create top button hilight */
 }
-
