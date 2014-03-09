@@ -6,11 +6,13 @@
 {% endblock %}
 
 {% block body %}
-	<div class="col-md-4"></div>
-	<div class="col-md-4 form-signin regist">
+	<div class="col-md-4 col-md-offset-4 
+                col-sm-4 col-sm-offset-4
+                col-xs-6 col-xs-offset-3
+                form-signin regist">
         <form  method="POST" action="/login/">
             {% csrf_token %}
-		<h2 class="form-signin-header"> Welcome! </h2>
+		<h2> Welcome! </h2>
                 <input type="text" name="username" class="form-control" 
 		placeholder="Username" required autofocus/> <br/>
                 <input type="password" name="password" 
@@ -22,5 +24,4 @@
             <a href="/login/register/">Register</a>
         </form>
 	</div>
-	<div class="col-md-4 form-signin"></div>
 {% endblock %}
