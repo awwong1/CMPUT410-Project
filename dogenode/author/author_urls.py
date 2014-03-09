@@ -3,7 +3,7 @@ from django.conf.urls import patterns, url
 from author import views
 
 urlpatterns = patterns('',
-    url(r'^$', views.profile, name='index'),
+    url(r'^profile/(\w+)/$', views.profile, name='profile'),
     #url(r'^(?P<author_id>\w+)/$', views.profile),
     url(r'^relationship/(\w+)/$', views.updateRelationship),
     url(r'^stream/$', views.stream),

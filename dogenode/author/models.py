@@ -10,8 +10,12 @@ class Author(models.Model):
     accepted = models.BooleanField(default=False)
     about_me = models.TextField(blank=True)
 
-    def __str__(self):
+    def __unicode__(self):
         return self.user.username
+
+    def get_absolute_url(self):
+        from django.core.urlresolvers import reverse
+        return reverse('author.views.profile', args=[str(self.id)])
 
     def getFriends(self):
 
@@ -40,6 +44,14 @@ class Author(models.Model):
         relationships = Relationship.objects.filter(author2=self,
                                                     relationship=False)
         return [r.author1 for r in relationships]
+
+    def isFriendOfAFriend(self, author):
+
+        if set(self.getFriends()) & set(author.getFriends()):
+            return True
+
+        return False
+
 
 # Post-save stuff from:
 # http://stackoverflow.com/questions/44109/extending-the-user-model-with-custom-fields-in-django
