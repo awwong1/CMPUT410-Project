@@ -28,11 +28,11 @@ def posts(request):
     visibilityExceptions = []
 
     for post in posts:
-        categoryIds = PostCategory.objects.filter(post = post)
+        categoriesInPost = PostCategory.objects.filter(post = post).values_list('category', flat=True)
         postVisibilityExceptions = PostVisibilityException.objects.filter(
             post=post)
         comments.append(Comment.objects.filter(post_ref=post))
-        categories.append(Category.objects.filter(id__in=categoryIds))
+        categories.append(categoriesInPost)
         visibilityExceptions.append(Author.objects.filter(
                 id__in=postVisibilityExceptions))
         # Convert Markdown into HTML for web browser 
@@ -92,14 +92,30 @@ def add_post(request):
         categoriesString = request.POST.get("categories", "")
         contentType = request.POST.get("contentType", Post.PLAIN)
 
+        categoryNames = categoriesString.split()
+        exceptionUsernames = visibilityExceptionsString.split()
 
-    author = Author.objects.get(user=request.user)
-    newPost = Post.objects.create(title=title, description=description,
-                                  content=content, visibility=visibility,
-                                  contentType=contentType)
-    newPost.origin = request.build_absolute_uri(newPost.get_absolute_url())
-    newPost.save()
-    AuthorPost.objects.create(post=newPost, author=author)
+        author = Author.objects.get(user=request.user)
+        newPost = Post.objects.create(title=title, description=description,
+                                      content=content, visibility=visibility,
+                                      contentType=contentType)
+        newPost.origin = request.build_absolute_uri(newPost.get_absolute_url())
+        newPost.save()
+
+        AuthorPost.objects.create(post=newPost, author=author)
+
+        # I use (abuse) get_or_create to curtail creating duplicates
+        for name in categoryNames:
+            categoryObject, _ = Category.objects.get_or_create(name=name)
+            PostCategory.objects.get_or_create(post=newPost, category=categoryObject)
+        for name in exceptionUsernames:
+            try:
+                userObject = User.objects.get(username=name)
+                authorObject = Author.objects.get(user=userObject)
+                PostVisibilityException.objects.get_or_create(post=newPost,
+                    author=authorObject)
+            except DoesNotExist:
+                pass
 
     # TODO: Need to add to PostVisibilityException and PostCategory
     return redirect(request.META['HTTP_REFERER'])
