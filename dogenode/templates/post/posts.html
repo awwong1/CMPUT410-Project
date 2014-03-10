@@ -11,33 +11,49 @@
             <th>Title</th>
             <th>Description</th>
             <th>Content</th>
+            <th>Categories</th>
+            <th>Visibility Exceptions</th>
             <th>Date</th>
             <th>Delete?</th>
           </tr>
         </thead>
         <tbody>
-        {% for post, comments in posts %}
+        {% for post, comments, categories, visibilityExceptions in posts %}
           <tr>
             <td>
-              <a href="{% url 'post.views.post' post.id %}">{{ post.title }}</a>
+              <a href="{% url 'post.views.post' post.id %}">
+                {{ post.title }}
+              </a>
             </td>
             <td>
-              <a href="{% url 'post.views.post' post.id %}">{{ post.description }}</a>
+              <a href="{% url 'post.views.post' post.id %}">
+                {{ post.description }}
+              </a>
             </td>
             <td>
-              <a href="/posts/{{ post.id }}/">
+              <a href="{% url 'post.views.post' post.id %}">
                 {% if post.contentType == post.HTML or post.contentType == post.MARKDOWN %} 
-                    {% autoescape off %}
-                      {{ post.content }}
-                    {% endautoescape %}
+                  {% autoescape off %}
+                    {{ post.content }}
+                  {% endautoescape %}
                 {% else %}
-                    {{ post.content|linebreaks }}
+                  {{ post.content|linebreaks }}
                 {% endif %}
               </a>
             </td>
+            <td>
+            {% for c in categories %}
+              <span class="label label-default">{{ c.name }}</span>
+            {% endfor %}
+            </td>
+            <td>
+            {% for a in visibilityExceptions %}
+              <a href="{% url 'author.views.profile' a %}">{{ a }}</a>
+            {% endfor %}
+            </td>
             <td>{{ post.pubDate }}</td>
             <td>
-              <form action="/posts/delete_post/" method="POST">
+              <form action="{% url 'post.views.delete_post' %}" method="POST">
                 {% csrf_token %}
                 <input type="hidden" name="post_id" value="{{ post.id }}">
                 <input type="submit" class="danger" value="Delete Post">

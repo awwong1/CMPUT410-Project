@@ -1,4 +1,4 @@
-{% for post, author, comments in posts %}
+{% for post, author, comments, categories, visibilityExceptions in posts %}
 <div class="row">
   <div class="col-md-12">
     <div class="panel panel-default">
@@ -11,21 +11,41 @@
         {% endif %}
       </div>
       <div class="panel-body">
-        {% if post.contentType == post.HTML or post.contentType == post.MARKDOWN %} 
-            {% autoescape off %}
-              {{ post.content }}
-            {% endautoescape %}
-        {% else %}
-            {{ post.content|linebreaks }}
-        {% endif %}
+        <div class="row">
+          {% if categories %}
+          <div class="col-sm-8 col-md-10">
+          {% else %}
+          <div class="col-sm-12">
+          {% endif %}
+            {% if post.contentType == post.HTML or post.contentType == post.MARKDOWN %}
+                {% autoescape off %}
+                  {{ post.content }}
+                {% endautoescape %}
+            {% else %}
+                {{ post.content|linebreaks }}
+            {% endif %}
+          </div>
+          {% if categories %}
+          <div class="col-sm-4 col-md-2">
+            {% for c in categories %}
+            <span class="label label-default">{{ c.name }}</span>
+            {% endfor %}
+          </div>
+          {% endif %}
+        </div>
       </div>
       <div class="panel-footer">
         <div class="row">
           <div class="col-sm-4">
-            by <a href="/author/profile/{{ author.user.username }}"><strong>{{ author.user.username }}</strong></a> on {{ post.pubDate }}
+            by <a href="{% url 'author.views.profile' author.user.username %}">
+                <strong>{{ author.user.username }}</strong>
+              </a>
+            on {{ post.pubDate }}
           </div>
           <div class="col-sm-8 text-right">
-            <a href="{{ post.origin }}" class="text-muted">{{ post.origin }}</a>
+            <a href="{{ post.origin }}" class="text-muted">
+              {{ post.origin }}
+            </a>
           </div>
         </div>
       </div>
@@ -33,17 +53,18 @@
         <tbody>
           {% for comment in comments %}
           <tr>
-            <td><a href="/author/profile/{{comment.author.user.username}}">
-		<strong>{{comment.author.user.username}}</strong></a> on 
-	      {{comment.pub_date}}:
-              {{comment.comment}}
+            <td><small>
+              <a href="{% url 'author.views.profile' author.user.username %}">
+                <strong>{{comment.author.user.username}}</strong>
+              </a> on {{comment.pub_date}}:</small> {{comment.comment}}
             </td>
           </tr>
           {% endfor %}
         </tbody>
       </table>
       <div class="panel-footer">
-        <form role="form" method="POST" action="/comments/add_comment/">
+        <form role="form" method="POST"
+         action="{% url 'comments.views.add_comment' %}">
           {% csrf_token %}
           <div class="form-group">
             <input type="hidden" name="post_id" value="{{post.id}}" />

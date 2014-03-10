@@ -14,16 +14,13 @@ from comments.models import Comment
 import markdown, json
 
 def isUserAccepted(user):
-
     author = Author.objects.filter(user=user)
     if len(author) > 0:
         return author[0].accepted
 
     return False
 
-# Create your views here.
 def index(request):
-
     context = RequestContext(request)
 
     if request.method == 'POST':
@@ -33,21 +30,18 @@ def index(request):
         #https://docs.djangoproject.com/en/dev/topics/auth/default/#authenticating-users
         user = authenticate(username=username, password=password)
 
-        if user is not None:
-
+        if user:
             # the password verified for the user and the user is accepted
             if isUserAccepted(user):
                 login(request, user)
                 return redirect('/author/stream/')
             else:
-                context = RequestContext(request,
-                                {'message': ("Server admin has not accepted"
-                                             " your registration yet!") })
+                context['message'] = ("Server admin has not accepted your "
+                                      "registration yet!")
                 return render(request, 'login/index.html', context)
         else:
             # Incorrect username and password
-            context = RequestContext(request,
-                            {'message': "Incorrect username and password." })
+            context['message'] = "Incorrect username and password."
             return render(request, 'login/index.html', context)
 
     return render(request, 'login/index.html', context)
@@ -148,23 +142,36 @@ def stream(request):
     if request.user.is_authenticated():
         context = RequestContext(request)
         author = Author.objects.get(user=request.user)
-        # rawposts = Post.objects.all().order_by('pubDate')
         rawposts = Post.getAllowedPosts(author)
         comments = []
         authors = []
+        categories = []
+        visibilityExceptions = []
 
         for post in rawposts:
+            categoryIds = PostCategory.objects.filter(post=post).values_list(
+                            'category', flat=True)
+            authorIds = PostVisibilityException.objects.filter(
+                            post=post).values_list('author', flat=True)
+
             authors.append(AuthorPost.objects.get(post=post).author)
             comments.append(Comment.objects.filter(post_ref=post))
+            categories.append(Category.objects.filter(id__in=categoryIds))
+            visibilityExceptions.append(Author.objects.filter(
+                id__in=authorIds))
 
             # Convert Markdown into HTML for web browser 
             # django.contrib.markup is deprecated in 1.6, so, workaround
             if post.contentType == post.MARKDOWN:
                 post.content = markdown.markdown(post.content)
 
-        context['posts'] = zip(rawposts, authors, comments)
+        # Stream payload
+        context['posts'] = zip(rawposts, authors, comments, categories, 
+                               visibilityExceptions)
+        # Make a Post payload
         context['visibilities'] = Post.VISIBILITY_CHOICES
         context['contentTypes'] = Post.CONTENT_TYPE_CHOICES
+
         return render_to_response('author/stream.html', context)
     else:
         return redirect('/login/')
@@ -218,7 +225,6 @@ def getFriendsFromList(request, username):
     return HttpResponse('{"query":"friends",'
                         '"author":"%s",'
                         '"friends":"[]"}' % username)
-
 
 def friends(request):
     """
@@ -345,4 +351,3 @@ def updateRelationship(request, username):
         return HttpResponse(status)
 
     return HttpResponse("success!")
-

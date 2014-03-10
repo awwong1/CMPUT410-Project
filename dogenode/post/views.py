@@ -1,3 +1,4 @@
+from django.views.decorators.csrf import ensure_csrf_cookie
 from django.shortcuts import render, render_to_response, redirect
 from django.http import HttpResponse
 from django.template import RequestContext
@@ -21,20 +22,24 @@ def posts(request):
         return render(request, 'login/index.html', context)
 
     author = Author.objects.get(user=request.user)
-    postIds = AuthorPost.objects.filter(author=author)
+    postIds = AuthorPost.objects.filter(author=author).values_list(
+                'post', flat=True)
     posts = Post.objects.filter(id__in=postIds).order_by('pubDate')
     comments = []
     categories = []
     visibilityExceptions = []
 
     for post in posts:
-        categoriesInPost = PostCategory.objects.filter(post = post).values_list('category', flat=True)
-        postVisibilityExceptions = PostVisibilityException.objects.filter(
-            post=post)
+        categoryIds = PostCategory.objects.filter(post = post).values_list(
+                        'category', flat=True)
+        authorIds = PostVisibilityException.objects.filter(
+                        post=post).values_list('author', flat=True)
+
         comments.append(Comment.objects.filter(post_ref=post))
-        categories.append(categoriesInPost)
+        categories.append(Category.objects.filter(id__in=categoryIds))
         visibilityExceptions.append(Author.objects.filter(
-                id__in=postVisibilityExceptions))
+                                        id__in=authorIds))
+
         # Convert Markdown into HTML for web browser 
         # django.contrib.markup is deprecated in 1.6, so, workaround
         if post.contentType == post.MARKDOWN:
@@ -54,28 +59,32 @@ def post(request, post_id):
         post = Post.objects.get(id=post_id) 
         if (post.isAllowedToViewPost(author)):            
             context = RequestContext(request)
-            categoryIds = PostCategory.objects.filter(post = post)
-            postVisibilityExceptions = PostVisibilityException.objects.filter(
-                post = post)
+
+            categoryIds = PostCategory.objects.filter(
+                            post=post).values_list('category', flat=True)
+            authorIds = PostVisibilityException.objects.filter(
+                            post=post).values_list('author', flat=True)
+
             comments = Comment.objects.filter(post_ref=post)
             visibilityExceptions = Author.objects.filter(
-                id__in=postVisibilityExceptions)
+                id__in=authorIds)
             categories = Category.objects.filter(id__in=categoryIds)
 
             # Convert Markdown into HTML for web browser 
             # django.contrib.markup is deprecated in 1.6, so, workaround
             if post.contentType == post.MARKDOWN:
                 post.content = markdown.markdown(post.content)
-            context['posts'] = [(post, author, comments)]
-            context['visibilities'] = Post.VISIBILITY_CHOICES
-            context['contentTypes'] = Post.CONTENT_TYPE_CHOICES
+
+            context['posts'] = [(post, author, comments, categories, 
+                                 visibilityExceptions)]
+
             return render_to_response('post/post.html', context)
         else:
             return redirect('/posts/')
     else:
         return redirect('/login/')
 
-
+@ensure_csrf_cookie
 def add_post(request):
     """
     Adds a new post and displays 
@@ -107,7 +116,8 @@ def add_post(request):
         # I use (abuse) get_or_create to curtail creating duplicates
         for name in categoryNames:
             categoryObject, _ = Category.objects.get_or_create(name=name)
-            PostCategory.objects.get_or_create(post=newPost, category=categoryObject)
+            PostCategory.objects.get_or_create(post=newPost,
+                                               category=categoryObject)
         for name in exceptionUsernames:
             try:
                 userObject = User.objects.get(username=name)
@@ -117,7 +127,6 @@ def add_post(request):
             except DoesNotExist:
                 pass
 
-    # TODO: Need to add to PostVisibilityException and PostCategory
     return redirect(request.META['HTTP_REFERER'])
 
 def delete_post(request):
