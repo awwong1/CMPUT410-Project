@@ -3,6 +3,8 @@ from django.test import TestCase
 from author.models import Author, Relationship
 from django.contrib.auth.models import User
 
+import json
+
 # Create your tests here.
 class AuthorRelationshipsTestCase(TestCase):
     def setUp(self):
@@ -77,3 +79,52 @@ class AuthorRelationshipsTestCase(TestCase):
         self.assertFalse(author2.isFriendOfAFriend(author3))
         self.assertFalse(author1.isFriendOfAFriend(author2))
         self.assertFalse(author2.isFriendOfAFriend(author1))
+
+    # TODO: I'm not sure the posts are sending data using JSON
+    def testRESTfriends(self):
+
+        # 2 friends
+        response1 = self.client.post('/author/friends/utestuser3',
+                     data={'query':"friends",
+                           'author':"utestuser3",
+                           'authors': ["utestuser1", "utestuser2",
+                                       "utestuser3", "utestuser4"]})
+
+        # 1 friend
+        response2 = self.client.post('/author/friends/utestuser3',
+                     data={'query':"friends",
+                           'author':"utestuser3",
+                           'authors': ["utestuser1", "utestuser2",
+                                       "utestuser3"]})
+
+        # no friends
+        response3 = self.client.post('/author/friends/utestuser3',
+                     data={'query':"friends",
+                           'author':"utestuser3",
+                           'authors': ["utestuser1"]})
+
+        # user doesn't exist
+        response4 = self.client.post('/author/friends/unosuchuser',
+                     data={'query':"friends",
+                           'author':"unosuchuser",
+                           'authors': ["utestuser1", "utestuser2",
+                                       "utestuser3", "utestuser4"]})
+
+        self.assertItemsEqual(json.loads(response1.content),
+                              {"query":"friends",
+                               "author":"utestuser3",
+                               "friends":["utestuser2", "utestuser4"]})
+        self.assertItemsEqual(json.loads(response2.content),
+                              {"query":"friends",
+                               "author":"utestuser3",
+                               "friends":["utestuser2"]})
+        self.assertItemsEqual(json.loads(response3.content),
+                              {"query":"friends",
+                               "author":"utestuser3",
+                               "friends":[]})
+        self.assertItemsEqual(json.loads(response4.content),
+                              {"query":"friends",
+                               "author":"unosuchuser",
+                               "friends":[]})
+
+
