@@ -5,7 +5,8 @@ from django.template import RequestContext
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 
-from post.models import Post, Category, PostVisibilityException, AuthorPost, PostCategory
+from post.models import Post, PostVisibilityException, AuthorPost, PostCategory
+from categories.models import Category
 from author.models import Author
 from comments.models import Comment
 

@@ -7,7 +7,8 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 
 from author.models import Author, Relationship
-from post.models import Post, Category, PostVisibilityException, AuthorPost, PostCategory
+from post.models import Post, PostVisibilityException, AuthorPost, PostCategory
+from categories.models import Category
 from comments.models import Comment
 
 import markdown

@@ -40,6 +40,7 @@ INSTALLED_APPS = (
     'author',
     'comments',
     'post',
+    'categories',
 )
 
 MIDDLEWARE_CLASSES = (

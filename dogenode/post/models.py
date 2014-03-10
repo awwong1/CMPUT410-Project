@@ -1,5 +1,6 @@
 from django.db import models
 from author.models import Author
+from categories.models import Category
 
 import uuid
 
@@ -93,16 +94,6 @@ class Post(models.Model):
             if post.isAllowedToViewPost(author):
                 posts.insert(0, post)
         return posts
-
-class Category(models.Model):
-    name = models.CharField(max_length=80)
-
-    class Meta:
-        verbose_name = 'Category'
-        verbose_name_plural = 'Categories'
-
-    def __unicode__(self):
-        return self.name
 
 # Removes Many-to-Many relationship between Posts and Categories
 class PostCategory(models.Model):
