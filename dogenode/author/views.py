@@ -11,7 +11,7 @@ from post.models import Post, PostVisibilityException, AuthorPost, PostCategory
 from categories.models import Category
 from comments.models import Comment
 
-import markdown
+import markdown, json
 
 def isUserAccepted(user):
 
@@ -176,6 +176,49 @@ def posts(request):
     context = RequestContext(request)
     
     return render(request, 'post/posts.html', context)
+
+def areFriends(request, username1, username2):
+
+    user1 = User.objects.filter(username=username1)
+    user2 = User.objects.filter(username=username2)
+
+    if len(user1) > 0 and len(user2) > 0:
+        
+        author1, _ = Author.objects.get_or_create(user=user1[0])
+        author2, _ = Author.objects.get_or_create(user=user2[0])
+
+        if author2 in author1.getFriends():
+            return HttpResponse('{"query":"friends",'
+                    '"friends":[%s, %s]}' % (username1, username2))
+
+    return HttpResponse('{"query":"friends",'
+            '"friends":"NO"}')
+
+def getFriendsFromList(request, username):
+
+    if request.method == 'POST':
+        #data = json.loads(request.raw_post_data)
+
+        username = request.POST['author']
+        user = User.objects.filter(username=username)
+
+        if len(user) > 0:
+            author, _ = Author.objects.get_or_create(user=user)
+
+            friendUsernames = [a.user.username for a in author.getFriends()]
+            
+            friends = (set(friendUsernames) &
+                       set(request.POST.getlist("authors")))
+
+            return HttpResponse('{"query":"friends",'
+                                '"author":"%s",'
+                                '"friends":"%s"}' % (username, friends))
+
+    # Either this request wasn't a POST or the POSTed username was not found
+    return HttpResponse('{"query":"friends",'
+                        '"author":"%s",'
+                        '"friends":"[]"}' % username)
+
 
 def friends(request):
     """
