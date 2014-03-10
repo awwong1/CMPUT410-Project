@@ -13,3 +13,9 @@ class Category(models.Model):
     def get_absolute_url(self):
         from django.core.urlresolvers import reverse
         return reverse('categories.views.category', args=[str(self.id)])
+
+    def as_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name
+        }
