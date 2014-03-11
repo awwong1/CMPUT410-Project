@@ -6,12 +6,10 @@ from django.contrib.auth.models import User
 
 import json
 
-BASE_URL = "http://testserver"
 
 # Create your tests here.
 class AuthorRelationshipsTestCase(TestCase):
-    def setUp(self, base_url=BASE_URL):
-	self.base_url=base_url
+    def setUp(self):
 
         user1 = User.objects.create_user(username="utestuser1",
                                          password="testpassword")

@@ -7,20 +7,15 @@ from author.models import Author
 from django.contrib.auth.models import User
 
 import json
-import urllib2
-
-BASE_URL="http://testserver"
 
 class PostTestCase(TestCase):
 
     
-    def setUp(self, base_url=BASE_URL):
+    def setUp(self):
         """
         Creating 2 authors, 3 posts. author1 gets 1 post, author 2 gets 2 posts
         Sets up base url for REST tests
         """
-        self.base_url=base_url
-
         User.objects.create_user(username="mockuser1", password="mockpassword")
         user1 = User.objects.get(username="mockuser1")
         author1, _ = Author.objects.get_or_create(user=user1)
@@ -113,7 +108,7 @@ class PostTestCase(TestCase):
         """
         self.client.login(username="mockuser1", password="mockpassword")
 
-        url = self.base_url + "/posts/add_post/"
+        url = "/posts/add_post/"
 
         response = self.client.post(url, 
                                     {'title':'title6',
@@ -123,8 +118,7 @@ class PostTestCase(TestCase):
                                       'visibilityExceptions':'',
                                       'categories':'',
                                       'contentType': Post.PLAIN},
-                                       HTTP_REFERER=self.base_url +
-                                       '/author/stream.html')
+                                       HTTP_REFERER='/author/stream.html')
         self.assertEqual(response.status_code, 302, 
                         "Post creation was not successful, code:" + 
                          str(response.status_code))
@@ -140,14 +134,14 @@ class PostTestCase(TestCase):
         post_id = post.id
         
         self.client.login(username="mockuser1", password="mockpassword")
-        url = self.base_url + "/posts/" + str(post_id) + "/"
+        url = "/posts/" + str(post_id) + "/"
 
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200, 
                         "Post should exist, but response was not 200")
         self.assertTemplateUsed(response, 'fragments/post_content.html',
                                 "Wrong template(s) returned")
-        self.assertContains(response, "title1")
+	self.assertIsNotNone(response.context['posts'][0])
 
     def testViewsDeletePost(self):
         """
@@ -168,7 +162,7 @@ class PostTestCase(TestCase):
         post_id = post.id
 
         self.client.login(username="mockuser1", password="mockpassword")
-        url = self.base_url + "/posts/delete_post/"
+        url = "/posts/delete_post/"
 
         response = self.client.post(url, {'post_id': post_id})
 
@@ -187,7 +181,7 @@ class PostTestCase(TestCase):
         """
         self.client.login(username="mockuser1", password="mockpassword")
 
-        url = self.base_url + "/posts/999/"
+        url = "/posts/999/"
         try:
             response = self.client.get(url)
             self.assertFalse(True, "This post should not exist")
@@ -205,11 +199,11 @@ class PostTestCase(TestCase):
  
         self.client.login(username="mockuser2", password="mockpassword")
 
-        url = self.base_url + "/posts/"
+        url = "/posts/"
 
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200, 
                         "Posts should exist, but response was not 200")
         self.assertTemplateUsed(response, 'post/posts.html',
                                 "Wrong template(s) returned")
-
+	self.assertEquals(len(response.context['posts']), 2)

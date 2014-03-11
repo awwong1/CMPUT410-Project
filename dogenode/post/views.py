@@ -15,6 +15,7 @@ import markdown
 
 def posts(request):
     """
+    Retrieves all posts of an author
     """
     context = RequestContext(request)
 
