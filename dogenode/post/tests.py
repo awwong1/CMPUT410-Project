@@ -128,9 +128,9 @@ class PostTestCase(TestCase):
         self.assertEqual(response.status_code, 302, 
                         "Post creation was not successful, code:" + 
                          str(response.status_code))
-	post = Post.objects.get(title="title6")
-	self.assertIsNotNone(post, "Post was not successfully created")
-	post.delete()
+        post = Post.objects.get(title="title6")
+        self.assertIsNotNone(post, "Post was not successfully created")
+        post.delete()
 
     def testViewsGetPost(self):
         """
@@ -148,6 +148,36 @@ class PostTestCase(TestCase):
         self.assertTemplateUsed(response, 'fragments/post_content.html',
                                 "Wrong template(s) returned")
         self.assertContains(response, "title1")
+
+    def testViewsDeletePost(self):
+        """
+        Tests deleting a post. First creates a new post, then deletes it.
+        """
+        post4 = Post.objects.create(title="title4",
+                                    description="desc4",
+                                    content="post4",
+                                    visibility=Post.PUBLIC) 
+        
+        user = User.objects.get(username="mockuser1")
+        author = Author.objects.get(user=user)
+        AuthorPost.objects.create(post=post4, author=author)
+
+        post = Post.objects.filter(title="title4")[0]
+        self.assertIsNotNone(post, "Post should exist!")
+
+        post_id = post.id
+
+        self.client.login(username="mockuser1", password="mockpassword")
+        url = self.base_url + "/posts/delete_post/"
+
+        response = self.client.post(url, {'post_id': post_id})
+
+        self.assertEqual(response.status_code, 302, 
+                        "Post deletion not successful, code: " + 
+                        str(response.status_code))
+
+        posts = Post.objects.filter(title="title4");
+        self.assertEquals(len(posts), 0, "Post was not successfully deleted")
 
     def testViewsGetNonExistantPost(self):
         """
