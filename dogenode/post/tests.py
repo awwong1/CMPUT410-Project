@@ -6,13 +6,21 @@ from author.models import Author
 
 from django.contrib.auth.models import User
 
+import json
+import urllib2
+
+BASE_URL="http://testserver"
 
 class PostTestCase(TestCase):
+
     
-    def setUp(self):
+    def setUp(self, base_url=BASE_URL):
         """
         Creating 2 authors, 3 posts. author1 gets 1 post, author 2 gets 2 posts
+        Sets up base url for REST tests
         """
+        self.base_url=base_url
+
         User.objects.create_user(username="mockuser1", password="mockpassword")
         user1 = User.objects.get(username="mockuser1")
         author1, _ = Author.objects.get_or_create(user=user1)
@@ -97,3 +105,84 @@ class PostTestCase(TestCase):
         post4.delete()
         post = Post.objects.filter(title="title4")
         self.assertEquals(len(post), 0, "Post should not exist")
+
+
+    def testViewsAddPost(self):
+        """
+        Test if you can create a post via add_post in views
+        """
+        post4 = Post.objects.create(title="title4",
+                                    description="desc4",
+                                    content="post4",
+                                    visibility=Post.PUBLIC) 
+        
+        self.client.login(username="mockuser1", password="mockpassword")
+
+        url = self.base_url + "/posts/add_post/"
+
+        response = self.client.post(url, 
+                                    {'title':'title6',
+                                      'description':'desc6',
+                                      'content':'content6',
+                                      'visibility':Post.PUBLIC,
+                                      'visibilityExceptions':'',
+                                      'categories':'',
+                                      'contentType': Post.PLAIN},
+                                       HTTP_REFERER=self.base_url +
+                                       '/author/stream.html')
+        self.assertEqual(response.status_code, 302, 
+                        "Post creation was not successful, code:" + 
+                         str(response.status_code))
+
+
+    def testViewsGetPost(self):
+        """
+        Gets a single post using the post function in post/views.py.
+        """
+        post = Post.objects.filter(title="title1")[0]
+        post_id = post.id
+        
+        self.client.login(username="mockuser1", password="mockpassword")
+        url = self.base_url + "/posts/" + str(post_id) + "/"
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200, 
+                        "Post should exist, but response was not 200")
+        self.assertTemplateUsed(response, 'fragments/post_content.html',
+                                "Wrong template(s) returned")
+        self.assertContains(response, "title1")
+
+    def testViewsGetNonExistantPost(self):
+        """
+        Tests trying to retrieve an non existant post. Right now,
+        if error DoesNotExist pops up, it's coming from the post/views.py
+        file, and should be what is generated.
+        """
+        self.client.login(username="mockuser1", password="mockpassword")
+
+        url = self.base_url + "/posts/999/"
+        try:
+            response = self.client.get(url)
+            self.assertFalse(True, "This post should not exist")
+        except Post.DoesNotExist as e:
+            self.assertTrue(True)        
+        
+
+    def testViewsGetAllAuthorPosts(self):
+        """
+        Tests getting all the posts of an author using the posts function
+        in post/views.py
+        """        
+        user = User.objects.get(username="mockuser2")
+        posts = AuthorPost.objects.filter(author=user.id)
+ 
+        self.client.login(username="mockuser2", password="mockpassword")
+
+        url = self.base_url + "/posts/"
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200, 
+                        "Posts should exist, but response was not 200")
+        self.assertTemplateUsed(response, 'post/posts.html',
+                                "Wrong template(s) returned")
+
