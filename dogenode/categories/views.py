@@ -22,7 +22,13 @@ def add(request):
     status_code = 200
 
     if request.method == 'POST':
-        name = request.POST.get('name')
+        name = request.POST['name']
+        obj = None
+        created = False
+
+        objId = -1
+        objName = ""
+
         if name:
             obj, created = Category.objects.get_or_create(name=name.lower())
             if created:
@@ -30,8 +36,12 @@ def add(request):
             else:
                 context['message'] = "%s already exists!" % obj.name
                 status_code = 409 # Conflict
+
+            objId = obj.id
+            objName = obj.name
         else:
             context['message'] = "A name is required."
+            status_code = 400
 
         if 'text/html' in request.META['HTTP_ACCEPT']:
             return render('categories.views.categories', context,
@@ -39,11 +49,14 @@ def add(request):
 
         if 'application/json' in request.META['HTTP_ACCEPT']:
             response = HttpResponse(json.dumps(
-                                        {'message': context['message']}),
+                                        {'message': context['message'],
+                                         'id': objId,
+                                         'name': objName}),
                                     content_type='application/json',
                                     status=status_code)
         else:
-            response = HttpResponse(context['message'],
+            message = "%s\nid: %i\nname: %s\n" % (context['message'], objId, objName)
+            response = HttpResponse(message,
                                     content_type='text/plain',
                                     status=status_code)
 
