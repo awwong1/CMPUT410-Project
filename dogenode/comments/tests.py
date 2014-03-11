@@ -108,7 +108,23 @@ class CommentTestCase(TestCase):
 			  0, "Comment was not properly deleted")
 
     def testViewsGetPostComments(self):
-	pass
+	"""
+	Tests getting all comments of a post using the get_post_comments
+	in coments/views.py
+	"""
+	self.client.login(username="mockuser1", password="mockpassword")
+	post1_id = Post.objects.filter(title="title1")[0].id
+	
+	url = self.base_url + "/comments/" + str(post1_id) + "/"
+	
+	response = self.client.get(url)
+
+	self.assertEqual(response.status_code, 200,
+			 "Was unable to retrieve comments of post, code: " +
+			 str(response.status_code))
+	self.assertTemplateUsed(response, 'fragments/post_content.html',
+				"Wrong template returned")
+	print(response)
 
     def testViewsAddComment(self):
 	"""
@@ -131,7 +147,7 @@ class CommentTestCase(TestCase):
 
     def testViewsRemoveComment(self):
 	"""
-	Tests if you can add a comment via add_comment in comments/views.py
+	Tests if you can delete a comment via remove_comment in comments/views.py
 	"""	
 	self.client.login(username="mockuser1", password="mockpassword")
 	
