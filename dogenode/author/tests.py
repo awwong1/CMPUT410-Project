@@ -1,5 +1,6 @@
 from django.test import TestCase
 
+from post.models import Post, AuthorPost
 from author.models import Author, Relationship
 from django.contrib.auth.models import User
 
@@ -139,13 +140,15 @@ class AuthorRelationshipsTestCase(TestCase):
 	"""
 	self.client.login(username="utestuser1", password="testpassword")
 	
-
-	url = self.base_url + "/author/profile/utestuser1/"
+	url = "/author/profile/utestuser1/"
 	response = self.client.get(url)
 	self.assertEqual(response.status_code, 200)
 	self.assertTemplateUsed(response, "author/profile.html")
-	# TODO: This test has to be a loooottt better. But for now....
-	self.assertContains(response, "utestuser1")	
+	self.assertEquals(response.context['firstName'], "")
+	self.assertEquals(response.context['lastName'], "")
+	self.assertEquals(response.context['username'], "utestuser1")
+	self.assertEquals(response.context['aboutMe'], "")
+	self.assertEquals(response.context['userIsAuthor'], "True")
 
 
     def testViewsEditProfile(self):
@@ -161,7 +164,7 @@ class AuthorRelationshipsTestCase(TestCase):
 	
 	self.client.login(username="utestuser5", password="testpassword")
 	
-	url = self.base_url + "/author/edit_profile/"
+	url =  "/author/edit_profile/"
 	body = {'firstName':'bob1',
 		'lastName':'bob2',
 		'oldPassword':'testpassword',
@@ -191,14 +194,25 @@ class AuthorRelationshipsTestCase(TestCase):
 	visible aren't...
 	"""
 	self.client.login(username="utestuser1", password="testpassword")
+	user1 = User.objects.get(username="utestuser1")
+	author1 = Author.objects.get(user=user1)
+	
+	url = "/author/stream/"
+	response = self.client.get(url)
+	self.assertEqual(response.status_code, 200)
+	self.assertEquals(len(response.context['posts']), 0)	
 
-	url = self.base_url + "/author/stream/"
+	# TODO: Add posts user can't see
+        post1 = Post.objects.create(title="title1",
+                                    description="desc1",
+                                    content="post1",
+                                    visibility=Post.PUBLIC)
+        AuthorPost.objects.create(post=post1, author=author1)
+
 	response = self.client.get(url)
 	self.assertEqual(response.status_code, 200)
 	self.assertTemplateUsed(response, "author/stream.html")
-	
-	# TODO: Should test a lot more...currently not sure how to do so
-	# and will also probably have to parse html if its not json
+	self.assertEquals(len(response.context['posts']), 1)	
 	
 
     def testSearch(self):
@@ -224,6 +238,8 @@ class AuthorRelationshipsTestCase(TestCase):
 	self.assertEqual(response.status_code, 200)
 
 	# Find a better way to test this...  
-	self.assertContains(response, "utestuser6")
+	self.assertEquals(response.context['searchphrase'], "utestuser6")
+	self.assertEquals(response.context['results'][0][0], "utestuser6")
+	self.assertEquals(response.context['results'][0][1], "No Relationship")
 	user5.delete()
 	user6.delete()      
