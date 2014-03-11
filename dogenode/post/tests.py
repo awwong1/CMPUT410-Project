@@ -111,11 +111,6 @@ class PostTestCase(TestCase):
         """
         Test if you can create a post via add_post in views
         """
-        post4 = Post.objects.create(title="title4",
-                                    description="desc4",
-                                    content="post4",
-                                    visibility=Post.PUBLIC) 
-        
         self.client.login(username="mockuser1", password="mockpassword")
 
         url = self.base_url + "/posts/add_post/"
