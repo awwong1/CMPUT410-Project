@@ -20,7 +20,12 @@ def posts(request):
     context = RequestContext(request)
 
     if not request.user.is_authenticated():
-        return render(request, 'login/index.html', context)
+        if 'text/html' in request.META['HTTP_ACCEPT']:
+            return render(request, 'login/index.html', context)
+        elif 'application/json' in request.META['HTTP_ACCEPT']:
+            return HttpResponse(401)
+        else:
+            return HttpResponse(406)
 
     author = Author.objects.get(user=request.user)
     postIds = AuthorPost.objects.filter(author=author).values_list(
@@ -46,9 +51,27 @@ def posts(request):
         if post.contentType == post.MARKDOWN:
             post.content = markdown.markdown(post.content)
 
-    context["posts"] = zip(posts, comments, categories, visibilityExceptions)
+    if 'text/html' in request.META['HTTP_ACCEPT']:
+        context["posts"] = zip(posts, comments, categories, 
+                               visibilityExceptions)
+        return render_to_response('post/posts.html', context)
 
-    return render_to_response('post/posts.html', context)
+    elif 'application/json' in request.META['HTTP_ACCEPT']:
+        return makeJSONPost()
+    else:
+       response = HttpResponse(406)
+ 
+   return response
+
+def convertPostsToJSON(post_contents, comments, categories, 
+                        visibilityExceptions):
+        posts = []
+        for post, comment, category, visExc in zip(post_contents, 
+                                                   comments,
+                                                   categories,
+                                                   visibilityExceptions):
+            pass
+    return None
 
 def post(request, post_id):
     """
@@ -86,7 +109,7 @@ def post(request, post_id):
         return redirect('/login/')
 
 @ensure_csrf_cookie
-def add_post(request):
+def addPost(request):
     """
     Adds a new post and displays 
     """
