@@ -146,7 +146,7 @@ class AuthorRelationshipsTestCase(TestCase):
 	self.assertEquals(response.context['lastName'], "")
 	self.assertEquals(response.context['username'], "utestuser1")
 	self.assertEquals(response.context['aboutMe'], "")
-	self.assertEquals(response.context['userIsAuthor'], "True")
+	self.assertEquals(response.context['userIsAuthor'], True)
 
 
     def testViewsEditProfile(self):
@@ -228,7 +228,7 @@ class AuthorRelationshipsTestCase(TestCase):
         
 	self.client.login(username="utestuser5", password="testpassword")
 	
-	url = self.base_url + "/author/search_results/"
+	url = "/author/search_results/"
 
         response = self.client.post(url,
                      data={'username': "utestuser6"})
