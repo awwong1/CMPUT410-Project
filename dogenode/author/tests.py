@@ -5,9 +5,13 @@ from django.contrib.auth.models import User
 
 import json
 
+BASE_URL = "http://testserver"
+
 # Create your tests here.
 class AuthorRelationshipsTestCase(TestCase):
-    def setUp(self):
+    def setUp(self, base_url=BASE_URL):
+	self.base_url=base_url
+
         user1 = User.objects.create_user(username="utestuser1",
                                          password="testpassword")
         user2 = User.objects.create_user(username="utestuser2",
@@ -127,4 +131,99 @@ class AuthorRelationshipsTestCase(TestCase):
                                "author":"unosuchuser",
                                "friends":[]})
 
+    def testViewsGetProfile(self):
+	"""
+	Tests retrieving the profile of an author
 
+	TODO xxx: update test once author model has been refactored
+	"""
+	self.client.login(username="utestuser1", password="testpassword")
+	
+
+	url = self.base_url + "/author/profile/utestuser1/"
+	response = self.client.get(url)
+	self.assertEqual(response.status_code, 200)
+	self.assertTemplateUsed(response, "author/profile.html")
+	# TODO: This test has to be a loooottt better. But for now....
+	self.assertContains(response, "utestuser1")	
+
+
+    def testViewsEditProfile(self):
+        """
+	Tests editing the profile of an author
+
+	TODO XXX: update test once author model has been refactored,
+	and this should be done with a PUT not a POST
+	"""
+	user5 = User.objects.create_user(username="utestuser5",
+                                         password="testpassword")
+        author5, _ = Author.objects.get_or_create(user=user5)
+	
+	self.client.login(username="utestuser5", password="testpassword")
+	
+	url = self.base_url + "/author/edit_profile/"
+	body = {'firstName':'bob1',
+		'lastName':'bob2',
+		'oldPassword':'testpassword',
+		'newPassword':'bob3',
+		'aboutMe':'bob4'}
+	response = self.client.post(url, body)
+	
+	self.assertEqual(response.status_code, 200)
+	self.assertTemplateUsed(response, "author/edit_profile.html")
+	# TODO: This test has to be a loooottt better. But for now....
+	# also, not sure how to test to make sure password has changed
+	user5 = User.objects.get(username="utestuser5")
+	author5 = Author.objects.get(user=user5)
+	self.assertEquals(user5.first_name, "bob1")
+	self.assertEquals(user5.last_name, "bob2")
+	self.assertEquals(author5.about_me, "bob4")
+	author5.delete()
+	user5.delete()
+
+
+    def testStream(self):
+	"""
+	Tests retrieving the stream of an author
+
+	TODO xxx: update test once author model has been refactored,
+	might want to test to make sure posts that shouldn't be 
+	visible aren't...
+	"""
+	self.client.login(username="utestuser1", password="testpassword")
+
+	url = self.base_url + "/author/stream/"
+	response = self.client.get(url)
+	self.assertEqual(response.status_code, 200)
+	self.assertTemplateUsed(response, "author/stream.html")
+	
+	# TODO: Should test a lot more...currently not sure how to do so
+	# and will also probably have to parse html if its not json
+	
+
+    def testSearch(self):
+	"""
+	Tests searching for an author.
+	"""
+	# Made two new users, was getting wierd error using others
+	user5 = User.objects.create_user(username="utestuser5",
+                                         password="testpassword")
+        Author.objects.get_or_create(user=user5)
+	
+	user6 = User.objects.create_user(username="utestuser6",
+                                         password="testpassword")
+        Author.objects.get_or_create(user=user6)
+        
+	self.client.login(username="utestuser5", password="testpassword")
+	
+	url = self.base_url + "/author/search_results/"
+
+        response = self.client.post(url,
+                     data={'username': "utestuser6"})
+
+	self.assertEqual(response.status_code, 200)
+
+	# Find a better way to test this...  
+	self.assertContains(response, "utestuser6")
+	user5.delete()
+	user6.delete()      
