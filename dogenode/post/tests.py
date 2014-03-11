@@ -128,7 +128,9 @@ class PostTestCase(TestCase):
         self.assertEqual(response.status_code, 302, 
                         "Post creation was not successful, code:" + 
                          str(response.status_code))
-
+	post = Post.objects.get(title="title6")
+	self.assertIsNotNone(post, "Post was not successfully created")
+	post.delete()
 
     def testViewsGetPost(self):
         """

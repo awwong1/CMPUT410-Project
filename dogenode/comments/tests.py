@@ -5,30 +5,157 @@ from post.models import Post
 
 from django.contrib.auth.models import User
 
+BASE_URL="http://testserver"
+
 # Create your tests here.
 class CommentTestCase(TestCase):
-    def setUp(self):
-        User.objects.create_user(username="utestuser", password="testpassword")
-        user = User.objects.get(username="utestuser")
-        author, _ = Author.objects.get_or_create(user=user)
-        Post.objects.create(author=author, content="This post...")
-        post = Post.objects.get(content="This post...")
-        Comment.objects.create(
-            comment_auth=author,
-            post_ref=post,
-            comment_text="So spice!")
     
-    def testCommentTextExists(self):
-        self.assertEqual(
-            len(Comment.objects.filter(comment_text="So spice!")), 1)
+    def setUp(self, base_url=BASE_URL):
+	self.base_url = base_url
+        User.objects.create_user(username="mockuser1", password="mockpassword")
+        user1 = User.objects.get(username="mockuser1")
+        author1, _ = Author.objects.get_or_create(user=user1)
 
-    def testCommentAuthExists(self):
-        user = User.objects.get(username="utestuser")
-        author = Author.objects.get(user=user)
-        self.assertEqual(
-            len(Comment.objects.filter(comment_auth=author)), 1)
+	post1 = Post.objects.create(title="title1",
+			    	    description="desc1",
+			    	    content="post1",
+			    	    visibility=Post.PUBLIC)
 
-    def testCommentPostRef(self):
-        post = Post.objects.get(content="This post...")
-        self.assertEqual(
-            len(Comment.objects.filter(post_ref=post)), 1)
+	post2 = Post.objects.create(title="title2",
+			    	    description="desc2",
+			    	    content="post2",
+			    	    visibility=Post.PUBLIC)
+       
+	Comment.objects.create(
+            author=author1,
+            post_ref=post1,
+            comment="comment1")
+    
+	Comment.objects.create(
+            author=author1,
+            post_ref=post1,
+            comment="comment2")
+    
+	Comment.objects.create(
+            author=author1,
+            post_ref=post2,
+            comment="comment3")
+
+    def testGetComment(self):
+	"""
+	Gets a single comment by the comment content.
+	"""
+	comment = Comment.objects.get(comment="comment1")
+        self.assertIsNotNone(comment, 
+			     "Comment exists, but was not found")
+
+	user1 = User.objects.get(username="mockuser1")
+	author1 = Author.objects.get(user=user1)
+        post1 = Post.objects.filter(title="title1")[0]
+	
+	self.assertEquals(comment.author, author1, "Author id does not match")
+	self.assertEquals(comment.post_ref, post1, "Post id does not match")
+	self.assertEquals(comment.comment, "comment1", 
+			  "Comment (content) does not match")
+	self.assertIsNotNone(comment.pub_date)
+
+    def testGetAllComments(self):
+	"""
+	Tests getting all comments in the database
+	"""
+        comments = Comment.objects.filter()
+	self.assertEqual(len(comments), 3, "3 Comments exist" + 
+			 "but only " +  str(len(comments)) + " found")
+
+    def testGetAllPostComments(self):
+	"""
+	Tests retrieving all comments of a post from the database
+	"""
+	post2 = Post.objects.filter(title="title2")[0]
+        
+        comments = Comment.objects.filter(post_ref=post2)
+	self.assertEqual(len(comments), 1, "Post has one comment," + 
+			 "but " +  str(len(comments)) + " were found")
+
+    def testGetNonExistantComment(self):
+        """
+        Tests retrieving a non existant comment from the database
+        """
+        comments = Comment.objects.filter(comment="idontexist")
+        self.assertEquals(len(comments), 0, "Comment should not exist!")
+
+
+    def testDeleteComment(self):
+	"""
+	Tests comment deletion from database
+	"""
+	post1 = Post.objects.filter(title="title1")[0]
+	user1 = User.objects.get(username="mockuser1")
+        author1= Author.objects.get(user=user1)
+
+	Comment.objects.create(
+            author=author1,
+            post_ref=post1,
+            comment="comment4")
+	
+	
+	comment = Comment.objects.get(comment="comment4")
+        self.assertIsNotNone(comment, 
+			     "Comment exists, but was not found")
+
+	comment.delete()
+	self.assertEquals(len(Comment.objects.filter(comment="comment4")),
+			  0, "Comment was not properly deleted")
+
+    def testViewsGetPostComments(self):
+	pass
+
+    def testViewsAddComment(self):
+	"""
+	Tests if you can add a comment via add_comment in comments/views.py
+	"""	
+	self.client.login(username="mockuser1", password="mockpassword")
+	url = self.base_url + "/comments/add_comment/"
+	post1_id = Post.objects.filter(title="title1")[0].id
+	
+	response = self.client.post(url,
+				    {'post_id':post1_id,
+				     'newComment':'comment5'},
+				     HTTP_REFERER=self.base_url +
+				     '/author/stream.html')
+	self.assertEqual(response.status_code, 302,
+			 "Comment creation was not succesful, code: " +
+			 str(response.status_code))
+	comment = Comment.objects.filter(comment="comment5")[0]
+	self.assertIsNotNone(comment, "Comment was not succesfully created")	
+
+    def testViewsRemoveComment(self):
+	"""
+	Tests if you can add a comment via add_comment in comments/views.py
+	"""	
+	self.client.login(username="mockuser1", password="mockpassword")
+	
+	post1 = Post.objects.filter(title="title1")[0]
+	user1 = User.objects.get(username="mockuser1")
+        author1= Author.objects.get(user=user1)
+
+	Comment.objects.create(
+            author=author1,
+            post_ref=post1,
+            comment="comment6")
+	
+	self.assertNotEqual(len(Comment.objects.filter(comment="comment6")), 0)
+
+	comment_id = Comment.objects.get(comment="comment6").id
+	
+	url = self.base_url + "/comments/remove_comment/" + str(comment_id) + "/"
+	response = self.client.delete(url, 
+				      HTTP_REFERER=self.base_url +
+				     '/author/stream.html')
+	self.assertEqual(response.status_code, 302,
+			 "Comment deletion was not succesful, code: " +
+			 str(response.status_code))
+	comments = Comment.objects.filter(comment="comment6")
+	self.assertEqual(len(comments), 0, "Comment was not succesfully deleted")	
+
+
