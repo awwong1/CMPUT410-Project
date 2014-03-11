@@ -95,6 +95,21 @@ class Post(models.Model):
                 posts.insert(0, post)
         return posts
 
+    # also inefficient, but w.e
+    @staticmethod
+    def getViewablePosts(viewer, author):
+        """
+        Returns all the posts of an author that a viewer can see
+        """
+        # Get all the posts that the viewer can see
+        allposts = Post.getAllowedPosts(viewer)
+        viewposts = []
+        # Filter out all the posts that aren't by author
+        for checkpost in allposts:
+            if AuthorPost.objects.get(post=checkpost).author == author:
+                viewposts.append(checkpost)
+        return viewposts
+
 # Removes Many-to-Many relationship between Posts and Categories
 class PostCategory(models.Model):
     post = models.ForeignKey(Post)

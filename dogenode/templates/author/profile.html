@@ -44,16 +44,40 @@
   
   <h4 class="sub-header"> Posts by {{ username }} </h4>
   <div class="table-responsive">  
+    {% if authPosts %}
     <table class="table table-bordered">
       <thead>
         <tr>
-          <th> Content </th>
-          <th> Date </th>
+          <th>Title</th>
+	  <th>Description</th>
+	  <th>Content</th>
+          <th>Date</th>
         </tr>
       </thead>
       <tbody>
+	{% for post in authPosts %}
+	<tr>
+	  <td><a href="/posts/{{post.id}}/">{{post.title}}</a></td>
+	  <td>{{post.description}}</td>
+	  <td>
+	    {% if post.contentType == post.HTML or post.contentType == post.MARKDOWN %}
+              {% autoescape off %}
+                {{ post.content }}
+              {% endautoescape %}
+            {% else %}
+              {{ post.content|linebreaks }}
+            {% endif %}
+	  </td>
+	  <td>{{post.pubDate}}</td>
+	</tr>
+	{% endfor %}
       </tbody>
     </table>
+    {% else %}
+    <p class="text-muted">
+      This author doesn't have any posts!
+    </p>
+    {% endif %}
   </div>
 </div>
 {% endblock %}

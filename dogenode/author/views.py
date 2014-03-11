@@ -86,6 +86,9 @@ def profile(request, username):
         payload['aboutMe'] = author.about_me or ""
         payload['userIsAuthor'] = (user.username == request.user.username)
         context = RequestContext(request, payload)
+        viewer = Author.objects.get(user=User.objects.get(
+                username=request.user))
+        context['authPosts'] = Post.getViewablePosts(viewer, author)
         return render(request, 'author/profile.html', context)
     else:
         return redirect('/login/')
