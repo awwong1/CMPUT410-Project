@@ -6,9 +6,9 @@ from django.template import RequestContext
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 
-from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from rest_framework import status
 
 from post.models import Post, PostVisibilityException, AuthorPost, PostCategory
 from categories.models import Category
@@ -96,9 +96,9 @@ def getAllPublicPosts(request):
                                           "categories":categories,
                                           "author":author}),
                             content_type="application/json",
-                            status=200)
+                            status=status.HTTP_200_OK)
     else:
-        return HttpResponse(status=401)
+        return HttpResponse(status=status.HTTP_401_UNAUTHORIZED)
 
 def chooseResponseType(request, context, url, data):
     if 'text/html' in request.META['HTTP_ACCEPT']:
@@ -107,9 +107,9 @@ def chooseResponseType(request, context, url, data):
     elif 'application/json' in request.META['HTTP_ACCEPT']:
         response = HttpResponse(makeJSONPost(data),
                                 content_type="application/json",
-                                status=200)
+                                status=status.HTTP_200_OK)
     else:
-        response = HttpResponse(status=406)
+        response = HttpResponse(status=status.HTTP_406_NOT_ACCEPTABLE)
         
     return response
 
@@ -140,54 +140,104 @@ def makeJSONPost(data):
             posts.append(json_post)
         return json.dumps({"posts":posts})
 
+@api_view(['GET', 'POST', 'PUT'])
+def handlePost(request, post_id):
+    if request.method == "PUT":
+        context = RequestContext(request)
+        return addPost(context, request, post_id)
+    else:
+        return getPost(request, post_id)
 
-@api_view(['POST', 'PUT'])
-@ensure_csrf_cookie
-def addPost(request):
+def addPost(context, request, post_id):
     """
-    Adds a new post and displays 
+    Adds a new post via the webservice using a PUT request 
     """
-    context = RequestContext(request)
-   
     title = request.DATA.get("title", "")
     description = request.DATA.get("description", "")
     content = request.DATA.get("content", "")
     contentType = request.POST.get("contentType", Post.PLAIN) 
     visibility = request.DATA.get("visibility", Post.PRIVATE)
-    visibilityExceptionsString = request.DATA.get("visibilityExceptions","")
-    exceptionUsernames = visibilityExceptionsString.split()
-    categoriesString = request.DATA.get("categories", "")
-    categoryNames = []
-    if "text/html" in request.META.get('HTTP_ACCEPT'): 
-        categoryNames = categoriesString.split()
-    else:
-        categoryNames = categoriesString    
+    categoryNames = request.DATA.get("categories", "")
+    #source = request.DATA.get("source", "")
+    origin = request.DATA.get("origin", "")
     author = Author.objects.get(user=request.user)
-    newPost = Post.objects.create(title=title, description=description,
-                                  content=content, visibility=visibility,
-                                  contentType=contentType)
-    newPost.origin = request.build_absolute_uri(newPost.get_absolute_url())
-    newPost.save()
 
-    AuthorPost.objects.create(post=newPost, author=author)
+    post = Post.objects.create(title=title,
+                               description=description,
+                               content=content,
+                               contentType=contentType,
+                               visibility=visibility)
+    post.id = int(post_id);
+    post.save()
+    print post
+    AuthorPost.objects.create(post=post, author=author)
+    post.title = title
+    post.content = content
+    post.contentType = contentType
+    post.description = description
+    post.visibility = visibility
 
-    # I use (abuse) get_or_create to curtail creating duplicates
+    # Adding post origins   
+    if origin == "":
+        post.origin = request.build_absolute_uri(post.get_absolute_url())
+    
+    post.save()
+    print "post saved"
+
+     # I use (abuse) get_or_create to curtail creating duplicates
     for name in categoryNames:
         categoryObject, _ = Category.objects.get_or_create(name=name)
-        PostCategory.objects.get_or_create(post=newPost,
+        PostCategory.objects.get_or_create(post=post,
                                            category=categoryObject)
-    for name in exceptionUsernames:
-        try:
-            userObject = User.objects.get(username=name)
-            authorObject = Author.objects.get(user=userObject)
-            PostVisibilityException.objects.get_or_create(post=newPost,
-                author=authorObject)
-        except DoesNotExist:
-            pass
+    if "json" not in request.META["HTTP_ACCEPT"]:
+        return HttpResponse(status=status.HTTP_400_BAD_REQUEST)
+    return HttpResponse(status=status.HTTP_201_CREATED)
+
+
+@ensure_csrf_cookie
+def addFormPost(request):
+    """
+    Adds a new post and displays 
+    """
+    context = RequestContext(request)
+    
+    if request.method == "POST":
+        title = request.POST.get("title", "")
+        description = request.POST.get("description", "")
+        content = request.POST.get("content", "")
+        visibility = request.POST.get("visibility", Post.PRIVATE)
+        visibilityExceptionsString = request.POST.get("visibilityExceptions",
+                                                      "")
+        categoriesString = request.POST.get("categories", "")
+        contentType = request.POST.get("contentType", Post.PLAIN)
+
+        categoryNames = categoriesString.split()
+        exceptionUsernames = visibilityExceptionsString.split()
+
+        author = Author.objects.get(user=request.user)
+        newPost = Post.objects.create(title=title, description=description,
+                                      content=content, visibility=visibility,
+                                      contentType=contentType)
+        newPost.origin = request.build_absolute_uri(newPost.get_absolute_url())
+        newPost.save()
+
+        AuthorPost.objects.create(post=newPost, author=author)
+
+        # I use (abuse) get_or_create to curtail creating duplicates
+        for name in categoryNames:
+            categoryObject, _ = Category.objects.get_or_create(name=name)
+            PostCategory.objects.get_or_create(post=newPost,
+                                               category=categoryObject)
+        for name in exceptionUsernames:
+            try:
+                userObject = User.objects.get(username=name)
+                authorObject = Author.objects.get(user=userObject)
+                PostVisibilityException.objects.get_or_create(post=newPost,
+                    author=authorObject)
+            except DoesNotExist:
+                pass
 
     return redirect(request.META['HTTP_REFERER'])
-
-
 
 def deletePost(request):
     """

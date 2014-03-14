@@ -199,28 +199,24 @@ class PostTestCase(TestCase):
         """
         Test if you can add and update a post via PUT request with /post/postid
         """
-        pass
-        """
+        
         self.client.login(username="mockuser1", password="mockpassword")
 
-        url = "/posts/add_post/"
+        url = "/posts/999/"
 
-        response = self.client.post(url, 
-                                    {'title':'title6',
-                                     'description':'desc6',
-                                     'content':'content6',
+        response = self.client.put(url, json.dumps( 
+                                    {'title':'title7',
+                                     'description':'desc7',
+                                     'content':'content7',
                                      'visibility':Post.PUBLIC,
-                                     'visibilityExceptions':'',
-                                     'categories':'',
-                                     'contentType': Post.PLAIN},
-                                    HTTP_REFERER='/author/stream.html')
-        self.assertEqual(response.status_code, 302, 
-                        "Post creation was not successful, code:" + 
-                         str(response.status_code))
-        post = Post.objects.get(title="title6")
+                                     'categories': "hi",
+                                     'contentType': Post.PLAIN}),
+                                   HTTP_ACCEPT="application/json",
+                                   content_type="application/json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        post = Post.objects.get(id=999)
         self.assertIsNotNone(post, "Post was not successfully created")
         post.delete()
-        """
 
     def testRESTGetPost(self):
         """

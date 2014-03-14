@@ -21,17 +21,17 @@
         {% for post, comments, categories, visibilityExceptions in posts %}
           <tr>
             <td>
-              <a href="{% url 'post.views.getPost' post.id %}">
+              <a href="{% url 'post.views.handlePost' post.id %}">
                 {{ post.title }}
               </a>
             </td>
             <td>
-              <a href="{% url 'post.views.getPost' post.id %}">
+              <a href="{% url 'post.views.handlePost' post.id %}">
                 {{ post.description }}
               </a>
             </td>
             <td>
-              <a href="{% url 'post.views.getPost' post.id %}">
+              <a href="{% url 'post.views.handlePost' post.id %}">
                 {% if post.contentType == post.HTML or post.contentType == post.MARKDOWN %} 
                   {% autoescape off %}
                     {{ post.content }}

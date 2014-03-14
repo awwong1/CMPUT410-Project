@@ -57,7 +57,7 @@
       <tbody>
 	{% for post in authPosts %}
 	<tr>
-	  <td><a href="/posts/{{post.id}}/">{{post.title}}</a></td>
+	  <td><a href="{% url 'post.views.handlePost' post.id %}">{{post.title}}</a></td>
 	  <td>{{post.description}}</td>
 	  <td>
 	    {% if post.contentType == post.HTML or post.contentType == post.MARKDOWN %}
