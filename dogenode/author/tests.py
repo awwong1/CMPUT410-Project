@@ -241,3 +241,48 @@ class AuthorRelationshipsTestCase(TestCase):
 	self.assertEquals(response.context['results'][0][1], "No Relationship")
 	user5.delete()
 	user6.delete()      
+
+    def testViewsGetAllAuthorPosts(self):
+        """
+        Tests getting all the posts of an author using the posts function
+        in post/views.py
+        """        
+        user = User.objects.get(username="mockuser2")
+        posts = AuthorPost.objects.filter(author=user.id)
+ 
+        self.client.login(username="mockuser2", password="mockpassword")
+
+        url = "/author/"+str(user.id)+"/posts"
+
+        response = self.client.get(url, HTTP_ACCEPT='text/html')
+        self.assertEqual(response.status_code, 200, 
+                        "Posts should exist, but response was not 200")
+        self.assertTemplateUsed(response, 'post/posts.html',
+                                "Wrong template(s) returned")
+    	self.assertEquals(len(response.context['posts']), 2)
+
+   def testRESTGetAllAuthorPosts(self):
+        """
+        Tests getting all the posts of an author that are visible by user
+        making the request. Sends a GET / POST request to /author/authorid/posts
+        """        
+        user = User.objects.get(username="mockuser2")
+        posts = AuthorPost.objects.filter(author=user.id)
+ 
+        self.client.login(username="mockuser2", password="mockpassword")
+
+        url = "/posts/"
+
+        response = self.client.get(url, HTTP_ACCEPT='text/html')
+        self.assertEqual(response.status_code, 200, 
+                        "Posts should exist, but response was not 200")
+        self.assertTemplateUsed(response, 'post/posts.html',
+                                "Wrong template(s) returned")
+        self.assertEquals(len(response.context['posts']), 2)
+
+    def testRESTGetUserVisiblePosts(self):
+        """
+        Tests retrieving all posts that are visible to the current user.
+        Sends a GET / POST request to /author/posts/
+        """
+        pass

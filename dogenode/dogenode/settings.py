@@ -41,6 +41,7 @@ INSTALLED_APPS = (
     'comments',
     'post',
     'categories',
+    'rest_framework',
 )
 
 MIDDLEWARE_CLASSES = (

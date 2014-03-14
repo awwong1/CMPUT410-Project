@@ -16,4 +16,6 @@ urlpatterns = patterns('',
     url(r'^posts/', include('post.urls')),
     url(r'^categories/', include('categories.urls')),
     url(r'^author/', include('author.author_urls')),
+    url(r'^api-auth/', include('rest_framework.urls', 
+        namespace='rest_framework'))
 )

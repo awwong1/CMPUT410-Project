@@ -6,76 +6,32 @@ from django.template import RequestContext
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 
+from rest_framework import status
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+
 from post.models import Post, PostVisibilityException, AuthorPost, PostCategory
 from categories.models import Category
 from author.models import Author
 from comments.models import Comment
 
 import markdown
+import json
 
-def posts(request):
+
+def getPost(request, post_id):
     """
-    Retrieves all posts of an author
-    """
-    context = RequestContext(request)
+    Returns a post and displays it in the web browser if the request 
+    HTTP_ACCEPT header was set to text/html. The currently authenticated
+    user must also have permissions to view the post, else it will not be 
+    shown.
 
-    if not request.user.is_authenticated():
-        if 'text/html' in request.META['HTTP_ACCEPT']:
-            return render(request, 'login/index.html', context)
-        elif 'application/json' in request.META['HTTP_ACCEPT']:
-            return HttpResponse(401)
-        else:
-            return HttpResponse(406)
-
-    author = Author.objects.get(user=request.user)
-    postIds = AuthorPost.objects.filter(author=author).values_list(
-                'post', flat=True)
-    posts = Post.objects.filter(id__in=postIds).order_by('pubDate')
-    comments = []
-    categories = []
-    visibilityExceptions = []
-
-    for post in posts:
-        categoryIds = PostCategory.objects.filter(post = post).values_list(
-                        'category', flat=True)
-        authorIds = PostVisibilityException.objects.filter(
-                        post=post).values_list('author', flat=True)
-
-        comments.append(Comment.objects.filter(post_ref=post))
-        categories.append(Category.objects.filter(id__in=categoryIds))
-        visibilityExceptions.append(Author.objects.filter(
-                                        id__in=authorIds))
-
-        # Convert Markdown into HTML for web browser 
-        # django.contrib.markup is deprecated in 1.6, so, workaround
-        if post.contentType == post.MARKDOWN:
-            post.content = markdown.markdown(post.content)
-
-    if 'text/html' in request.META['HTTP_ACCEPT']:
-        context["posts"] = zip(posts, comments, categories, 
-                               visibilityExceptions)
-        return render_to_response('post/posts.html', context)
-
-    elif 'application/json' in request.META['HTTP_ACCEPT']:
-        return makeJSONPost()
-    else:
-       response = HttpResponse(406)
- 
-   return response
-
-def convertPostsToJSON(post_contents, comments, categories, 
-                        visibilityExceptions):
-        posts = []
-        for post, comment, category, visExc in zip(post_contents, 
-                                                   comments,
-                                                   categories,
-                                                   visibilityExceptions):
-            pass
-    return None
-
-def post(request, post_id):
-    """
-    Returns a post and displays it in the web browser.
+    If the request HTTP_ACCEPT header was set to json, then the json 
+    representation of the post will be returned. This representation could
+    be accessed by http://service/posts/{post_id}, which would return a list
+    of posts containing the requested post. If the currently authenticated 
+    user does not have the permission to view the post, the list will be
+    empty.
     """    
     if request.user.is_authenticated():
         user = request.user
@@ -98,16 +54,94 @@ def post(request, post_id):
             # django.contrib.markup is deprecated in 1.6, so, workaround
             if post.contentType == post.MARKDOWN:
                 post.content = markdown.markdown(post.content)
-
-            context['posts'] = [(post, author, comments, categories, 
-                                 visibilityExceptions)]
-
-            return render_to_response('post/post.html', context)
+            
+            context['posts'] = [(post, author, comments, categories, visibilityExceptions)]
+            data = {"posts":[post],
+                    "comments":[comments],
+                    "categories":[categories],
+                    "author":author}
+            return chooseResponseType(request, context, 'post/post.html', data)
         else:
             return redirect('/posts/')
     else:
         return redirect('/login/')
 
+def getAllPublicPosts(request):
+    """
+    Retreives all public posts. Can be accessed via REST interface
+    by service/posts/
+    """
+    """
+    Returns the stream of an author (all posts author can view)
+    """
+    if request.user.is_authenticated():
+        context = RequestContext(request)
+        author = Author.objects.get(user=request.user)
+        rawposts = Post.objects.filter(visibility=Post.PUBLIC)
+        comments = []
+        authors = []
+        categories = []
+
+        for post in rawposts:
+            categoryIds = PostCategory.objects.filter(post=post).values_list(
+                            'category', flat=True)
+
+            authors.append(AuthorPost.objects.get(post=post).author)
+            comments.append(Comment.objects.filter(post_ref=post))
+            categories.append(Category.objects.filter(id__in=categoryIds))
+
+        # Stream payload
+        return HttpResponse(makeJSONPost({"posts":rawposts,
+                                          "comments":comments,
+                                          "categories":categories,
+                                          "author":author}),
+                            content_type="application/json",
+                            status=200)
+    else:
+        return HttpResponse(status=401)
+
+def chooseResponseType(request, context, url, data):
+    if 'text/html' in request.META['HTTP_ACCEPT']:
+        return render_to_response(url, context)
+
+    elif 'application/json' in request.META['HTTP_ACCEPT']:
+        response = HttpResponse(makeJSONPost(data),
+                                content_type="application/json",
+                                status=200)
+    else:
+        response = HttpResponse(status=406)
+        
+    return response
+
+def makeJSONPost(data):
+        posts = []
+        author = data["author"]
+        for post, comments, categories in zip(data["posts"], 
+                                              data["comments"],
+                                              data["categories"]):
+                                                   
+            #json_author = {"id": author.id,
+            #               "host":author.host,
+            #               "displayname":author.displayname,
+            #               "url":author.url}
+            json_post = {"title":post.title,
+                         #"source":post.source,
+                         "origin":post.origin,
+                         "description": post.description,
+                         "content-type":post.contentType,
+                         "content":post.content,
+                         #"author":json_author,
+                         "author":"doge",
+                         #"categories":["hi","oh"],
+                         #"comments":comments,
+                         "pubDate": str(post.pubDate),
+                         "guid":post.guid,
+                         "visibility":post.visibility}
+            posts.append(json_post)
+        return json.dumps({"posts":posts})
+
+
+@api_view(['POST', 'PUT'])
 @ensure_csrf_cookie
 def addPost(request):
     """
@@ -115,45 +149,47 @@ def addPost(request):
     """
     context = RequestContext(request)
    
-    if request.method == "POST":
-        title = request.POST.get("title", "")
-        description = request.POST.get("description", "")
-        content = request.POST.get("content", "")
-        visibility = request.POST.get("visibility", Post.PRIVATE)
-        visibilityExceptionsString = request.POST.get("visibilityExceptions",
-                                                      "")
-        categoriesString = request.POST.get("categories", "")
-        contentType = request.POST.get("contentType", Post.PLAIN)
-
+    title = request.DATA.get("title", "")
+    description = request.DATA.get("description", "")
+    content = request.DATA.get("content", "")
+    contentType = request.POST.get("contentType", Post.PLAIN) 
+    visibility = request.DATA.get("visibility", Post.PRIVATE)
+    visibilityExceptionsString = request.DATA.get("visibilityExceptions","")
+    exceptionUsernames = visibilityExceptionsString.split()
+    categoriesString = request.DATA.get("categories", "")
+    categoryNames = []
+    if "text/html" in request.META.get('HTTP_ACCEPT'): 
         categoryNames = categoriesString.split()
-        exceptionUsernames = visibilityExceptionsString.split()
+    else:
+        categoryNames = categoriesString    
+    author = Author.objects.get(user=request.user)
+    newPost = Post.objects.create(title=title, description=description,
+                                  content=content, visibility=visibility,
+                                  contentType=contentType)
+    newPost.origin = request.build_absolute_uri(newPost.get_absolute_url())
+    newPost.save()
 
-        author = Author.objects.get(user=request.user)
-        newPost = Post.objects.create(title=title, description=description,
-                                      content=content, visibility=visibility,
-                                      contentType=contentType)
-        newPost.origin = request.build_absolute_uri(newPost.get_absolute_url())
-        newPost.save()
+    AuthorPost.objects.create(post=newPost, author=author)
 
-        AuthorPost.objects.create(post=newPost, author=author)
-
-        # I use (abuse) get_or_create to curtail creating duplicates
-        for name in categoryNames:
-            categoryObject, _ = Category.objects.get_or_create(name=name)
-            PostCategory.objects.get_or_create(post=newPost,
-                                               category=categoryObject)
-        for name in exceptionUsernames:
-            try:
-                userObject = User.objects.get(username=name)
-                authorObject = Author.objects.get(user=userObject)
-                PostVisibilityException.objects.get_or_create(post=newPost,
-                    author=authorObject)
-            except DoesNotExist:
-                pass
+    # I use (abuse) get_or_create to curtail creating duplicates
+    for name in categoryNames:
+        categoryObject, _ = Category.objects.get_or_create(name=name)
+        PostCategory.objects.get_or_create(post=newPost,
+                                           category=categoryObject)
+    for name in exceptionUsernames:
+        try:
+            userObject = User.objects.get(username=name)
+            authorObject = Author.objects.get(user=userObject)
+            PostVisibilityException.objects.get_or_create(post=newPost,
+                author=authorObject)
+        except DoesNotExist:
+            pass
 
     return redirect(request.META['HTTP_REFERER'])
 
-def delete_post(request):
+
+
+def deletePost(request):
     """
     Deletes the Post based on the post id given in the request.
     Returns the user back to their posts page.
@@ -173,6 +209,6 @@ def delete_post(request):
                 post.delete();
             # else: send a message?
 
-        return redirect('/posts/')
+        return redirect('/author/'+str(user.id)+'/posts/')
     else:
         return redirect('/login/')

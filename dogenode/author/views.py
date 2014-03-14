@@ -7,6 +7,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 
 from author.models import Author, Relationship
+from post.views import makeJSONPost
 from post.models import Post, PostVisibilityException, AuthorPost, PostCategory
 from categories.models import Category
 from comments.models import Comment
@@ -93,7 +94,7 @@ def profile(request, username):
     else:
         return redirect('/login/')
 
-def edit_profile(request):
+def editProfile(request):
     """
     Renders html page to allow for editing of profile in web browser.
     GET: Renders the page, populating the necessary fields.
@@ -138,9 +139,66 @@ def edit_profile(request):
     else:
         return redirect('/login/')
 
+def getAuthorPosts(request, author_id):
+    """
+    Retrieves all posts made by the author specified and that are visible
+    to currently authenticated user
+
+    To get the json representation: http://service/author/author_id/posts
+    """
+    context = RequestContext(request)
+
+    if not request.user.is_authenticated():
+        if 'application/json' in request.META['HTTP_ACCEPT']:
+            return HttpResponse(status=401)
+        else:
+           return render(request, 'login/index.html', context)
+
+    viewer = Author.objects.get(user=request.user)
+    author = Author.objects.get(id=author_id)
+
+    postIds = AuthorPost.objects.filter(author=author).values_list(
+                'post', flat=True)
+    posts = Post.getViewablePosts(request.user, author)
+    comments = []
+    categories = []
+    visibilityExceptions = []
+
+    for post in posts:
+        categoryIds = PostCategory.objects.filter(post = post).values_list(
+                        'category', flat=True)
+        authorIds = PostVisibilityException.objects.filter(
+                        post=post).values_list('author', flat=True)
+
+        comments.append(Comment.objects.filter(post_ref=post))
+        categories.append(Category.objects.filter(id__in=categoryIds))
+        visibilityExceptions.append(Author.objects.filter(
+                                        id__in=authorIds))
+
+        # Convert Markdown into HTML for web browser 
+        # django.contrib.markup is deprecated in 1.6, so, workaround
+        if post.contentType == post.MARKDOWN:
+            post.content = markdown.markdown(post.content)
+
+    context["posts"] = zip(posts, comments, categories, visibilityExceptions)
+    data = {"posts":posts, "comments":comments, "categories":categories,
+            "visibilityExceptions":visibilityExceptions, "author":author}
+
+    if 'text/html' in request.META['HTTP_ACCEPT'] and viewer == author:
+        return render_to_response('post/posts.html', context)
+
+    elif 'application/json' in request.META['HTTP_ACCEPT']:
+        response = HttpResponse(makeJSONPost(data),
+                                content_type="application/json",
+                                status=200)
+    else:
+        response = HttpResponse(status=401)
+
+    return response
+
 def stream(request):
     """
-    GET: Returns the stream of an author (all posts by followers)
+    Returns the stream of an author (all posts author can view)
     """
     if request.user.is_authenticated():
         context = RequestContext(request)
@@ -178,14 +236,6 @@ def stream(request):
         return render_to_response('author/stream.html', context)
     else:
         return redirect('/login/')
-
-def posts(request):
-    """
-    GET: Retrieves all posts (of an author?)
-    """
-    context = RequestContext(request)
-    
-    return render(request, 'post/posts.html', context)
 
 def areFriends(request, username1, username2):
 

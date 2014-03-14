@@ -10,7 +10,6 @@ import json
 
 class PostTestCase(TestCase):
 
-    
     def setUp(self):
         """
         Creating 2 authors, 3 posts. author1 gets 1 post, author 2 gets 2 posts
@@ -47,8 +46,7 @@ class PostTestCase(TestCase):
         fields are correct.
         """
         post = Post.objects.filter(title="title1")[0]
-        self.assertIsNotNone(post,
-                            "Post does not exist")
+        self.assertIsNotNone(post, "Post does not exist")
         self.assertEquals(post.title, "title1", 
                             "Title does not match")
         self.assertEquals(post.content, "post1", 
@@ -112,13 +110,13 @@ class PostTestCase(TestCase):
 
         response = self.client.post(url, 
                                     {'title':'title6',
-                                      'description':'desc6',
-                                      'content':'content6',
-                                      'visibility':Post.PUBLIC,
-                                      'visibilityExceptions':'',
-                                      'categories':'',
-                                      'contentType': Post.PLAIN},
-                                       HTTP_REFERER='/author/stream.html')
+                                     'description':'desc6',
+                                     'content':'content6',
+                                     'visibility':Post.PUBLIC,
+                                     'visibilityExceptions':'',
+                                     'categories':'',
+                                     'contentType': Post.PLAIN},
+                                    HTTP_REFERER='/author/stream.html')
         self.assertEqual(response.status_code, 302, 
                         "Post creation was not successful, code:" + 
                          str(response.status_code))
@@ -136,7 +134,7 @@ class PostTestCase(TestCase):
         self.client.login(username="mockuser1", password="mockpassword")
         url = "/posts/" + str(post_id) + "/"
 
-        response = self.client.get(url)
+        response = self.client.get(url, HTTP_ACCEPT='text/html')
         self.assertEqual(response.status_code, 200, 
                         "Post should exist, but response was not 200")
         self.assertTemplateUsed(response, 'fragments/post_content.html',
@@ -183,27 +181,63 @@ class PostTestCase(TestCase):
 
         url = "/posts/999/"
         try:
-            response = self.client.get(url)
+            response = self.client.get(url, HTTP_ACCEPT='text/html')
             self.assertFalse(True, "This post should not exist")
         except Post.DoesNotExist as e:
             self.assertTrue(True)        
         
-
-    def testViewsGetAllAuthorPosts(self):
+    
+    def testRESTAddUpdatePost(self):
         """
-        Tests getting all the posts of an author using the posts function
-        in post/views.py
-        """        
-        user = User.objects.get(username="mockuser2")
-        posts = AuthorPost.objects.filter(author=user.id)
- 
-        self.client.login(username="mockuser2", password="mockpassword")
+        Test if you can add and update a post via PUT request with /post/postid
+        """
+        self.client.login(username="mockuser1", password="mockpassword")
 
-        url = "/posts/"
+        url = "/posts/add_post/"
 
-        response = self.client.get(url)
+        response = self.client.post(url, 
+                                    {'title':'title6',
+                                     'description':'desc6',
+                                     'content':'content6',
+                                     'visibility':Post.PUBLIC,
+                                     'visibilityExceptions':'',
+                                     'categories':'',
+                                     'contentType': Post.PLAIN},
+                                    HTTP_REFERER='/author/stream.html')
+        self.assertEqual(response.status_code, 302, 
+                        "Post creation was not successful, code:" + 
+                         str(response.status_code))
+        post = Post.objects.get(title="title6")
+        self.assertIsNotNone(post, "Post was not successfully created")
+        post.delete()
+
+    def testRESTGetPost(self):
+        """
+        Gets a single post via a GET and a POST request for /post/postid
+        Tests:
+        1. GET an existing post
+        2. POST an exisiting post
+        3. GET a non existing post
+        4. POST a non existing post
+        """
+        post = Post.objects.filter(title="title1")[0]
+        post_id = post.id
+        
+        self.client.login(username="mockuser1", password="mockpassword")
+        url = "/posts/" + str(post_id) + "/"
+
+        response = self.client.get(url, HTTP_ACCEPT='text/html')
         self.assertEqual(response.status_code, 200, 
-                        "Posts should exist, but response was not 200")
-        self.assertTemplateUsed(response, 'post/posts.html',
+                        "Post should exist, but response was not 200")
+        self.assertTemplateUsed(response, 'fragments/post_content.html',
                                 "Wrong template(s) returned")
-	self.assertEquals(len(response.context['posts']), 2)
+	self.assertIsNotNone(response.context['posts'][0])
+
+
+    def testRESTGetAllPublicPosts(self):
+        """
+        Tests retreiving all public posts on the server. Sends a GET / POST
+        request to /posts/
+        """
+        pass
+

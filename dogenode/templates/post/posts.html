@@ -21,17 +21,17 @@
         {% for post, comments, categories, visibilityExceptions in posts %}
           <tr>
             <td>
-              <a href="{% url 'post.views.post' post.id %}">
+              <a href="{% url 'post.views.getPost' post.id %}">
                 {{ post.title }}
               </a>
             </td>
             <td>
-              <a href="{% url 'post.views.post' post.id %}">
+              <a href="{% url 'post.views.getPost' post.id %}">
                 {{ post.description }}
               </a>
             </td>
             <td>
-              <a href="{% url 'post.views.post' post.id %}">
+              <a href="{% url 'post.views.getPost' post.id %}">
                 {% if post.contentType == post.HTML or post.contentType == post.MARKDOWN %} 
                   {% autoescape off %}
                     {{ post.content }}
@@ -53,7 +53,7 @@
             </td>
             <td>{{ post.pubDate }}</td>
             <td>
-              <form action="{% url 'post.views.delete_post' %}" method="POST">
+              <form action="{% url 'post.views.deletePost' %}" method="POST">
                 {% csrf_token %}
                 <input type="hidden" name="post_id" value="{{ post.id }}">
                 <input type="submit" class="danger" value="Delete Post">

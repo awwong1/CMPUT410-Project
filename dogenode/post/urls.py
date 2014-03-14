@@ -5,10 +5,10 @@ from post import views
 urlpatterns = patterns('',
 #    url(r'^author/(?P<author_id>\w+)/posts/$', views.posts),
 #    url(r'^author/(?P<author_id>\w+)/posts/(?P<post_id>\w+)/$', views.friends),
-     url(r'^$', views.posts),
-     url(r'^(?P<post_id>\d+)/$', views.post),
+     url(r'^$', views.getAllPublicPosts),
+     url(r'^(?P<post_id>\d+)/$', views.getPost),
      url(r'^add_post/$', views.addPost),
-     url(r'^delete_post/$', views.delete_post),
-#     url(r'^posts/(?P<author_id>\w)/$', views.posts),
+     url(r'^delete_post/$', views.deletePost),
+     url(r'^posts/$', views.getAllPublicPosts),
 
 )

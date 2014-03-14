@@ -51,7 +51,7 @@ class Post(models.Model):
 
     def get_absolute_url(self):
         from django.core.urlresolvers import reverse
-        return reverse('post.views.post', args=[str(self.id)])
+        return reverse('post.views.getPost', args=[str(self.id)])
 
     # TODO: Need to add admin logic.
     def isAllowedToViewPost(self, author):
