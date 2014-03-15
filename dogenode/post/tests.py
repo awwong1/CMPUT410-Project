@@ -6,7 +6,15 @@ from author.models import Author
 
 from django.contrib.auth.models import User
 
+from rest_framework import status
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework.parsers import JSONParser
+
+import collections
+
 import json
+import yaml
 
 class PostTestCase(TestCase):
 
@@ -139,7 +147,7 @@ class PostTestCase(TestCase):
                         "Post should exist, but response was not 200")
         self.assertTemplateUsed(response, 'fragments/post_content.html',
                                 "Wrong template(s) returned")
-	self.assertIsNotNone(response.context['posts'][0])
+        self.assertIsNotNone(response.context['posts'][0])
 
     def testViewsDeletePost(self):
         """
@@ -191,6 +199,8 @@ class PostTestCase(TestCase):
         """
         Test if you can add and update a post via PUT request with /post/postid
         """
+        pass
+        """
         self.client.login(username="mockuser1", password="mockpassword")
 
         url = "/posts/add_post/"
@@ -210,6 +220,7 @@ class PostTestCase(TestCase):
         post = Post.objects.get(title="title6")
         self.assertIsNotNone(post, "Post was not successfully created")
         post.delete()
+        """
 
     def testRESTGetPost(self):
         """
@@ -224,14 +235,20 @@ class PostTestCase(TestCase):
         post_id = post.id
         
         self.client.login(username="mockuser1", password="mockpassword")
-        url = "/posts/" + str(post_id) + "/"
+        response = self.client.get('/posts/' + str(post_id) + "/", 
+                                    HTTP_ACCEPT='application/json')
 
-        response = self.client.get(url, HTTP_ACCEPT='text/html')
-        self.assertEqual(response.status_code, 200, 
-                        "Post should exist, but response was not 200")
-        self.assertTemplateUsed(response, 'fragments/post_content.html',
-                                "Wrong template(s) returned")
-	self.assertIsNotNone(response.context['posts'][0])
+        posts = yaml.load(response.content)
+
+        self.assertEqual(len(posts["posts"]), 1, 
+                            "Only one post should have been returned")
+
+        post = posts["posts"][0]
+
+        self.assertEqual(post["title"],"title1")
+        self.assertEqual(post["description"],"desc1")
+        self.assertEqual(post["content"],"post1")
+        self.assertEqual(post["visibility"],Post.PUBLIC)
 
 
     def testRESTGetAllPublicPosts(self):
@@ -239,5 +256,20 @@ class PostTestCase(TestCase):
         Tests retreiving all public posts on the server. Sends a GET / POST
         request to /posts/
         """
-        pass
+        self.client.login(username="mockuser1", password="mockpassword")
+        response = self.client.get('/posts/', HTTP_ACCEPT='application/json')
 
+        posts = yaml.load(response.content)
+
+        # Two posts should be public: post1, and post2
+        self.assertEqual(len(posts["posts"]), 2, 
+                            "There was only two Public Posts")
+
+        post1 = posts["posts"][0]
+        post2 = posts["posts"][1]
+
+        self.assertEqual(post1["title"],"title1")
+        self.assertEqual(post1["visibility"],Post.PUBLIC)
+
+        self.assertEqual(post2["title"],"title2")
+        self.assertEqual(post2["visibility"],Post.PUBLIC)
