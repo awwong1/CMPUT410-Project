@@ -9,7 +9,6 @@ from django.contrib.auth.models import User
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from rest_framework.parsers import JSONParser
 
 import collections
 
@@ -23,12 +22,12 @@ class PostTestCase(TestCase):
         Creating 2 authors, 3 posts. author1 gets 1 post, author 2 gets 2 posts
         Sets up base url for REST tests
         """
-        User.objects.create_user(username="mockuser1", password="mockpassword")
-        user1 = User.objects.get(username="mockuser1")
+        User.objects.create_user(username="utestuser1", password="testpassword")
+        user1 = User.objects.get(username="utestuser1")
         author1, _ = Author.objects.get_or_create(user=user1)
 
-        User.objects.create_user(username="mockuser2", password="mockpassword")
-        user2 = User.objects.get(username="mockuser2")
+        User.objects.create_user(username="utestuser2", password="testpassword")
+        user2 = User.objects.get(username="utestuser2")
         author2, _ = Author.objects.get_or_create(user=user2)
 
         post1 = Post.objects.create(title="title1",
@@ -78,12 +77,12 @@ class PostTestCase(TestCase):
         """
         Tests if you can get all of an author's posts
         """
-        user = User.objects.get(username="mockuser2")
+        user = User.objects.get(username="utestuser2")
         author = Author.objects.get(user=user)
         posts = AuthorPost.objects.filter(author=author)
 
         self.assertEquals(len(posts), 2, 
-                            "mockuser2 had 2 posts, found " + str(len(posts)))
+                            "utestuser2 had 2 posts, found " + str(len(posts)))
     
     def testGetNonExistantPost(self):
         """
@@ -112,7 +111,7 @@ class PostTestCase(TestCase):
         """
         Test if you can create a post via add_post in views
         """
-        self.client.login(username="mockuser1", password="mockpassword")
+        self.client.login(username="utestuser1", password="testpassword")
 
         url = "/posts/add_post/"
 
@@ -139,7 +138,7 @@ class PostTestCase(TestCase):
         post = Post.objects.filter(title="title1")[0]
         post_id = post.id
         
-        self.client.login(username="mockuser1", password="mockpassword")
+        self.client.login(username="utestuser1", password="testpassword")
         url = "/posts/" + str(post_id) + "/"
 
         response = self.client.get(url, HTTP_ACCEPT='text/html')
@@ -158,7 +157,7 @@ class PostTestCase(TestCase):
                                     content="post4",
                                     visibility=Post.PUBLIC) 
         
-        user = User.objects.get(username="mockuser1")
+        user = User.objects.get(username="utestuser1")
         author = Author.objects.get(user=user)
         AuthorPost.objects.create(post=post4, author=author)
 
@@ -167,7 +166,7 @@ class PostTestCase(TestCase):
 
         post_id = post.id
 
-        self.client.login(username="mockuser1", password="mockpassword")
+        self.client.login(username="utestuser1", password="testpassword")
         url = "/posts/delete_post/"
 
         response = self.client.post(url, {'post_id': post_id})
@@ -185,7 +184,7 @@ class PostTestCase(TestCase):
         if error DoesNotExist pops up, it's coming from the post/views.py
         file, and should be what is generated.
         """
-        self.client.login(username="mockuser1", password="mockpassword")
+        self.client.login(username="utestuser1", password="testpassword")
 
         url = "/posts/999/"
         try:
@@ -200,7 +199,7 @@ class PostTestCase(TestCase):
         Test if you can add and update a post via PUT request with /post/postid
         """
         
-        self.client.login(username="mockuser1", password="mockpassword")
+        self.client.login(username="utestuser1", password="testpassword")
 
         url = "/posts/999/"
 
@@ -252,7 +251,7 @@ class PostTestCase(TestCase):
         post = Post.objects.filter(title="title1")[0]
         post_id = post.id
         
-        self.client.login(username="mockuser1", password="mockpassword")
+        self.client.login(username="utestuser1", password="testpassword")
         response = self.client.get('/posts/' + str(post_id) + "/", 
                                     HTTP_ACCEPT='application/json')
 
@@ -274,7 +273,7 @@ class PostTestCase(TestCase):
         Tests retreiving all public posts on the server. Sends a GET / POST
         request to /posts/
         """
-        self.client.login(username="mockuser1", password="mockpassword")
+        self.client.login(username="utestuser1", password="testpassword")
         response = self.client.get('/posts/', HTTP_ACCEPT='application/json')
 
         posts = yaml.load(response.content)
