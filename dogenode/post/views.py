@@ -155,34 +155,36 @@ def addPost(context, request, post_id):
     title = request.DATA.get("title", "")
     description = request.DATA.get("description", "")
     content = request.DATA.get("content", "")
-    contentType = request.POST.get("contentType", Post.PLAIN) 
+    contentType = request.DATA.get("content-type", Post.PLAIN) 
     visibility = request.DATA.get("visibility", Post.PRIVATE)
     categoryNames = request.DATA.get("categories", "")
     #source = request.DATA.get("source", "")
     origin = request.DATA.get("origin", "")
     author = Author.objects.get(user=request.user)
 
-    post = Post.objects.create(title=title,
-                               description=description,
-                               content=content,
-                               contentType=contentType,
-                               visibility=visibility)
-    post.id = int(post_id);
-    post.save()
-    print post
-    AuthorPost.objects.create(post=post, author=author)
-    post.title = title
-    post.content = content
-    post.contentType = contentType
-    post.description = description
-    post.visibility = visibility
+    posts = Post.objects.filter(id=int(post_id))
+    post = None
+    if len(posts) == 0:
+        post = Post.objects.create(title=title,
+                                   description=description,
+                                   content=content,
+                                   contentType=contentType,
+                                   visibility=visibility)
+        post.id = int(post_id)
+        AuthorPost.objects.create(post=post, author=author)
+    else:
+        post = Post.objects.get(id=int(post_id))
+        post.title = title
+        post.description = description
+        post.content=content
+        
+        post.contentType=contentType
+        post.visibility=visibility
 
-    # Adding post origins   
     if origin == "":
         post.origin = request.build_absolute_uri(post.get_absolute_url())
     
     post.save()
-    print "post saved"
 
      # I use (abuse) get_or_create to curtail creating duplicates
     for name in categoryNames:

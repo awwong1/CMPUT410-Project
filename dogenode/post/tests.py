@@ -209,13 +209,35 @@ class PostTestCase(TestCase):
                                      'description':'desc7',
                                      'content':'content7',
                                      'visibility':Post.PUBLIC,
-                                     'categories': "hi",
-                                     'contentType': Post.PLAIN}),
+                                     'categories': ["dogs","cats"],
+                                     'content-type': Post.PLAIN}),
                                    HTTP_ACCEPT="application/json",
                                    content_type="application/json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         post = Post.objects.get(id=999)
         self.assertIsNotNone(post, "Post was not successfully created")
+
+        # now testing updating via put
+       
+        response = self.client.put(url, json.dumps( 
+                                    {'title':'title7again',
+                                     'description':'desc7again',
+                                     'content':'content<br/>7again',
+                                     'visibility':Post.PRIVATE,
+                                     'content-type':Post.HTML,
+                                     'categories': ["ant","bear"]
+                                    }),
+                                   HTTP_ACCEPT="application/json",
+                                   content_type="application/json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        post = Post.objects.get(id=999)
+        self.assertIsNotNone(post, "Post was not successfully created")
+        self.assertEquals(post.title, "title7again")
+        self.assertEquals(post.content, "content<br/>7again")
+        self.assertEquals(post.description, "desc7again")
+        self.assertEquals(post.visibility, Post.PRIVATE)
+        self.assertEquals(post.contentType.encode('utf8'), Post.HTML)
+        # TODO: check categories ?
         post.delete()
 
     def testRESTGetPost(self):
