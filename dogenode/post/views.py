@@ -74,31 +74,28 @@ def getAllPublicPosts(request):
     """
     Returns the stream of an author (all posts author can view)
     """
-    if request.user.is_authenticated():
-        context = RequestContext(request)
-        author = Author.objects.get(user=request.user)
-        rawposts = Post.objects.filter(visibility=Post.PUBLIC)
-        comments = []
-        authors = []
-        categories = []
+    context = RequestContext(request)
+    author = Author.objects.get(user=request.user)
+    rawposts = Post.objects.filter(visibility=Post.PUBLIC)
+    comments = []
+    authors = []
+    categories = []
 
-        for post in rawposts:
-            categoryIds = PostCategory.objects.filter(post=post).values_list(
-                            'category', flat=True)
+    for post in rawposts:
+        categoryIds = PostCategory.objects.filter(post=post).values_list(
+                        'category', flat=True)
 
-            authors.append(AuthorPost.objects.get(post=post).author)
-            comments.append(Comment.objects.filter(post_ref=post))
-            categories.append(Category.objects.filter(id__in=categoryIds))
+        authors.append(AuthorPost.objects.get(post=post).author)
+        comments.append(Comment.objects.filter(post_ref=post))
+        categories.append(Category.objects.filter(id__in=categoryIds))
 
-        # Stream payload
-        return HttpResponse(makeJSONPost({"posts":rawposts,
-                                          "comments":comments,
-                                          "categories":categories,
-                                          "author":author}),
-                            content_type="application/json",
-                            status=status.HTTP_200_OK)
-    else:
-        return HttpResponse(status=status.HTTP_401_UNAUTHORIZED)
+    # Stream payload
+    return HttpResponse(makeJSONPost({"posts":rawposts,
+                                      "comments":comments,
+                                      "categories":categories,
+                                      "author":author}),
+                        content_type="application/json",
+                        status=status.HTTP_200_OK)
 
 def chooseResponseType(request, context, url, data):
     if 'text/html' in request.META['HTTP_ACCEPT']:

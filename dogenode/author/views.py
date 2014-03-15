@@ -159,7 +159,7 @@ def getAuthorPosts(request, author_id):
 
     postIds = AuthorPost.objects.filter(author=author).values_list(
                 'post', flat=True)
-    posts = Post.getViewablePosts(request.user, author)
+    posts = Post.getViewablePosts(viewer, author)
     comments = []
     categories = []
     visibilityExceptions = []

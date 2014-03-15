@@ -271,9 +271,10 @@ class AuthorRelationshipsTestCase(TestCase):
         posts should be retrieved.
         """        
         user1 = User.objects.get(username="utestuser1")
-        self.client.login(username="utestuser1", password="mockpassword")
+        author1 = Author.objects.get(user=user1)
+        self.client.login(username="utestuser1", password="testpassword")
 
-        url = "/author/"+str(user1.id)+"/posts/"
+        url = "/author/"+str(author1.id)+"/posts/"
 
         response = self.client.get(url, HTTP_ACCEPT='text/html')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -291,9 +292,9 @@ class AuthorRelationshipsTestCase(TestCase):
         user1 = User.objects.get(username="utestuser1")
         author1 = Author.objects.get(user=user1)
         
-        self.client.login(username="mockuser2", password="mockpassword")
+        self.client.login(username="utestuser1", password="testpassword")
 
-        url = "/author/"+str(user1.id)+"/posts/"
+        url = "/author/"+str(author1.id)+"/posts/"
 
         response = self.client.get(url, HTTP_ACCEPT='application/json')
         
@@ -301,11 +302,11 @@ class AuthorRelationshipsTestCase(TestCase):
         posts = yaml.load(response.content)
 
         self.assertEqual(len(posts['posts']), 2)
-        post1 = posts['posts'][0]
-        post2 = posts['posts'][1]
-
-        self.assertEquals(post1.title, "title1")
-        self.assertEquals(post2.title, "title2")
+        
+        for post in posts['posts']:
+            # self.assertEquals(post["author"][])  TODO: FIX ONCE AUTHOR MODEL DONE
+            self.assertIn(post["title"], "title1 title2")
+      
 
     def testRESTStream(self):
         """
