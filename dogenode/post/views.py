@@ -208,7 +208,7 @@ def addFormPost(request):
         visibilityExceptionsString = request.POST.get("visibilityExceptions",
                                                       "")
         categoriesString = request.POST.get("categories", "")
-        contentType = request.POST.get("contentType", Post.PLAIN)
+        contentType = request.POST.get("content-type", Post.PLAIN)
 
         categoryNames = categoriesString.split()
         exceptionUsernames = visibilityExceptionsString.split()
