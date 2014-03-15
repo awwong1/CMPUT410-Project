@@ -5,6 +5,9 @@ from author.models import Author, Relationship
 from django.contrib.auth.models import User
 
 from rest_framework import status
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+
 import json
 import yaml
 
@@ -230,14 +233,14 @@ class AuthorRelationshipsTestCase(TestCase):
         author1 = Author.objects.get(user=user1)
         
         url = "/author/stream/"
-        response = self.client.get(url)
+        response = self.client.get(url, HTTP_ACCEPT="text/html")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEquals(len(response.context['posts']), 4)	
         self.assertTemplateUsed(response, "author/stream.html")
 
+        titles = ["title1", "title2", "title6", "title8"]
         for post in response.context['posts']:
-            self.assertIn(post.title, "title1 title2 title6 title8")
-        
+            self.assertIn(str(post[0].title), titles)
 
     def testSearch(self):
         """
@@ -303,10 +306,11 @@ class AuthorRelationshipsTestCase(TestCase):
         posts = yaml.load(response.content)
 
         self.assertEqual(len(posts['posts']), 2)
-        
+       
+        titles = ["title1", "title2"] 
         for post in posts['posts']:
             # self.assertEquals(post["author"][])  TODO: FIX ONCE AUTHOR MODEL DONE
-            self.assertIn(post["title"], "title1 title2")
+            self.assertIn(post["title"], titles)
       
     def testRESTStream(self):
         """
@@ -320,8 +324,11 @@ class AuthorRelationshipsTestCase(TestCase):
         author1 = Author.objects.get(user=user1)
         
         url = "/author/stream/"
-        response = self.client.get(url)
+        response = self.client.get(url, HTTP_ACCEPT="application/json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEquals(len(response.context['posts']), 4)	
-        self.assertTemplateUsed(response, "author/stream.html")
-        pass
+        posts = yaml.load(response.content)
+        self.assertEquals(len(posts["posts"]), 4)	
+
+        titles = ["title1", "title2", "title6", "title8"]
+        for post in posts["posts"]:
+            self.assertIn(post["title"], titles)

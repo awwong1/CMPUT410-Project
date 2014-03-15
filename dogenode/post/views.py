@@ -59,7 +59,7 @@ def getPost(request, post_id):
             data = {"posts":[post],
                     "comments":[comments],
                     "categories":[categories],
-                    "author":author}
+                    "authors":[author]}
             return chooseResponseType(request, context, 'post/post.html', data)
         else:
             return redirect('/posts/')
@@ -93,7 +93,7 @@ def getAllPublicPosts(request):
     return HttpResponse(makeJSONPost({"posts":rawposts,
                                       "comments":comments,
                                       "categories":categories,
-                                      "author":author}),
+                                      "authors":authors}),
                         content_type="application/json",
                         status=status.HTTP_200_OK)
 
@@ -112,10 +112,10 @@ def chooseResponseType(request, context, url, data):
 
 def makeJSONPost(data):
         posts = []
-        author = data["author"]
-        for post, comments, categories in zip(data["posts"], 
+        for post, comments, categories, author in zip(data["posts"], 
                                               data["comments"],
-                                              data["categories"]):
+                                              data["categories"],
+                                              data["authors"]):
                                                    
             #json_author = {"id": author.id,
             #               "host":author.host,

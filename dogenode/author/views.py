@@ -6,6 +6,10 @@ from django.db.models import Q
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
+
 from author.models import Author, Relationship
 from post.views import makeJSONPost
 from post.models import Post, PostVisibilityException, AuthorPost, PostCategory
@@ -162,9 +166,11 @@ def getAuthorPosts(request, author_id):
     posts = Post.getViewablePosts(viewer, author)
     comments = []
     categories = []
+    authors = []   #  for the sake of making makeJSONPost work
     visibilityExceptions = []
 
     for post in posts:
+        authors.append(author)
         categoryIds = PostCategory.objects.filter(post = post).values_list(
                         'category', flat=True)
         authorIds = PostVisibilityException.objects.filter(
@@ -181,8 +187,10 @@ def getAuthorPosts(request, author_id):
             post.content = markdown.markdown(post.content)
 
     context["posts"] = zip(posts, comments, categories, visibilityExceptions)
-    data = {"posts":posts, "comments":comments, "categories":categories,
-            "visibilityExceptions":visibilityExceptions, "author":author}
+    data = {"posts":posts, 
+            "comments":comments, 
+            "categories":categories,
+            "authors": authors}
 
     if 'text/html' in request.META['HTTP_ACCEPT'] and viewer == author:
         return render_to_response('post/posts.html', context)
@@ -190,15 +198,16 @@ def getAuthorPosts(request, author_id):
     elif 'application/json' in request.META['HTTP_ACCEPT']:
         response = HttpResponse(makeJSONPost(data),
                                 content_type="application/json",
-                                status=200)
+                                status=status.HTTP_200_OK)
     else:
-        response = HttpResponse(status=401)
+        response = HttpResponse(status=status.HTTP_401_UNAUTHORIZED)
 
     return response
 
 def stream(request):
     """
     Returns the stream of an author (all posts author can view)
+    If calling the function restfully, call by sending a GET request to /author/posts 
     """
     if request.user.is_authenticated():
         context = RequestContext(request)
@@ -233,9 +242,24 @@ def stream(request):
         context['visibilities'] = Post.VISIBILITY_CHOICES
         context['contentTypes'] = Post.CONTENT_TYPE_CHOICES
 
-        return render_to_response('author/stream.html', context)
+        data = {"posts":rawposts, 
+                "comments":comments, 
+                "categories":categories,
+                "authors":authors}
+
+        if 'text/html' in request.META['HTTP_ACCEPT']:
+            return render_to_response('author/stream.html', context)
+
+        elif 'application/json' in request.META['HTTP_ACCEPT']:
+            return  HttpResponse(makeJSONPost(data),
+                                content_type="application/json",
+                                status=status.HTTP_200_OK)
     else:
-        return redirect('/login/')
+        if 'text/html' in request.META['HTTP_ACCEPT']:
+            return redirect('/login/')
+
+        elif 'application/json' in request.META['HTTP_ACCEPT']:
+            return HttpResponse(status=status.HTTP_401_UNAUTHORIZED)
 
 def areFriends(request, username1, username2):
 
