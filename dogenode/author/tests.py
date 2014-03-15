@@ -223,9 +223,7 @@ class AuthorRelationshipsTestCase(TestCase):
         """
         Tests retrieving the stream of an author
 
-        TODO xxx: update test once author model has been refactored,
-        might want to test to make sure posts that shouldn't be 
-        visible aren't...
+        utestuser1 should be able to see post 1, 2, 6, and 8
         """
         self.client.login(username="utestuser1", password="testpassword")
         user1 = User.objects.get(username="utestuser1")
@@ -236,6 +234,9 @@ class AuthorRelationshipsTestCase(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEquals(len(response.context['posts']), 4)	
         self.assertTemplateUsed(response, "author/stream.html")
+
+        for post in response.context['posts']:
+            self.assertIn(post.title, "title1 title2 title6 title8")
         
 
     def testSearch(self):
@@ -307,11 +308,20 @@ class AuthorRelationshipsTestCase(TestCase):
             # self.assertEquals(post["author"][])  TODO: FIX ONCE AUTHOR MODEL DONE
             self.assertIn(post["title"], "title1 title2")
       
-
     def testRESTStream(self):
         """
         Tests retrieving all posts that are visible to the current user.
         Sends a GET request to /author/posts/
         utestuser1 should be able to see post 1, 2, 6, and 8
         """
+        
+        self.client.login(username="utestuser1", password="testpassword")
+        user1 = User.objects.get(username="utestuser1")
+        author1 = Author.objects.get(user=user1)
+        
+        url = "/author/stream/"
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEquals(len(response.context['posts']), 4)	
+        self.assertTemplateUsed(response, "author/stream.html")
         pass
