@@ -125,48 +125,53 @@ class AuthorRelationshipsTestCase(TestCase):
     # TODO: I'm not sure the posts are sending data using JSON
     def testRESTfriends(self):
 
+        userid1 = User.objects.get(username="utestuser1").id
+        userid2 = User.objects.get(username="utestuser2").id
+        userid3 = User.objects.get(username="utestuser3").id
+        userid4 = User.objects.get(username="utestuser4").id
+
         # 2 friends
         response1 = self.client.post('/author/friends/utestuser3',
                      data={'query':"friends",
-                           'author':"utestuser3",
-                           'authors': ["utestuser1", "utestuser2",
-                                       "utestuser3", "utestuser4"]})
+                           'author':userid3,
+                           'authors': [userid1, userid2,
+                                       userid3, userid4]})
 
         # 1 friend
         response2 = self.client.post('/author/friends/utestuser3',
                      data={'query':"friends",
-                           'author':"utestuser3",
-                           'authors': ["utestuser1", "utestuser2",
-                                       "utestuser3"]})
+                           'author':userid3,
+                           'authors': [userid1, userid2,
+                                       userid3]})
 
         # no friends
         response3 = self.client.post('/author/friends/utestuser3',
                      data={'query':"friends",
-                           'author':"utestuser3",
-                           'authors': ["utestuser1"]})
+                           'author':userid3,
+                           'authors': [userid1]})
 
         # user doesn't exist
-        response4 = self.client.post('/author/friends/unosuchuser',
+        response4 = self.client.post('/author/friends/0',
                      data={'query':"friends",
-                           'author':"unosuchuser",
-                           'authors': ["utestuser1", "utestuser2",
-                                       "utestuser3", "utestuser4"]})
+                           'author':0,
+                           'authors': [userid1, userid2,
+                                       userid3, userid4]})
 
         self.assertItemsEqual(json.loads(response1.content),
                               {"query":"friends",
-                               "author":"utestuser3",
-                               "friends":["utestuser2", "utestuser4"]})
+                               "author":userid3,
+                               "friends":[userid2, userid4]})
         self.assertItemsEqual(json.loads(response2.content),
                               {"query":"friends",
-                               "author":"utestuser3",
-                               "friends":["utestuser2"]})
+                               "author":userid3,
+                               "friends":[userid2]})
         self.assertItemsEqual(json.loads(response3.content),
                               {"query":"friends",
-                               "author":"utestuser3",
+                               "author":userid3,
                                "friends":[]})
         self.assertItemsEqual(json.loads(response4.content),
                               {"query":"friends",
-                               "author":"unosuchuser",
+                               "author":0,
                                "friends":[]})
 
     def testViewsGetProfile(self):
