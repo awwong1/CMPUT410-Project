@@ -49,6 +49,32 @@ class RESTfulTestCase(TestCase):
                                            author2=author4,
                                            relationship=True)
 
+    def testRESTareFriends(self):
+
+        userid1 = User.objects.get(username="utestuser1").id
+        userid2 = User.objects.get(username="utestuser2").id
+        userid3 = User.objects.get(username="utestuser3").id
+
+        response1 = self.client.post(
+                        '/api/friends/%s/%s' % (userid1, userid2),
+                        content_type="application/json")
+        response2 = self.client.post(
+                        '/api/friends/%s/%s' % (userid2, userid1),
+                        content_type="application/json")
+        response3 = self.client.post(
+                        '/api/friends/%s/%s' % (userid2, userid3),
+                        content_type="application/json")
+
+        self.assertItemsEqual(json.loads(response1.content),
+                              {"query":"friends",
+                               "friends":"NO"})
+        self.assertItemsEqual(json.loads(response2.content),
+                              {"query":"friends",
+                               "friends":"NO"})
+        self.assertItemsEqual(json.loads(response3.content),
+                              {"query":"friends",
+                               "friends":[userid2, userid3]})
+
     def testRESTrelationships(self):
 
         user5 = User.objects.get(username="utestuser5")
