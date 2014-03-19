@@ -102,7 +102,6 @@ class RESTfulTestCase(TestCase):
                       {"status":"success",
                        "message":"You are now friends with %s" % user5.id})
 
-    # TODO: I'm not sure the posts are sending data using JSON
     def testRESTfriends(self):
 
         userid1 = User.objects.get(username="utestuser1").id
@@ -112,30 +111,34 @@ class RESTfulTestCase(TestCase):
 
         # 2 friends
         response1 = self.client.post('/api/friends/utestuser3',
-                     data={'query':"friends",
-                           'author':userid3,
-                           'authors': [userid1, userid2,
-                                       userid3, userid4]})
+                     content_type="application/json",
+                     data=json.dumps({'query':"friends",
+                                      'author':userid3,
+                                      'authors': [userid1, userid2,
+                                                  userid3, userid4]}))
 
         # 1 friend
         response2 = self.client.post('/api/friends/utestuser3',
-                     data={'query':"friends",
-                           'author':userid3,
-                           'authors': [userid1, userid2,
-                                       userid3]})
+                     content_type="application/json",
+                     data=json.dumps({'query':"friends",
+                                      'author':userid3,
+                                      'authors': [userid1, userid2,
+                                                  userid3]}))
 
         # no friends
         response3 = self.client.post('/api/friends/utestuser3',
-                     data={'query':"friends",
-                           'author':userid3,
-                           'authors': [userid1]})
+                     content_type="application/json",
+                     data=json.dumps({'query':"friends",
+                                      'author':userid3,
+                                      'authors': [userid1]}))
 
         # user doesn't exist
         response4 = self.client.post('/api/friends/0',
-                     data={'query':"friends",
-                           'author':0,
-                           'authors': [userid1, userid2,
-                                       userid3, userid4]})
+                     content_type="application/json",
+                     data=json.dumps({'query':"friends",
+                                      'author':0,
+                                      'authors': [userid1, userid2,
+                                                  userid3, userid4]}))
 
         self.assertItemsEqual(json.loads(response1.content),
                               {"query":"friends",

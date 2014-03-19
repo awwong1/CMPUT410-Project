@@ -12,30 +12,39 @@ import json
 
 def areFriends(request, userid1, userid2):
 
-    user1 = User.objects.filter(id=userid1)
-    user2 = User.objects.filter(id=userid2)
+    response = {"query":"friends",
+                "friends":"NO"}
 
-    if len(user1) > 0 and len(user2) > 0:
+    if request.method == 'POST':
 
-        author1, _ = Author.objects.get_or_create(user=user1[0])
-        author2, _ = Author.objects.get_or_create(user=user2[0])
+        user1 = User.objects.filter(id=userid1)
+        user2 = User.objects.filter(id=userid2)
 
-        if author2 in author1.getFriends():
-            return HttpResponse('{"query":"friends",'
-                    '"friends":[%s, %s]}' % (userid1, userid2))
+        if len(user1) > 0 and len(user2) > 0:
 
-    return HttpResponse('{"query":"friends",'
-            '"friends":"NO"}')
+            author1, _ = Author.objects.get_or_create(user=user1[0])
+            author2, _ = Author.objects.get_or_create(user=user2[0])
+
+            if author2 in author1.getFriends():
+                response["friends"] = [userid1, userid2]
+
+    return HttpResponse(json.dumps(response),
+                        content_type="application/json")
 
 # The POST request is sent to a url which includes the user ID, but the user
 # ID is also sent in the POST request body.
 # Right now I am using the user ID sent in the request body
 def getFriendsFromList(request, userid):
 
-    if request.method == 'POST':
-        #data = json.loads(request.raw_post_data)
+    response = {"query":"friends",
+                "author":userid,
+                "friends":[]}
 
-        userid = request.POST['author']
+    if request.method == 'POST':
+
+        jsonData = json.loads(request.body)
+
+        userid = jsonData['author']
         user = User.objects.filter(id=userid)
 
         if len(user) > 0:
@@ -44,17 +53,13 @@ def getFriendsFromList(request, userid):
 
             friendUserids = [a.user.id for a in author.getFriends()]
             
-            friends = (set(friendUserids) &
-                       set(request.POST.getlist("authors")))
+            friends = list(set(friendUserids) & set(jsonData["authors"]))
+            
+            response["author"] = userid
+            response["friends"] = friends
 
-            return HttpResponse('{"query":"friends",'
-                                '"author":"%s",'
-                                '"friends":"%s"}' % (userid, friends))
-
-    # Either this request wasn't a POST or the POSTed userid was not found
-    return HttpResponse('{"query":"friends",'
-                        '"author":"%s",'
-                        '"friends":"[]"}' % userid)
+    return HttpResponse(json.dumps(response),
+                        content_type="application/json")
 
 def sendFriendRequest(request):
 
