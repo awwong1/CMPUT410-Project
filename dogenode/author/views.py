@@ -432,3 +432,59 @@ def updateRelationship(request, username):
         return HttpResponse(status)
 
     return HttpResponse("success!")
+
+def sendFriendRequest(request):
+
+    response = {"status":"failure", "message":"Internal failure"}
+
+    if request.method == 'POST':
+
+        jsonData = json.loads(request.body)
+
+        userid1 = jsonData["author"]["id"]
+        userid2 = jsonData["friend"]["author"]["id"]
+
+        user1 = User.objects.filter(id=userid1)
+        user2 = User.objects.filter(id=userid2)
+
+        if len(user1) > 0 and len(user2) > 0:
+
+            user1 = user1[0]
+            user2 = user2[0]
+
+            author1, _ = Author.objects.get_or_create(user=user1)
+            author2, _ = Author.objects.get_or_create(user=user2)
+            
+            relationship = Relationship.objects.filter(
+                                ((Q(author1=author1) & Q(author2=author2))
+                                |(Q(author2=author1) & Q(author1=author2))))
+
+            if len(relationship) > 0:
+
+                relationship = relationship[0]
+
+                # author1 already follows author2, no change
+                if relationship.author1 == author1:
+                    response["status"] = "success"
+                    response["message"] = ("Already following %s, no change" %
+                                            user2.username)
+                # author2 follows author1, so now make them friends
+                else:
+                    relationship.relationship = True
+                    relationship.save()
+                    response["status"] = "success"
+                    response["message"] = ("You are now friends with %s" %
+                                            user2.username)
+            else:
+                # author1 will follow author2
+                _, _ = Relationship.objects.get_or_create(
+                                                   author1=author1,
+                                                   author2=author2,
+                                                   relationship=False)
+                response["status"] = "success"
+                response["message"] = ("You are now following %s" %
+                                            user2.username)
+
+    return HttpResponse(json.dumps(response),
+                        content_type="application/json")
+        
