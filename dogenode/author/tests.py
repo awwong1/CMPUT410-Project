@@ -25,15 +25,12 @@ class AuthorRelationshipsTestCase(TestCase):
                                          password="password")
         user5 = User.objects.create_user(username="utestuser5",
                                          password="testpassword")
-        user6 = User.objects.create_user(username="utestuser6",
-                                         password="testpassword")
 
         author1, _ = Author.objects.get_or_create(user=user1)
         author2, _ = Author.objects.get_or_create(user=user2)
         author3, _ = Author.objects.get_or_create(user=user3)
         author4, _ = Author.objects.get_or_create(user=user4)
         author5, _ = Author.objects.get_or_create(user=user5)
-        author6, _ = Author.objects.get_or_create(user=user6)
 
         # author1 follows author2
         Relationship.objects.get_or_create(author1=author1,
@@ -129,110 +126,6 @@ class AuthorRelationshipsTestCase(TestCase):
         self.assertFalse(author1.isFriendOfAFriend(author2))
         self.assertFalse(author2.isFriendOfAFriend(author1))
 
-    def testRESTrelationships(self):
-
-        user5 = User.objects.get(username="utestuser5")
-        user6 = User.objects.get(username="utestuser6")
-
-        # utestuser5 sends friend request to utestuser6
-        friendRequestData = {
-                "query":"friendrequest",
-                "author":{
-                    "id": user5.id,
-                    "host":"http://127.0.0.1:5454/",
-                    "displayname":"utestuser1"
-                },
-                "friend":{
-                    "author":{
-                        "id": user6.id,
-                        "host":"http://127.0.0.1:5454/",
-                        "displayname":"utestuser2",
-                        "url":"http://127.0.0.1:5454/author/utestuser2"
-                    }
-                }
-        }
-
-        response = self.client.post('/author/friends/friendrequest',
-                                     content_type="application/json",
-                                     data=json.dumps(friendRequestData))
-
-        self.assertItemsEqual(json.loads(response.content),
-                          {"status":"success",
-                           "message":"You are now following %s" % user6.id})
-
-        # test the same thing, there should be no change
-        response = self.client.post('/author/friends/friendrequest',
-                                     content_type="application/json",
-                                     data=json.dumps(friendRequestData))
-
-        self.assertItemsEqual(json.loads(response.content),
-                          {"status":"success",
-                           "message":
-                               "Already following %s, no change" % user6.id})
-
-        # utestuser6 befriends utestuser5
-        friendRequestData["author"]["id"] = user6.id
-        friendRequestData["friend"]["author"]["id"] = user5.id
-
-        response = self.client.post('/author/friends/friendrequest',
-                                     content_type="application/json",
-                                     data=json.dumps(friendRequestData))
-
-        self.assertItemsEqual(json.loads(response.content),
-                      {"status":"success",
-                       "message":"You are now friends with %s" % user5.id})
-
-    # TODO: I'm not sure the posts are sending data using JSON
-    def testRESTfriends(self):
-
-        userid1 = User.objects.get(username="utestuser1").id
-        userid2 = User.objects.get(username="utestuser2").id
-        userid3 = User.objects.get(username="utestuser3").id
-        userid4 = User.objects.get(username="utestuser4").id
-
-        # 2 friends
-        response1 = self.client.post('/author/friends/utestuser3',
-                     data={'query':"friends",
-                           'author':userid3,
-                           'authors': [userid1, userid2,
-                                       userid3, userid4]})
-
-        # 1 friend
-        response2 = self.client.post('/author/friends/utestuser3',
-                     data={'query':"friends",
-                           'author':userid3,
-                           'authors': [userid1, userid2,
-                                       userid3]})
-
-        # no friends
-        response3 = self.client.post('/author/friends/utestuser3',
-                     data={'query':"friends",
-                           'author':userid3,
-                           'authors': [userid1]})
-
-        # user doesn't exist
-        response4 = self.client.post('/author/friends/0',
-                     data={'query':"friends",
-                           'author':0,
-                           'authors': [userid1, userid2,
-                                       userid3, userid4]})
-
-        self.assertItemsEqual(json.loads(response1.content),
-                              {"query":"friends",
-                               "author":userid3,
-                               "friends":[userid2, userid4]})
-        self.assertItemsEqual(json.loads(response2.content),
-                              {"query":"friends",
-                               "author":userid3,
-                               "friends":[userid2]})
-        self.assertItemsEqual(json.loads(response3.content),
-                              {"query":"friends",
-                               "author":userid3,
-                               "friends":[]})
-        self.assertItemsEqual(json.loads(response4.content),
-                              {"query":"friends",
-                               "author":0,
-                               "friends":[]})
 
     def testViewsGetProfile(self):
         """
