@@ -1,14 +1,18 @@
 from django.shortcuts import render
 from django.http import HttpResponse
 from django.db.models import Q
-
 from django.contrib.auth.models import User
+from django.views.decorators.csrf import csrf_exempt
+
+from rest_framework import status
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
 
 from author.models import Author, Relationship
+from post.models import Post
+from api.serializers import PostSerializer, AuthorSerializer
 
 import json
-
-# Create your views here.
 
 def areFriends(request, userid1, userid2):
 
@@ -115,4 +119,112 @@ def sendFriendRequest(request):
 
     return HttpResponse(json.dumps(response),
                         content_type="application/json")
-        
+
+
+@api_view(['GET'])
+def postsPublic(request):
+    """
+    List all public posts
+    """
+    if request.method == 'GET':
+        posts = Post.objects.filter(visibility=Post.PUBLIC)
+        serializer = PostSerializer(posts, many=True)
+        return Response(serializer.data)
+
+@api_view(['GET','PUT','DELETE'])
+def postSingle(request, pk):
+    """
+    Retrieve, update or delete a post.
+    """
+    try:
+        post = Post.objects.get(id=pk)
+    except Post.DoesNotExist:
+        return Response(status=404)
+
+    # Check if the current author is allowed to view the post
+    user = User.objects.get(username=request.user)
+    author = Author.objects.get(user=user)
+
+    if not post.isAllowedToViewPost(author):
+        return Response(status=403) 
+
+    # Get the post
+    if request.method == 'GET':
+        serializer = PostSerializer(post)
+        return Response(serializer.data)
+
+    # Update the post
+    elif request.method == 'PUT':
+        serializer = PostSerializer(post, data=request.DATA)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=400)
+
+    # Delete the post
+    elif request.method == 'DELETE':
+        post.delete()
+        return Response(status=204) 
+
+@api_view(['GET'])
+def getAuthorPosts(request, requestedUsername):
+    """
+    Gets all the posts the requesting author can view of the requested author
+    """
+
+    if request.user.is_authenticated():
+        user = User.objects.get(username=request.user)
+        viewingAuthor = Author.objects.get(user=user)
+
+        try:
+            requestedUser = User.objects.get(username=requestedUsername)
+            requestedAuthor = Author.objects.get(user=requestedUser)
+        except Author.DoesNotExist:
+            return Response(status=404)
+
+        if request.method == 'GET':
+            posts = Post.getViewablePosts(viewingAuthor, requestedAuthor)
+            serializer = PostSerializer(posts)
+            return Response(serializer.data)
+
+@api_view(['GET'])
+def getStream(request):
+    """
+    Implementing:
+        http://service/author/posts 
+        (posts that are visible to the currently authenticated user)
+    """
+    if request.user.is_authenticated():
+        user = User.objects.get(username=request.user)
+        author = Author.objects.get(user=user)
+        posts = Post.getAllowedPosts(author)
+
+        if request.method == 'GET':
+            serializer = PostSerializer(posts)
+            return Response(serializer.data)
+    else:
+        return Response(status=403)
+
+@api_view(['GET','PUT'])
+def authorProfile(request, username):
+    """
+    Gets or updates the author's information
+    """
+    try:
+        user = User.objects.get(username=username)
+        author = Author.objects.get(user=user)
+    except Author.DoesNotExist:
+        return Response(status=404)
+
+    # Get the author's information
+    if request.method == 'GET':
+        serializer = AuthorSerializer(author)
+        return Response(serializer.data)
+
+    # Update the author's information
+    elif request.method == 'PUT':
+        serializer = PostSerializer(author, data=request.DATA)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=400)
