@@ -45,6 +45,8 @@ def getPost(request, post_id):
             authorIds = PostVisibilityException.objects.filter(
                             post=post).values_list('author', flat=True)
 
+            postAuthor = AuthorPost.objects.get(post=post).author
+
             comments = Comment.objects.filter(post_ref=post)
             visibilityExceptions = Author.objects.filter(
                 id__in=authorIds)
@@ -55,11 +57,11 @@ def getPost(request, post_id):
             if post.contentType == post.MARKDOWN:
                 post.content = markdown.markdown(post.content)
             
-            context['posts'] = [(post, author, comments, categories, visibilityExceptions)]
+            context['posts'] = [(post, postAuthor, comments, categories, visibilityExceptions)]
             data = {"posts":[post],
                     "comments":[comments],
                     "categories":[categories],
-                    "authors":[author]}
+                    "authors":[postAuthor]}
             return chooseResponseType(request, context, 'post/post.html', data)
         else:
             return redirect('/posts/')

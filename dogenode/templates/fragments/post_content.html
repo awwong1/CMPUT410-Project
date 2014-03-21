@@ -54,7 +54,7 @@
           {% for comment in comments %}
           <tr>
             <td><small>
-              <a href="{% url 'author.views.profile' author.user.username %}">
+              <a href="{% url 'author.views.profile' comment.author.user.username %}">
                 <strong>{{comment.author.user.username}}</strong>
               </a> on {{comment.pub_date}}:</small> {{comment.comment}}
             </td>
