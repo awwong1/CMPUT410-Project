@@ -34,7 +34,7 @@ def areFriends(request, userid1, userid2):
             author2, _ = Author.objects.get_or_create(user=user2[0])
 
             if author2 in author1.getFriends():
-                response["friends"] = [userid1, userid2]
+                response["friends"] = [int(userid1), int(userid2)]
 
     return HttpResponse(json.dumps(response),
                         content_type="application/json")
@@ -44,27 +44,37 @@ def areFriends(request, userid1, userid2):
 # Right now I am using the user ID sent in the request body
 def getFriendsFromList(request, userid):
 
-    response = {"query":"friends",
-                "author":userid,
-                "friends":[]}
+    # check if userid is actually an int first
+    if userid.isdigit():
 
-    if request.method == 'POST':
+        response = {"query":"friends",
+                    "author":int(userid),
+                    "friends":[]}
 
-        jsonData = json.loads(request.body)
+        if request.method == 'POST':
 
-        userid = jsonData['author']
-        user = User.objects.filter(id=userid)
+            jsonData = json.loads(request.body)
 
-        if len(user) > 0:
+            userid = jsonData['author']
+            user = User.objects.filter(id=userid)
 
-            author, _ = Author.objects.get_or_create(user=user)
+            if len(user) > 0:
 
-            friendUserids = [a.user.id for a in author.getFriends()]
-            
-            friends = list(set(friendUserids) & set(jsonData["authors"]))
-            
-            response["author"] = userid
-            response["friends"] = friends
+                author, _ = Author.objects.get_or_create(user=user)
+
+                friendUserids = [a.user.id for a in author.getFriends()]
+                
+                friends = list(set(friendUserids) & set(jsonData["authors"]))
+                
+                response["author"] = userid
+                response["friends"] = friends
+
+    else:
+
+        response = {"query":"friends",
+                    "author":userid,
+                    "friends":[]}
+
 
     return HttpResponse(json.dumps(response),
                         content_type="application/json")

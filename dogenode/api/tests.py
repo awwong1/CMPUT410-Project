@@ -6,6 +6,35 @@ from author.models import Author, Relationship
 
 import json
 
+# The decoding functions are from
+# http://stackoverflow.com/a/6633651
+def _decode_list(data):
+    rv = []
+    for item in data:
+        if isinstance(item, unicode):
+            item = item.encode('utf-8')
+        elif isinstance(item, list):
+            item = _decode_list(item)
+        elif isinstance(item, dict):
+            item = _decode_dict(item)
+        rv.append(item)
+    return rv
+
+def _decode_dict(data):
+
+    rv = {}
+    for key, value in data.iteritems():
+        if isinstance(key, unicode):
+            key = key.encode('utf-8')
+        if isinstance(value, unicode):
+            value = value.encode('utf-8')
+        elif isinstance(value, list):
+            value = _decode_list(value)
+        elif isinstance(value, dict):
+            value = _decode_dict(value)
+        rv[key] = value
+    return rv
+
 # Create your tests here.
 class RESTfulTestCase(TestCase):
 
@@ -49,6 +78,7 @@ class RESTfulTestCase(TestCase):
                                            author2=author4,
                                            relationship=True)
 
+
     def testRESTareFriends(self):
 
         userid1 = User.objects.get(username="utestuser1").id
@@ -65,13 +95,14 @@ class RESTfulTestCase(TestCase):
                         '/api/friends/%s/%s' % (userid2, userid3),
                         content_type="application/json")
 
-        self.assertItemsEqual(json.loads(response1.content),
+        self.assertEqual(json.loads(response1.content),
                               {"query":"friends",
                                "friends":"NO"})
-        self.assertItemsEqual(json.loads(response2.content),
+        self.assertEqual(json.loads(response2.content),
                               {"query":"friends",
                                "friends":"NO"})
-        self.assertItemsEqual(json.loads(response3.content),
+        self.assertEqual(json.loads(response3.content,
+                         object_hook=_decode_dict),
                               {"query":"friends",
                                "friends":[userid2, userid3]})
 
@@ -102,19 +133,20 @@ class RESTfulTestCase(TestCase):
                                      content_type="application/json",
                                      data=json.dumps(friendRequestData))
 
-        self.assertItemsEqual(json.loads(response.content),
-                          {"status":"success",
-                           "message":"You are now following %s" % user6.id})
+        self.assertEqual(json.loads(response.content),
+                      {"status":"success",
+                       "message":
+                           "You are now following %s" % user6.username})
 
         # test the same thing, there should be no change
         response = self.client.post('/api/friendrequest',
                                      content_type="application/json",
                                      data=json.dumps(friendRequestData))
 
-        self.assertItemsEqual(json.loads(response.content),
-                          {"status":"success",
-                           "message":
-                               "Already following %s, no change" % user6.id})
+        self.assertEqual(json.loads(response.content),
+                      {"status":"success",
+                       "message":
+                           "Already following %s, no change" % user6.username})
 
         # utestuser6 befriends utestuser5
         friendRequestData["author"]["id"] = user6.id
@@ -124,9 +156,10 @@ class RESTfulTestCase(TestCase):
                                      content_type="application/json",
                                      data=json.dumps(friendRequestData))
 
-        self.assertItemsEqual(json.loads(response.content),
+        self.assertEqual(json.loads(response.content),
                       {"status":"success",
-                       "message":"You are now friends with %s" % user5.id})
+                       "message":
+                           "You are now friends with %s" % user5.username})
 
     def testRESTfriends(self):
 
@@ -136,7 +169,7 @@ class RESTfulTestCase(TestCase):
         userid4 = User.objects.get(username="utestuser4").id
 
         # 2 friends
-        response1 = self.client.post('/api/friends/utestuser3',
+        response1 = self.client.post('/api/friends/%s' % userid3,
                      content_type="application/json",
                      data=json.dumps({'query':"friends",
                                       'author':userid3,
@@ -144,7 +177,7 @@ class RESTfulTestCase(TestCase):
                                                   userid3, userid4]}))
 
         # 1 friend
-        response2 = self.client.post('/api/friends/utestuser3',
+        response2 = self.client.post('/api/friends/%s' % userid3,
                      content_type="application/json",
                      data=json.dumps({'query':"friends",
                                       'author':userid3,
@@ -152,7 +185,7 @@ class RESTfulTestCase(TestCase):
                                                   userid3]}))
 
         # no friends
-        response3 = self.client.post('/api/friends/utestuser3',
+        response3 = self.client.post('/api/friends/%s' % userid3,
                      content_type="application/json",
                      data=json.dumps({'query':"friends",
                                       'author':userid3,
@@ -166,19 +199,20 @@ class RESTfulTestCase(TestCase):
                                       'authors': [userid1, userid2,
                                                   userid3, userid4]}))
 
-        self.assertItemsEqual(json.loads(response1.content),
+        self.assertEqual(json.loads(response1.content),
                               {"query":"friends",
                                "author":userid3,
                                "friends":[userid2, userid4]})
-        self.assertItemsEqual(json.loads(response2.content),
+        self.assertEqual(json.loads(response2.content),
                               {"query":"friends",
                                "author":userid3,
                                "friends":[userid2]})
-        self.assertItemsEqual(json.loads(response3.content),
+        self.assertEqual(json.loads(response3.content),
                               {"query":"friends",
                                "author":userid3,
                                "friends":[]})
-        self.assertItemsEqual(json.loads(response4.content),
+        self.assertEqual(json.loads(response4.content,
+                         object_hook=_decode_dict),
                               {"query":"friends",
                                "author":0,
                                "friends":[]})

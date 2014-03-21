@@ -107,17 +107,17 @@ class AuthorRelationshipsTestCase(TestCase):
         author3 = Author.objects.get(user=user3)
         author4 = Author.objects.get(user=user4)
 
-        self.assertItemsEqual(author1.getFriends(), [])
-        self.assertItemsEqual(author1.getPendingSentRequests(),
+        self.assertEqual(author1.getFriends(), [])
+        self.assertEqual(author1.getPendingSentRequests(),
                               [author2, author3])
-        self.assertItemsEqual(author1.getPendingReceivedRequests(), [])
+        self.assertEqual(author1.getPendingReceivedRequests(), [])
 
-        self.assertItemsEqual(author2.getFriends(), [author3])
-        self.assertItemsEqual(author2.getPendingSentRequests(), [])
+        self.assertEqual(author2.getFriends(), [author3])
+        self.assertEqual(author2.getPendingSentRequests(), [])
         self.assertEqual(author2.getPendingReceivedRequests(), [author1])
 
         self.assertItemsEqual(author3.getFriends(), [author2, author4])
-        self.assertItemsEqual(author3.getPendingSentRequests(), [])
+        self.assertEqual(author3.getPendingSentRequests(), [])
         self.assertEqual(author3.getPendingReceivedRequests(), [author1])
 
         self.assertTrue(author2.isFriendOfAFriend(author4))
