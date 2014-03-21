@@ -7,10 +7,14 @@ from django.views.decorators.csrf import csrf_exempt
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from rest_framework.renderers import JSONRenderer
+from rest_framework.parsers import JSONParser
 
 from author.models import Author, Relationship
-from post.models import Post
-from api.serializers import PostSerializer, AuthorSerializer
+from post.models import Post, AuthorPost, PostCategory
+from comments.models import Comment
+from categories.models import Category
+from api.serializers import AuthorSerializer, FullPostSerializer
 
 import json
 
@@ -121,23 +125,90 @@ def sendFriendRequest(request):
                         content_type="application/json")
 
 
-@api_view(['GET'])
-def postsPublic(request):
+def buildFullPostContent(post):
     """
-    List all public posts
+    Goes through all the fields of a Post 
+    Should find a better way to go through all the fields of a post
+    """
+    # Post object
+    postContent = {}
+    postContent['guid'] = post.guid
+    postContent['title'] = post.title
+    postContent['description'] = post.description
+    postContent['content'] = post.content
+    postContent['visibility'] = post.visibility
+    postContent['contentType'] = post.contentType
+    postContent['origin'] = post.origin
+    postContent['pubDate'] = post.pubDate
+    postContent['modifiedDate'] = post.modifiedDate
+
+    # other objects
+    postContent["author"] = AuthorPost.objects.get(post=post).author
+    postContent["comments"] = Comment.objects.filter(post_ref=post)
+
+    categoryIds = PostCategory.objects.filter(post=post).values_list('category', flat=True)
+
+    postContent["categories"] = Category.objects.filter(id__in=categoryIds)
+
+    return postContent
+
+
+def buildFullPost(rawposts):
+    """
+    From a list of just the posts, add in the author, comments, and 
+    categories to the actual post information we are sending,
+    as in example-article.json 
+    """
+    # If there is only one Post
+    if type(rawposts) is Post:
+        fullpost = buildFullPostContent(rawposts)
+
+        return fullpost 
+    else:
+        posts = []
+
+        for post in rawposts:
+            fullpost = buildFullPostContent(post)
+
+            posts.append(fullpost)            
+
+        return posts
+
+def serializeFullPost(posts):
+    """
+    Minor final Full Post cleanup to match example-article.json 
+    """
+    serializer = FullPostSerializer(posts, many=True)
+    return {"posts":serializer.data}
+
+@api_view(['GET'])
+def getPublicPosts(request):
+    """
+    Gets all public posts
+
+    Fulfills from example-article.json
+    http://service/posts (all posts marked as public on the server)
     """
     if request.method == 'GET':
-        posts = Post.objects.filter(visibility=Post.PUBLIC)
-        serializer = PostSerializer(posts, many=True)
-        return Response(serializer.data)
+        rawposts = Post.objects.filter(visibility=Post.PUBLIC)
 
-@api_view(['GET','PUT','DELETE'])
+        posts = buildFullPost(rawposts)
+
+        return Response(serializeFullPost(posts))
+
+@api_view(['GET','POST','PUT'])
 def postSingle(request, pk):
     """
-    Retrieve, update or delete a post.
+    Retrieve a post. Currently does not properly update/create a post.
+
+    Semi-Fulfills:
+    Implement a restful API for http://service/post/{POST_ID}
+        a PUT should insert/update a post
+        a POST should get the post
+        a GET should get the post
     """
     try:
-        post = Post.objects.get(id=pk)
+        rawpost = Post.objects.get(id=pk)
     except Post.DoesNotExist:
         return Response(status=404)
 
@@ -145,74 +216,79 @@ def postSingle(request, pk):
     user = User.objects.get(username=request.user)
     author = Author.objects.get(user=user)
 
-    if not post.isAllowedToViewPost(author):
+    if not rawpost.isAllowedToViewPost(author):
         return Response(status=403) 
 
     # Get the post
-    if request.method == 'GET':
-        serializer = PostSerializer(post)
-        return Response(serializer.data)
+    if request.method == 'GET' or request.method == 'POST':
+        post = buildFullPost(rawpost)
+        serializer = FullPostSerializer(post)
+        return Response({"posts":serializer.data})
 
     # Update the post
     elif request.method == 'PUT':
-        serializer = PostSerializer(post, data=request.DATA)
+        post = buildFullPost(rawpost)
+        serializer = FullPostSerializer(post, data=request.DATA)
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data)
+            return Response({"posts":serializer.data})
         return Response(serializer.errors, status=400)
 
-    # Delete the post
-    elif request.method == 'DELETE':
-        post.delete()
-        return Response(status=204) 
-
 @api_view(['GET'])
-def getAuthorPosts(request, requestedUsername):
+def getAuthorPosts(request, requestedUserid):
     """
     Gets all the posts the requesting author can view of the requested author
-    """
 
+    Fulfills:
+    http://service/author/{AUTHOR_ID}/posts
+    (all posts made by {AUTHOR_ID} visible to the currently authenticated user)
+    """
     if request.user.is_authenticated():
         user = User.objects.get(username=request.user)
         viewingAuthor = Author.objects.get(user=user)
 
         try:
-            requestedUser = User.objects.get(username=requestedUsername)
-            requestedAuthor = Author.objects.get(user=requestedUser)
+            requestedAuthor = Author.objects.get(user=requestedUserid)
         except Author.DoesNotExist:
             return Response(status=404)
 
         if request.method == 'GET':
-            posts = Post.getViewablePosts(viewingAuthor, requestedAuthor)
-            serializer = PostSerializer(posts)
-            return Response(serializer.data)
+            rawposts = Post.getViewablePosts(viewingAuthor, requestedAuthor)
+
+            posts = buildFullPost(rawposts)
+
+            return Response(serializeFullPost(posts))
 
 @api_view(['GET'])
 def getStream(request):
     """
-    Implementing:
+    Get's the currently authenicated author's stream. 
+
+    Fulfills
         http://service/author/posts 
         (posts that are visible to the currently authenticated user)
     """
     if request.user.is_authenticated():
         user = User.objects.get(username=request.user)
         author = Author.objects.get(user=user)
-        posts = Post.getAllowedPosts(author)
+        rawposts = Post.getAllowedPosts(author)
 
         if request.method == 'GET':
-            serializer = PostSerializer(posts)
-            return Response(serializer.data)
+            posts = buildFullPost(rawposts)
+            return Response(serializeFullPost(posts))
     else:
         return Response(status=403)
 
-@api_view(['GET','PUT'])
-def authorProfile(request, username):
+@api_view(['GET'])
+def authorProfile(request, userid):
     """
-    Gets or updates the author's information
+    Gets the author's information. Does not support updating your profile.
+    
+    Semi-fulfills:
+    implement author profiles via http://service/author/userid
     """
     try:
-        user = User.objects.get(username=username)
-        author = Author.objects.get(user=user)
+        author = Author.objects.get(user=userid)
     except Author.DoesNotExist:
         return Response(status=404)
 
@@ -221,10 +297,10 @@ def authorProfile(request, username):
         serializer = AuthorSerializer(author)
         return Response(serializer.data)
 
-    # Update the author's information
-    elif request.method == 'PUT':
-        serializer = PostSerializer(author, data=request.DATA)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=400)
+    # Update the author's information?
+    #elif request.method == 'PUT':
+    #    serializer = AuthorSerializer(author, data=request.DATA)
+    #    if serializer.is_valid():
+    #        serializer.save()
+    #        return Response(serializer.data)
+    #    return Response(serializer.errors, status=400)
