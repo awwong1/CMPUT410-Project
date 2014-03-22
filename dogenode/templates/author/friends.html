@@ -106,7 +106,7 @@
             <tbody>  
             {% for friend in friends %}
                 <tr>
-                    <td><a href="/author/profile/{{ friend }}">{{ friend }}</a></td>
+                    <td><a href="/author/profile/{{ friend.author_id }}">{{ friend }}</a></td>
                     <td>
                         <input class="danger unfriend" type="submit" value="Unfriend">
                     </td>
@@ -127,7 +127,7 @@
             <tbody>
             {% for follow in follows %}
                 <tr>
-                    <td><a href="/author/profile/{{ follow }}">{{ follow }}</a></td>
+                    <td><a href="/author/profile/{{ follow.author_id }}">{{ follow.user.username }}</a></td>
                     <td>
                         <input class="danger unfollow" type="submit" value="UnFollow">
                     </td>
@@ -149,7 +149,7 @@
             <tbody>
             {% for follower in followers %}
                 <tr>
-                    <td><a href="/author/profile/{{ follower }}">{{ follower }}</a></td>
+                    <td><a href="/author/profile/{{ follower.author_id }}">{{ follower }}</a></td>
                     <!-- TODO: befriending someone shouldn't be "dangerous" -->
                     <td>
                         <input class="danger befriend" type="submit" value="Befriend">

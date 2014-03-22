@@ -42,6 +42,7 @@ INSTALLED_APPS = (
     'post',
     'categories',
     'rest_framework',
+    'api',
 )
 
 MIDDLEWARE_CLASSES = (

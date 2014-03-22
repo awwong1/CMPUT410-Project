@@ -79,7 +79,7 @@ def profile(request, author_id):
     """
     if request.user.is_authenticated():
         #user = User.objects.get(id=user_id)
-        author = Author.objects.get(author_id=uuid.UUID(author_id))
+        author = Author.objects.get(author_id=author_id)
         user = author.user
         payload = { } # This is what we send in the RequestContext
 
@@ -277,15 +277,15 @@ def search(request):
             if len(r) > 0:
 
                 if (r[0].relationship): # They are friends
-                    usersAndStatus.append([u.username, "Friend"])
+                    usersAndStatus.append([u.username, "Friend", a.author_id])
 
                 else:
                     if r[0].author1 == author:
-                        usersAndStatus.append([u.username, "Following"])
+                        usersAndStatus.append([u.username, "Following", a.author_id])
                     else:
-                        usersAndStatus.append([u.username, "Follower"])
+                        usersAndStatus.append([u.username, "Follower", a.author_id])
             else:
-                usersAndStatus.append([u.username, "No Relationship"])
+                usersAndStatus.append([u.username, "No Relationship", a.author_id])
 
 
         context = RequestContext(request, {'searchphrase': username,

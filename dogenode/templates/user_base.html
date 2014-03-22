@@ -41,7 +41,7 @@
             </li>
             {% endif %}
             <li>
-              <form method="post" action="/author/search_results/"
+              <form method="post" action="{% url 'author.views.search' %}"
                class="pull-down  navbar-search">
                 {%  csrf_token %}
                 <div class="form-group">
@@ -51,9 +51,9 @@
               </form>
             </li>
             <li><a href="{% url 'author.views.stream' %}">My Stream</a></li>
-            <li><a href="/author/profile/{{ author_id }}">My Profile</a></li>
+            <li><a href="{% url 'author.views.profile' author_id %}">My Profile</a></li>
             <li><a href="{% url 'author.views.friends' %}">Manage Friends</a></li>
-            <li><a href="/author/{{ author_id }}/posts/">Manage Posts</a></li>
+            <li><a href="{% url 'author.views.getAuthorPosts' author_id %}">Manage Posts</a></li>
             <li><a href="{% url 'author.views.logUserOut' %}">Logout</a></li>
           </ul>
         </div>
