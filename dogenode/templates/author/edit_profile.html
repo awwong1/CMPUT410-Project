@@ -3,56 +3,39 @@
 {% block body %}
 <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
 
-    {% if successMessage %}
-    <div id="divMessage" class="alert alert-success span">{{ successMessage }}</div>
-    {% elif failureMessage %}
+    {% if failureMessage %}
     <div id="divMessage" class="alert alert-danger span">{{ failureMessage }}</div>
+    {% elif successMessage %}
+    <div id="divMessage" class="alert alert-success span">{{ successMessage }}</div>
     {% endif %}
 
 
   <form method="post" action="/author/edit_profile/">
     {% csrf_token %}
   
-     {% if firstName %}
-    <h1 class="section-header">{{ firstName }} {{ lastName}}<span>
+    <h1 class="section-header">{{ username }} 
+        <span>
         <input type="submit" value="Save Changes" class="button-links"/>
-        </span></h1>
-    {% else %}
-    <h1 class="section-header">{{ username }} <span>
-        <input type="submit" value="Save Changes" class="button-links"/>
-        </span></h1>
-    {% endif %}
+        </span>
+    </h1>
 
-    <div class="row placeholder">
-            <div class="col-sm-3 placeholder">
-                <img id="doge" src="{{STATIC_URL}}images/doge.jpeg" class="img-responsive" alt="dogey"/>
-            </div>
-         
-            <div class="col-sm-9">
-                <h4>About Me</h4>
-                <div class="form-group">
-                    <textarea id="aboutMe" class="form-control" name="aboutMe"
-                     rows="5">{{ aboutMe }}</textarea>
-                </div>
-	    </div>
-    </div> 
             <h2> Account Information </h2>
             <p>Leave fields blank and/or unmodified if you do not want to change them.</p>
             
      <div class="row">
-	<div class="col-md-4">	
-	    <div class="form-group"> 
-               <label for="firstName">First Name</label>
-               <input id="firstName" type="text" class="form-control" 
+	   <div class="col-md-3 col-sm-4">	
+	     <div class="form-group"> 
+           <label for="firstName">First Name</label>
+           <input id="firstName" type="text" class="form-control" 
                  name="firstName" value="{{ firstName }}"/>
-            </div>
-            <div class="form-group"> 
-                <label for="lastName">Last Name</label>
-                <input id="lastName" type="text" class="form-control"
+         </div>
+         <div class="form-group"> 
+           <label for="lastName">Last Name</label>
+           <input id="lastName" type="text" class="form-control"
                   name="lastName" value="{{ lastName }}"/>
-            </div>
-	</div>
-	<div class="col-md-4">
+         </div>
+	   </div>
+	   <div class="col-md-3 col-sm-4">
             <div class="form-group"> 
                 <label for="oldPassword">Current Password</label>
                 <input id="oldPassword" type="password" class="form-control" name="oldPassword"/>

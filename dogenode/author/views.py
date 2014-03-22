@@ -7,12 +7,7 @@ from django.db.models import Q
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
-from rest_framework import status
-
 from author.models import Author, Relationship
-from post.views import makeJSONPost
 from post.models import Post, PostVisibilityException, AuthorPost, PostCategory
 from categories.models import Category
 from comments.models import Comment
@@ -70,26 +65,28 @@ def register(request):
                 "The username '%s' is taken!" % username})
         else:
             if username and password:
-                user = User.objects.create_user(username=username,
+                user = User.objects.create_user(id=uuid.uuid4(), 
+                                                username=username,
                                                 password=password)
                 user.save()
                 return redirect('/login/')
 
     return render(request, 'login/register.html', context)
 
-def profile(request, username):
+def profile(request, author_id):
     """
     GET: Returns the profile page / information of an author.
     """
     if request.user.is_authenticated():
-        user = User.objects.get(username=username)
+        user = User.objects.get(id=author_id)
         author = Author.objects.get(user=user)
         payload = { } # This is what we send in the RequestContext
 
         payload['firstName'] = user.first_name or ""
         payload['lastName'] = user.last_name or ""
-        payload['username'] = user.username
-        payload['aboutMe'] = author.about_me or ""
+        payload['username'] = author.displayName
+        payload['host'] = author.host or ""
+        payload['url'] = author.url or request.build_absolute_uri(author.get_absolute_url())
         payload['userIsAuthor'] = (user.username == request.user.username)
         context = RequestContext(request, payload)
         viewer = Author.objects.get(user=User.objects.get(
@@ -116,14 +113,10 @@ def editProfile(request):
             newLastName = request.POST['lastName']
             oldPassword = request.POST['oldPassword']
             newPassword = request.POST['newPassword']
-            newAboutMe = request.POST['aboutMe']
 
             user.first_name = newFirstName or user.first_name
             user.last_name = newLastName or user.last_name
             user.save()
-
-            author.about_me = newAboutMe
-            author.save()
 
             payload['successMessage'] = "Profile updated."
 
@@ -137,7 +130,6 @@ def editProfile(request):
         payload['firstName'] = user.first_name or ""
         payload['lastName'] = user.last_name or ""
         payload['username'] = user.username
-        payload['aboutMe'] = author.about_me or ""
 
         context = RequestContext(request, payload)
         return render(request, 'author/edit_profile.html', context)
@@ -149,15 +141,11 @@ def getAuthorPosts(request, author_id):
     Retrieves all posts made by the author specified and that are visible
     to currently authenticated user
 
-    To get the json representation: http://service/author/author_id/posts
     """
     context = RequestContext(request)
 
     if not request.user.is_authenticated():
-        if 'application/json' in request.META['HTTP_ACCEPT']:
-            return HttpResponse(status=401)
-        else:
-           return render(request, 'login/index.html', context)
+       return render(request, 'login/index.html', context)
 
     viewer = Author.objects.get(user=request.user)
     author = Author.objects.get(id=author_id)
@@ -167,11 +155,9 @@ def getAuthorPosts(request, author_id):
     posts = Post.getViewablePosts(viewer, author)
     comments = []
     categories = []
-    authors = []   #  for the sake of making makeJSONPost work
     visibilityExceptions = []
 
     for post in posts:
-        authors.append(author)
         categoryIds = PostCategory.objects.filter(post = post).values_list(
                         'category', flat=True)
         authorIds = PostVisibilityException.objects.filter(
@@ -190,8 +176,7 @@ def getAuthorPosts(request, author_id):
     context["posts"] = zip(posts, comments, categories, visibilityExceptions)
     data = {"posts":posts, 
             "comments":comments, 
-            "categories":categories,
-            "authors": authors}
+            "categories":categories}
 
     if 'text/html' in request.META['HTTP_ACCEPT'] and viewer == author:
         return render_to_response('post/posts.html', context)
@@ -243,24 +228,14 @@ def stream(request):
         context['visibilities'] = Post.VISIBILITY_CHOICES
         context['contentTypes'] = Post.CONTENT_TYPE_CHOICES
 
-        data = {"posts":rawposts, 
-                "comments":comments, 
-                "categories":categories,
-                "authors":authors}
 
         if 'text/html' in request.META['HTTP_ACCEPT']:
             return render_to_response('author/stream.html', context)
 
-        elif 'application/json' in request.META['HTTP_ACCEPT']:
-            return  HttpResponse(makeJSONPost(data),
-                                content_type="application/json",
-                                status=status.HTTP_200_OK)
     else:
         if 'text/html' in request.META['HTTP_ACCEPT']:
             return redirect('/login/')
 
-        elif 'application/json' in request.META['HTTP_ACCEPT']:
-            return HttpResponse(status=status.HTTP_401_UNAUTHORIZED)
 
 def friends(request):
     """

@@ -6,10 +6,6 @@ from django.template import RequestContext
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
-from rest_framework import status
-
 from post.models import Post, PostVisibilityException, AuthorPost, PostCategory
 from categories.models import Category
 from author.models import Author
@@ -52,19 +48,15 @@ def getPost(request, post_id):
                 id__in=authorIds)
             categories = Category.objects.filter(id__in=categoryIds)
 
+            print "BBBRRRONNNNTTTEEE"
             # Convert Markdown into HTML for web browser 
             # django.contrib.markup is deprecated in 1.6, so, workaround
             if post.contentType == post.MARKDOWN:
                 post.content = markdown.markdown(post.content)
             
             context['posts'] = [(post, postAuthor, comments, categories, visibilityExceptions)]
-            data = {"posts":[post],
-                    "comments":[comments],
-                    "categories":[categories],
-                    "authors":[postAuthor]}
-            return chooseResponseType(request, context, 'post/post.html', data)
-        else:
-            return redirect('/posts/')
+
+            return render_to_response('post/post.html', context)
     else:
         return redirect('/login/')
 
@@ -72,10 +64,9 @@ def getAllPublicPosts(request):
     """
     Retreives all public posts. Can be accessed via REST interface
     by service/posts/
-    """
-    """
-    Returns the stream of an author (all posts author can view)
-    """
+    
+    NOT CURRENTLY NEEDED FOR BROWSER
+ 
     context = RequestContext(request)
     author = Author.objects.get(user=request.user)
     rawposts = Post.objects.filter(visibility=Post.PUBLIC)
@@ -92,108 +83,19 @@ def getAllPublicPosts(request):
         categories.append(Category.objects.filter(id__in=categoryIds))
 
     # Stream payload
-    return HttpResponse(makeJSONPost({"posts":rawposts,
-                                      "comments":comments,
-                                      "categories":categories,
-                                      "authors":authors}),
-                        content_type="application/json",
-                        status=status.HTTP_200_OK)
+    context['posts'] = [(post, authors, comments, categories)]
+    return chooseResponseType(request, context, 'post/public_posts.html', data)
+    """
 
-def chooseResponseType(request, context, url, data):
     if 'text/html' in request.META['HTTP_ACCEPT']:
         return render_to_response(url, context)
 
-    elif 'application/json' in request.META['HTTP_ACCEPT']:
-        response = HttpResponse(makeJSONPost(data),
-                                content_type="application/json",
-                                status=status.HTTP_200_OK)
-    else:
-        response = HttpResponse(status=status.HTTP_406_NOT_ACCEPTABLE)
-        
-    return response
-
-def makeJSONPost(data):
-        posts = []
-        for post, comments, categories, author in zip(data["posts"], 
-                                              data["comments"],
-                                              data["categories"],
-                                              data["authors"]):
-                                                   
-            #json_author = {"id": author.id,
-            #               "host":author.host,
-            #               "displayname":author.displayname,
-            #               "url":author.url}
-            json_post = {"title":post.title,
-                         #"source":post.source,
-                         "origin":post.origin,
-                         "description": post.description,
-                         "content-type":post.contentType,
-                         "content":post.content,
-                         #"author":json_author,
-                         "author":"doge",
-                         #"categories":["hi","oh"],
-                         #"comments":comments,
-                         "pubDate": str(post.pubDate),
-                         "guid":post.guid,
-                         "visibility":post.visibility}
-            posts.append(json_post)
-        return json.dumps({"posts":posts})
-
-@api_view(['GET', 'POST', 'PUT'])
 def handlePost(request, post_id):
     if request.method == "PUT":
         context = RequestContext(request)
         return addPost(context, request, post_id)
     else:
         return getPost(request, post_id)
-
-def addPost(context, request, post_id):
-    """
-    Adds a new post via the webservice using a PUT request 
-    """
-    title = request.DATA.get("title", "")
-    description = request.DATA.get("description", "")
-    content = request.DATA.get("content", "")
-    contentType = request.DATA.get("content-type", Post.PLAIN) 
-    visibility = request.DATA.get("visibility", Post.PRIVATE)
-    categoryNames = request.DATA.get("categories", "")
-    #source = request.DATA.get("source", "")
-    origin = request.DATA.get("origin", "")
-    author = Author.objects.get(user=request.user)
-
-    posts = Post.objects.filter(id=int(post_id))
-    post = None
-    if len(posts) == 0:
-        post = Post.objects.create(title=title,
-                                   description=description,
-                                   content=content,
-                                   contentType=contentType,
-                                   visibility=visibility)
-        post.id = int(post_id)
-        AuthorPost.objects.create(post=post, author=author)
-    else:
-        post = Post.objects.get(id=int(post_id))
-        post.title = title
-        post.description = description
-        post.content=content
-        
-        post.contentType=contentType
-        post.visibility=visibility
-
-    if origin == "":
-        post.origin = request.build_absolute_uri(post.get_absolute_url())
-    
-    post.save()
-
-     # I use (abuse) get_or_create to curtail creating duplicates
-    for name in categoryNames:
-        categoryObject, _ = Category.objects.get_or_create(name=name)
-        PostCategory.objects.get_or_create(post=post,
-                                           category=categoryObject)
-    if "json" not in request.META["HTTP_ACCEPT"]:
-        return HttpResponse(status=status.HTTP_400_BAD_REQUEST)
-    return HttpResponse(status=status.HTTP_201_CREATED)
-
 
 @ensure_csrf_cookie
 def addFormPost(request):

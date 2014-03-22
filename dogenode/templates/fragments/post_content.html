@@ -37,8 +37,8 @@
       <div class="panel-footer">
         <div class="row">
           <div class="col-sm-4">
-            by <a href="{% url 'author.views.profile' author.user.username %}">
-                <strong>{{ author.user.username }}</strong>
+            by <a href="{% url 'author.views.profile' author.id %}">
+                <strong>{{ author.displayname }}</strong>
               </a>
             on {{ post.pubDate }}
           </div>
@@ -54,8 +54,8 @@
           {% for comment in comments %}
           <tr>
             <td><small>
-              <a href="{% url 'author.views.profile' comment.author.user.username %}">
-                <strong>{{comment.author.user.username}}</strong>
+              <a href="{% url 'author.views.profile' comment.author.id %}">
+                <strong>{{comment.author.displayname}}</strong>
               </a> on {{comment.pub_date}}:</small> {{comment.comment}}
             </td>
           </tr>

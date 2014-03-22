@@ -7,11 +7,14 @@ from django.db.models.signals import post_save
 class Author(models.Model):
 
     user = models.OneToOneField(User)
-    accepted = models.BooleanField(default=False)
-    about_me = models.TextField(blank=True)
+    
+    accepted = models.BooleanField(default=False)   
+    host = models.CharField(max_length=100, default="http://dogenode/")
+    displayName = models.CharField(max_length=30, blank=True)
+    url = models.URLField(blank=True)
 
     def __unicode__(self):
-        return self.user.username
+        return self.displayName
 
     def get_absolute_url(self):
         from django.core.urlresolvers import reverse
