@@ -35,6 +35,11 @@
         {% block side-nav %}
         <div class="col-sm-3 col-md-2 sidebar">
           <ul class="nav nav-sidebar">
+            {% if user.username %}
+            <li class="nav-title">
+                <p>Logged in as {{user.username}}</p>
+            </li>
+            {% endif %}
             <li>
               <form method="post" action="/author/search_results/"
                class="pull-down  navbar-search">
