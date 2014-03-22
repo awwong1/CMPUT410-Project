@@ -142,7 +142,7 @@ def buildFullPostContent(post):
     """
     # Post object
     postContent = buildPost(post)
-                  
+
     # other objects
     author = AuthorPost.objects.get(post=post).author
     postContent["author"] = buildAuthor(author)
@@ -166,7 +166,7 @@ def buildPost(post):
              'modifiedDate' : post.modifiedDate }
 
 def buildAuthor(author):
-    return {"id": author.id,
+    return {"id": author.author_id,
             "displayName": author.user.username,
             "host": author.host,
             "url": author.url }
@@ -175,12 +175,13 @@ def buildComment(post):
     comments = Comment.objects.filter(post_ref=post)
     commentContent = []
     for comment in comments:
+        currentComment = {}
         currentComment = {"guid": comment.guid,
                            "author": buildAuthor(comment.author),
                            "comment": comment.comment,
                            "pub_date": comment.pub_date
                           }
-        commentContent.append(comment)
+        commentContent.append(currentComment)
 
     return commentContent
 
@@ -224,6 +225,7 @@ def getPublicPosts(request):
         rawposts = Post.objects.filter(visibility=Post.PUBLIC)
 
         posts = buildFullPost(rawposts)
+        print(posts)
 
         return Response(serializeFullPost(posts))
 
@@ -279,7 +281,7 @@ def getAuthorPosts(request, requestedUserid):
         viewingAuthor = Author.objects.get(user=user)
 
         try:
-            requestedAuthor = Author.objects.get(id=requestedUserid)
+            requestedAuthor = Author.objects.get(author_id=requestedUserid)
         except Author.DoesNotExist:
             return Response(status=404)
 
@@ -319,7 +321,7 @@ def authorProfile(request, authorId):
     implement author profiles via http://service/author/userid
     """
     try:
-        author = Author.objects.get(id=authorId)
+        author = Author.objects.get(author_id=authorId)
     except Author.DoesNotExist:
         return Response(status=404)
 
