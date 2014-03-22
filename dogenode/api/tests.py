@@ -78,6 +78,42 @@ class RESTfulTestCase(TestCase):
                                            author2=author4,
                                            relationship=True)
 
+        # creating some posts for authors
+        post1 = Post.objects.create(content="content1",
+                                    title="title1",
+                                    visibility=Post.PUBLIC)
+        post2 = Post.objects.create(content="content2",
+                                    title="title2",
+                                    visibility=Post.PRIVATE)
+        post3 = Post.objects.create(content="content3",
+                                    title="title3",
+                                    visibility=Post.PRIVATE)
+        post4 = Post.objects.create(content="content4",
+                                    title="title4",
+                                    visibility=Post.FRIENDS)
+        post5 = Post.objects.create(content="content5",
+                                    title="title5",
+                                    visibility=Post.FOAF)
+        post6 = Post.objects.create(content="content6",
+                                    title="title6",
+                                   visibility=Post.PUBLIC)
+        post7 = Post.objects.create(content="content7",
+                                    title="title7",
+                                    visibility=Post.PRIVATE)
+        post8 = Post.objects.create(content="content8",
+                                    title="title8",
+                                    visibility=Post.SERVERONLY)
+        
+        # Author1 should see post 1, post 2, post 6, post 8
+        AuthorPost.objects.create(post=post1, author=author1)
+        AuthorPost.objects.create(post=post2, author=author1)
+        AuthorPost.objects.create(post=post3, author=author2)
+        AuthorPost.objects.create(post=post4, author=author2)
+        AuthorPost.objects.create(post=post5, author=author2)
+        AuthorPost.objects.create(post=post6, author=author2)
+        AuthorPost.objects.create(post=post7, author=author3)
+        AuthorPost.objects.create(post=post8, author=author3)
+
 
     def testRESTareFriends(self):
 
@@ -215,4 +251,51 @@ class RESTfulTestCase(TestCase):
                          object_hook=_decode_dict),
                               {"query":"friends",
                                "author":0,
+
                                "friends":[]})
+    def testRESTGetAllAuthorPosts(self):
+        """
+        Tests getting all the posts of an author that are visible by user
+        making the request. Sends a GET request to /author/authorid/posts.
+        utestuser1 made post 1 and post 2, so those two posts should be 
+        retrieved.
+        """
+       
+        user = User.objects.get(username="utestuser1")
+        author = Author.objects.get(user=user1)
+
+        self.client.login(username="utestuser1", password="testpassword")
+
+        response = self.client.get('/api/author/%s/posts/' % author.author_id,
+                                    HTTP_ACCEPT = 'application/json')
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        posts = yaml.load(response.content)
+
+        self.assertEqual(len(posts['posts']), 2)
+       
+        titles = ["title1", "title2"] 
+        for post in posts['posts']:
+            self.assertEquals(post["author"][])  TODO: FIX ONCE AUTHOR MODEL DONE
+            self.assertIn(post["title"], titles)
+
+    def testRESTStream(self):
+        """
+        Tests retrieving all posts that are visible to the current user.
+        Sends a GET request to /author/posts/
+        utestuser1 should be able to see post 1, 2, 6, and 8
+        
+        self.client.login(username="utestuser1", password="testpassword")
+        user1 = User.objects.get(username="utestuser1")
+        author1 = Author.objects.get(user=user1)
+        
+        url = "/author/stream/"
+        response = self.client.get(url, HTTP_ACCEPT="application/json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        posts = yaml.load(response.content)
+        self.assertEquals(len(posts["posts"]), 4)	
+
+        titles = ["title1", "title2", "title6", "title8"]
+        for post in posts["posts"]:
+            self.assertIn(post["title"], titles)
+        """
