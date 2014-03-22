@@ -7,8 +7,9 @@ import uuid
 
 # Create your models here.
 class Author(models.Model):
-    author_id = models.CharField(max_length=36, 
-                          default=uuid.uuid4())
+    author_id = models.CharField(max_length=36,
+                                 unique=True, 
+                                 default=uuid.uuid4)
     user = models.OneToOneField(User)
     accepted = models.BooleanField(default=False)   
     host = models.CharField(max_length=100, default="http://dogenode/")

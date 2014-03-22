@@ -130,20 +130,18 @@ class AuthorRelationshipsTestCase(TestCase):
     def testViewsGetProfile(self):
         """
         Tests retrieving the profile of an author
-
-        TODO xxx: update test once author model has been refactored
         """
         self.client.login(username="utestuser1", password="testpassword")
         user1 = User.objects.get(username="utestuser1")
+        author1 = Author.objects.get(user=user1)
 
-        url = "/author/profile/" + str(user1.id) + "/"
+        url = "/author/profile/" + str(author1.author_id) + "/"
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTemplateUsed(response, "author/profile.html")
         self.assertEquals(response.context['firstName'], "")
         self.assertEquals(response.context['lastName'], "")
         self.assertEquals(response.context['username'], "utestuser1")
-        self.assertEquals(response.context['aboutMe'], "")
         self.assertEquals(response.context['userIsAuthor'], True)
 
 
@@ -160,8 +158,7 @@ class AuthorRelationshipsTestCase(TestCase):
         body = {'firstName':'bob1',
                 'lastName':'bob2',
                 'oldPassword':'testpassword',
-                'newPassword':'bob3',
-                'aboutMe':'bob4'}
+                'newPassword':'bob3'}
         response = self.client.post(url, body)
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -172,7 +169,6 @@ class AuthorRelationshipsTestCase(TestCase):
         author5 = Author.objects.get(user=user5)
         self.assertEquals(user5.first_name, "bob1")
         self.assertEquals(user5.last_name, "bob2")
-        self.assertEquals(author5.about_me, "bob4")
         author5.delete()
         user5.delete()
 
@@ -233,7 +229,7 @@ class AuthorRelationshipsTestCase(TestCase):
         author1 = Author.objects.get(user=user1)
         self.client.login(username="utestuser1", password="testpassword")
 
-        url = "/author/"+str(author1.id)+"/posts/"
+        url = "/author/"+str(author1.author_id)+"/posts/"
 
         response = self.client.get(url, HTTP_ACCEPT='text/html')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
