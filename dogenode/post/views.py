@@ -74,13 +74,13 @@ def getAllPublicPosts(request):
     for post in rawposts:
         categoryIds = PostCategory.objects.filter(post=post).values_list(
                         'category', flat=True)
-
         authors.append(AuthorPost.objects.get(post=post).author)
         comments.append(Comment.objects.filter(post_ref=post))
         categories.append(Category.objects.filter(id__in=categoryIds))
 
     # Stream payload
-    context['posts'] = [(post, authors, comments, categories)]
+    context['posts'] = zip(rawposts, authors, comments, categories)
+    context['author_id'] = author.author_id
     return render_to_response('post/public_posts.html', context)
 
 def handlePost(request, post_id):
@@ -94,7 +94,6 @@ def addFormPost(request):
     """
     context = RequestContext(request)
     
-    print "got here"
     if request.method == "POST":
         title = request.POST.get("title", "")
         description = request.POST.get("description", "")
@@ -115,7 +114,6 @@ def addFormPost(request):
         newPost.origin = request.build_absolute_uri(newPost.get_absolute_url())
         newPost.save()
     
-        print "got here"
         AuthorPost.objects.create(post=newPost, author=author)
 
         # I use (abuse) get_or_create to curtail creating duplicates
