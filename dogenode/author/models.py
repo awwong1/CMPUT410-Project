@@ -3,11 +3,14 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 
+import uuid
+
 # Create your models here.
 class Author(models.Model):
-
+    id = models.CharField(max_length=36, 
+                          default=uuid.uuid4(), 
+                          primary_key=True)
     user = models.OneToOneField(User)
-    
     accepted = models.BooleanField(default=False)   
     host = models.CharField(max_length=100, default="http://dogenode/")
     displayName = models.CharField(max_length=30, blank=True)
@@ -18,7 +21,7 @@ class Author(models.Model):
 
     def get_absolute_url(self):
         from django.core.urlresolvers import reverse
-        return reverse('author.views.profile', args=[str(self.id)])
+        return reverse('author.views.profile', args=[self.id])
 
     def getFriends(self):
 

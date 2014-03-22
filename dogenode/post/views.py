@@ -55,6 +55,7 @@ def getPost(request, post_id):
                 post.content = markdown.markdown(post.content)
             
             context['posts'] = [(post, postAuthor, comments, categories, visibilityExceptions)]
+            context['author_id'] = author.id
 
             return render_to_response('post/post.html', context)
     else:
@@ -162,6 +163,6 @@ def deletePost(request):
                 post.delete();
             # else: send a message?
 
-        return redirect('/author/'+str(user.id)+'/posts/')
+        return redirect('/author/'+str(author.id)+'/posts/')
     else:
         return redirect('/login/')

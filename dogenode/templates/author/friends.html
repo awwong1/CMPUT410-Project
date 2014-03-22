@@ -70,7 +70,6 @@
                                 newRowValue = "Unfriend";
                             }
 
-                            //TODO: the dynamically created hyperlink isn't brown
                             $("#" + newRowTable + " tr:last").after('<tr><td><a href="/author/profile/' + user + '">' + user + '</a></td><td><input class="danger ' + newRowClass + '" type="submit" value="' + newRowValue + '"></td></tr>');
 
                         }
@@ -144,7 +143,7 @@
             <thead>
                 <tr>
                     <th>Follower</th>
-		    <th> Action? </th>
+		            <th> Action? </th>
                 </tr>
             </thead>
             <tbody>

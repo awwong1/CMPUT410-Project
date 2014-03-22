@@ -7,7 +7,7 @@ from categories.models import Category
 class AuthorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Author
-        fields = ('user', 'host', 'displayName', 'url')
+        fields = ('id', 'host', 'displayName', 'url')
 
 class CommentSerializer(serializers.ModelSerializer):
     class Meta:

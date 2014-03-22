@@ -13,6 +13,7 @@ from categories.models import Category
 from comments.models import Comment
 
 import markdown, json
+import uuid
 
 def isUserAccepted(user):
     author = Author.objects.filter(user=user)
@@ -65,8 +66,7 @@ def register(request):
                 "The username '%s' is taken!" % username})
         else:
             if username and password:
-                user = User.objects.create_user(id=uuid.uuid4(), 
-                                                username=username,
+                user = User.objects.create_user(username=username,
                                                 password=password)
                 user.save()
                 return redirect('/login/')
@@ -78,10 +78,12 @@ def profile(request, author_id):
     GET: Returns the profile page / information of an author.
     """
     if request.user.is_authenticated():
-        user = User.objects.get(id=author_id)
-        author = Author.objects.get(user=user)
+        #user = User.objects.get(id=user_id)
+        author = Author.objects.get(id=uuid.UUID(author_id))
+        user = author.user
         payload = { } # This is what we send in the RequestContext
 
+        payload['author_id'] = author.id
         payload['firstName'] = user.first_name or ""
         payload['lastName'] = user.last_name or ""
         payload['username'] = author.displayName
@@ -130,6 +132,7 @@ def editProfile(request):
         payload['firstName'] = user.first_name or ""
         payload['lastName'] = user.last_name or ""
         payload['username'] = user.username
+        payload['author_id'] = author.id
 
         context = RequestContext(request, payload)
         return render(request, 'author/edit_profile.html', context)
@@ -174,21 +177,10 @@ def getAuthorPosts(request, author_id):
             post.content = markdown.markdown(post.content)
 
     context["posts"] = zip(posts, comments, categories, visibilityExceptions)
-    data = {"posts":posts, 
-            "comments":comments, 
-            "categories":categories}
+    context["author_id"] = author.id
 
-    if 'text/html' in request.META['HTTP_ACCEPT'] and viewer == author:
-        return render_to_response('post/posts.html', context)
+    return render_to_response('post/posts.html', context)
 
-    elif 'application/json' in request.META['HTTP_ACCEPT']:
-        response = HttpResponse(makeJSONPost(data),
-                                content_type="application/json",
-                                status=status.HTTP_200_OK)
-    else:
-        response = HttpResponse(status=status.HTTP_401_UNAUTHORIZED)
-
-    return response
 
 def stream(request):
     """
@@ -227,7 +219,7 @@ def stream(request):
         # Make a Post payload
         context['visibilities'] = Post.VISIBILITY_CHOICES
         context['contentTypes'] = Post.CONTENT_TYPE_CHOICES
-
+        context['author_id'] = author.id
 
         if 'text/html' in request.META['HTTP_ACCEPT']:
             return render_to_response('author/stream.html', context)
@@ -240,8 +232,6 @@ def stream(request):
 def friends(request):
     """
     GET: Retrieves all friends of an author
-    PUT: ??
-    POST: ??
     """
     context = RequestContext(request)
 
@@ -256,8 +246,10 @@ def friends(request):
                      { "user" : request.user,
                        "friends": author.getFriends(),
                        "follows": author.getPendingSentRequests(),
-                       "followers": author.getPendingReceivedRequests() })
+                       "followers": author.getPendingReceivedRequests(),
+                       "author_id": author.id })
 
+    print author.getPendingSentRequests()[0].displayName
     return render(request, 'author/friends.html', context)
 
 def search(request):
@@ -298,7 +290,8 @@ def search(request):
 
 
         context = RequestContext(request, {'searchphrase': username,
-                                           'results': usersAndStatus})
+                                           'results': usersAndStatus,
+                                           'author_id': author.id})
 
     return render(request, 'author/search_results.html', context)
 
@@ -316,8 +309,7 @@ def updateRelationship(request, username):
         # assume the user exists
         user = User.objects.get(username=username)
 
-        author, _ = Author.objects.get_or_create(user=user)
-
+        author = Author.objects.get(displayName=username)
         status = currentRelationship
 
         if currentRelationship == "Friend":
