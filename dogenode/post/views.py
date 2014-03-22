@@ -32,7 +32,7 @@ def getPost(request, post_id):
     if request.user.is_authenticated():
         user = request.user
         author = Author.objects.get(user=request.user)
-        post = Post.objects.get(id=post_id) 
+        post = Post.objects.get(guid=post_id) 
         if (post.isAllowedToViewPost(author)):            
             context = RequestContext(request)
 
@@ -84,10 +84,7 @@ def getAllPublicPosts(request):
     return render_to_response('post/public_posts.html', context)
 
 def handlePost(request, post_id):
-    if request.method == "PUT":
-        context = RequestContext(request)
-        return addPost(context, request, post_id)
-    else:
+    if request.method == "GET" or request.method == "POST":
         return getPost(request, post_id)
 
 @ensure_csrf_cookie
@@ -97,6 +94,7 @@ def addFormPost(request):
     """
     context = RequestContext(request)
     
+    print "got here"
     if request.method == "POST":
         title = request.POST.get("title", "")
         description = request.POST.get("description", "")
@@ -116,7 +114,8 @@ def addFormPost(request):
                                       contentType=contentType)
         newPost.origin = request.build_absolute_uri(newPost.get_absolute_url())
         newPost.save()
-
+    
+        print "got here"
         AuthorPost.objects.create(post=newPost, author=author)
 
         # I use (abuse) get_or_create to curtail creating duplicates
@@ -146,7 +145,7 @@ def deletePost(request):
         author = Author.objects.get(user=request.user)   
         if request.method == "POST":
             post_id = request.POST["post_id"]
-            post = Post.objects.get(id=post_id)
+            post = Post.objects.get(guid=post_id)
             comments = Comment.objects.filter(post_ref=post)
 
             if (AuthorPost.objects.filter(post=post, 

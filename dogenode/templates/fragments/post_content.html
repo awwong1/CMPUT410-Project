@@ -67,7 +67,7 @@
          action="{% url 'comments.views.add_comment' %}">
           {% csrf_token %}
           <div class="form-group">
-            <input type="hidden" name="post_id" value="{{post.id}}" />
+            <input type="hidden" name="post_id" value="{{post.guid}}" />
             <input type="text" class="form-control" name="newComment"
              placeholder="Make a new comment..." required/>
           </div>
