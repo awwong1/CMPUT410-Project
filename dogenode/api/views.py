@@ -141,20 +141,12 @@ def buildFullPostContent(post):
     Should find a better way to go through all the fields of a post
     """
     # Post object
-    postContent = {}
-    postContent['guid'] = post.guid
-    postContent['title'] = post.title
-    postContent['description'] = post.description
-    postContent['content'] = post.content
-    postContent['visibility'] = post.visibility
-    postContent['contentType'] = post.contentType
-    postContent['origin'] = post.origin
-    postContent['pubDate'] = post.pubDate
-    postContent['modifiedDate'] = post.modifiedDate
-
+    postContent = buildPost(post)
+                  
     # other objects
-    postContent["author"] = AuthorPost.objects.get(post=post).author
-    postContent["comments"] = Comment.objects.filter(post_ref=post)
+    author = AuthorPost.objects.get(post=post).author
+    postContent["author"] = buildAuthor(author)
+    postContent["comments"] = buildComment(post)
 
     categoryIds = PostCategory.objects.filter(post=post).values_list('category', flat=True)
 
@@ -162,6 +154,35 @@ def buildFullPostContent(post):
 
     return postContent
 
+def buildPost(post):
+    return {'guid' : post.guid,
+             'title' : post.title,
+             'description' : post.description,
+             'content' : post.content,
+             'visibility': post.visibility,
+             'contentType' : post.contentType,
+             'origin' : post.origin,
+             'pubDate' : post.pubDate,
+             'modifiedDate' : post.modifiedDate }
+
+def buildAuthor(author):
+    return {"id": author.id,
+            "displayName": author.user.username,
+            "host": author.host,
+            "url": author.url }
+
+def buildComment(post):
+    comments = Comment.objects.filter(post_ref=post)
+    commentContent = []
+    for comment in comments:
+        currentComment = {"guid": comment.guid,
+                           "author": buildAuthor(comment.author),
+                           "comment": comment.comment,
+                           "pub_date": comment.pub_date
+                          }
+        commentContent.append(comment)
+
+    return commentContent
 
 def buildFullPost(rawposts):
     """
@@ -258,7 +279,7 @@ def getAuthorPosts(request, requestedUserid):
         viewingAuthor = Author.objects.get(user=user)
 
         try:
-            requestedAuthor = Author.objects.get(user=requestedUserid)
+            requestedAuthor = Author.objects.get(id=requestedUserid)
         except Author.DoesNotExist:
             return Response(status=404)
 
@@ -290,7 +311,7 @@ def getStream(request):
         return Response(status=403)
 
 @api_view(['GET'])
-def authorProfile(request, userid):
+def authorProfile(request, authorId):
     """
     Gets the author's information. Does not support updating your profile.
     
@@ -298,13 +319,15 @@ def authorProfile(request, userid):
     implement author profiles via http://service/author/userid
     """
     try:
-        author = Author.objects.get(user=userid)
+        author = Author.objects.get(id=authorId)
     except Author.DoesNotExist:
         return Response(status=404)
 
+    authorInfo = buildAuthor(author)
+
     # Get the author's information
     if request.method == 'GET':
-        serializer = AuthorSerializer(author)
+        serializer = AuthorSerializer(authorInfo)
         return Response(serializer.data)
 
     # Update the author's information?

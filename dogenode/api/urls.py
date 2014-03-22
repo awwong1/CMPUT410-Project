@@ -9,6 +9,6 @@ urlpatterns = patterns('',
     url(r'^posts/$', views.getPublicPosts),
     url(r'^post/(?P<pk>[0-9]+)/$', views.postSingle),
     url(r'^author/posts/$', views.getStream),
-    url(r'^author/(?P<userid>\w+)/$', views.authorProfile),
-    url(r'^author/(?P<requestedUserid>\w+)/posts/$', views.getAuthorPosts),
+    url(r'^author/(?P<authorId>[-\w]+)/$', views.authorProfile),
+    url(r'^author/(?P<requestedUserid>[-\w]+)/posts/$', views.getAuthorPosts),
 )
