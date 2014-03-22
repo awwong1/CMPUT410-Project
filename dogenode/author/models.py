@@ -7,21 +7,19 @@ import uuid
 
 # Create your models here.
 class Author(models.Model):
-    id = models.CharField(max_length=36, 
-                          default=uuid.uuid4(), 
-                          primary_key=True)
+    author_id = models.CharField(max_length=36, 
+                          default=uuid.uuid4())
     user = models.OneToOneField(User)
     accepted = models.BooleanField(default=False)   
     host = models.CharField(max_length=100, default="http://dogenode/")
-    displayName = models.CharField(max_length=30, blank=True)
     url = models.URLField(blank=True)
 
     def __unicode__(self):
-        return self.displayName
+        return self.user.username
 
     def get_absolute_url(self):
         from django.core.urlresolvers import reverse
-        return reverse('author.views.profile', args=[self.id])
+        return reverse('author.views.profile', args=[self.author_id])
 
     def getFriends(self):
 

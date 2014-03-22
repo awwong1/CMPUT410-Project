@@ -19,18 +19,10 @@ class UserAdmin(UserAdmin):
 
         return False
 
-    def displayName(self, user):
-        author = Author.objects.filter(user=user)
-        self.short_description = "hiiii"
-        if len(author) > 0:
-            author[0].displayName = user.username
-            author[0].save()
-        return user.username
-
     isAccepted.boolean = True
     isAccepted.short_description = "Accepted"
 
-    list_display = ('username', 'displayName', 'first_name', 'last_name', 'email',
+    list_display = ('username', 'first_name', 'last_name', 'email',
                     'isAccepted')
     inlines = (AuthorInline, )
 
