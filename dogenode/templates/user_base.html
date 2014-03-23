@@ -54,7 +54,15 @@
             <li><a href="{% url 'author.views.profile' user.username %}">My Profile</a></li>
             <li><a href="{% url 'author.views.friends' %}">Manage Friends</a></li>
             <li><a href="{% url 'author.views.getAuthorPosts' user.id %}">Manage Posts</a></li>
-            <li><a href="{% url 'author.views.logUserOut' %}">Logout</a></li>
+            <li>
+	      <!-- Made logout GET spoof safe, used javascript call to
+		override input submit style button-->
+	      <a href="javascript:void(document.logout.submit())">Logout</a>
+	      <form action="{% url 'author.views.logUserOut' %}" method="POST"
+		    name="logout">
+		{% csrf_token %}
+	      </form>
+	    </li>
           </ul>
         </div>
         {% endblock %}

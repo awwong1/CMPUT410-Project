@@ -3,6 +3,7 @@ from django.shortcuts import (get_object_or_404, render, redirect,
 from django.http import HttpResponse
 from django.template import RequestContext
 from django.db.models import Q
+from django.views.decorators.csrf import ensure_csrf_cookie
 
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
@@ -52,10 +53,12 @@ def index(request):
 
     return render(request, 'login/index.html', context)
 
+@ensure_csrf_cookie
 def logUserOut(request):
     context = RequestContext(request)
-    logout(request)
-    return render(request, 'login/index.html', context)
+    if request.method == "POST":
+        logout(request)
+    return redirect("/")
 
 def register(request):
     context = RequestContext(request)
