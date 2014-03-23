@@ -16,6 +16,7 @@ from comments.models import Comment
 from categories.models import Category
 from api.serializers import AuthorSerializer, FullPostSerializer
 
+import datetime
 import json
 
 def areFriends(request, userid1, userid2):
@@ -270,6 +271,7 @@ def postSingle(request, post_id):
         if len(posts) > 0:
             for key, value in data.items():
                 setattr(posts[0], key, value)
+            posts[0].modifiedDate = datetime.datetime.now()
             posts[0].save()
         else:    # post doesn't exist, a new one will be created
             post = Post.objects.create(**data)
