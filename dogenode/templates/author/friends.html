@@ -75,7 +75,7 @@
                             $("#" + newRowTable + " tr:last").after('<tr><td><a href="/author/profile/' 
                                     + author_id 
                                     + '">' + user + '</a><input type="hidden" id="' + user + '" value="'
-                                    + author_id + '" /></td><td><input class="danger ' + newRowClass 
+                                    + author_id + '" /></td><td><input class="' + newRowClass 
                                     + '" type="submit" value="' + newRowValue + '"></td></tr>');
 
                         }
@@ -116,7 +116,7 @@
                         <input id="{{ friend }}" type="hidden" value="{{ friend.author_id }}"/>
                     </td>
                     <td>
-                        <input class="danger unfriend" type="submit" value="Unfriend">
+                        <input class="unfriend" type="submit" value="Unfriend">
                     </td>
                 </tr>
             {% endfor %}
@@ -138,7 +138,7 @@
                     <td><a href="{% url 'author.views.profile' follow.author_id %}">{{ follow.user.username }}</a></td>
                         <input id="{{ follow }}" type="hidden" value="{{ follow.author_id }}"/>
                     <td>
-                        <input class="danger unfollow" type="submit" value="UnFollow">
+                        <input class="unfollow" type="submit" value="UnFollow">
                     </td>
                 </tr>
             {% endfor %}
@@ -158,6 +158,7 @@
             <tbody>
             {% for follower in followers %}
                 <tr>
+<<<<<<< HEAD
                     <td><a href="{% url 'author.views.profile' follower.author_id %}">
                         {{ follower }}</a>
                         <input id="{{ follower}}" type="hidden" value="{{ follower.author_id }}"/>
@@ -165,6 +166,11 @@
                     <!-- TODO: befriending someone shouldn't be "dangerous" -->
                     <td>
                         <input class="danger befriend" type="submit" value="Befriend"/>
+=======
+                    <td><a href="/author/profile/{{ follower }}">{{ follower }}</a></td>
+                    <td>
+                        <input class="befriend" type="submit" value="Befriend">
+>>>>>>> d2039e968cd9937af2d48491b88e5f182130a9ed
                     </td>
                 </tr>
             {% endfor %}
