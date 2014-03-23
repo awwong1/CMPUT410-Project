@@ -241,20 +241,22 @@ def postSingle(request, post_id):
         a POST should get the post
         a GET should get the post
     """
-    try:
-        rawpost = Post.objects.get(guid=post_id)
-    except Post.DoesNotExist:
-        return Response(status=404)
 
     # Check if the current author is allowed to view the post
+    if not request.user.is_authenticated():
+        return Response(status=status.HTTP_401_UNAUTHORIZED)
     user = User.objects.get(username=request.user)
     author = Author.objects.get(user=user)
 
-    if not rawpost.isAllowedToViewPost(author):
-        return Response(status=403) 
-
     # Get the post
     if request.method == 'GET' or request.method == 'POST':
+        try:
+            rawpost = Post.objects.get(guid=post_id)
+        except Post.DoesNotExist:
+            return Response(status=404)
+
+        if not rawpost.isAllowedToViewPost(author):
+            return Response(status=403) 
         post = buildFullPost(rawpost)
         serializer = FullPostSerializer(post)
         return Response({"posts":serializer.data})
@@ -269,11 +271,15 @@ def postSingle(request, post_id):
         if len(posts) > 0:
             for key, value in data.items():
                 setattr(posts[0], key, value)
+            posts[0].save()
         else:    # post doesn't exist, a new one will be created
-            pass
-        print posts[0]
-        posts[0].save() 
-        return Response(status=200)
+            post = Post.objects.create(**data)
+            post.origin = request.build_absolute_uri(post.get_absolute_url())
+            post.guid = post_id
+            post.save()
+            AuthorPost.objects.create(post=post, author=author)
+    
+        return Response(status=status.HTTP_200_OK)
         #serializer = FullPostSerializer(post, data=request.DATA)
         #if serializer.is_valid():
           #  print "yay"
