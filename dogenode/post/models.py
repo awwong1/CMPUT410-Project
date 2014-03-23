@@ -24,7 +24,7 @@ class Post(models.Model):
         (PRIVATE, "Private"),
         (FRIENDS, "Friends only"),
         (FOAF, "Friends of friends"),
-        (SERVERONLY, "Dogenode only"),
+        (SERVERONLY, "Dogenode friends only"),
         (PUBLIC, "Public"),
     )
 
