@@ -160,19 +160,12 @@
             <tbody>
             {% for follower in followers %}
                 <tr>
-<<<<<<< HEAD
                     <td><a href="{% url 'author.views.profile' follower.author_id %}">
                         {{ follower }}</a>
                         <input id="{{ follower}}" type="hidden" value="{{ follower.author_id }}"/>
                     </td>
-                    <!-- TODO: befriending someone shouldn't be "dangerous" -->
                     <td>
-                        <input class="danger befriend" type="submit" value="Befriend"/>
-=======
-                    <td><a href="/author/profile/{{ follower }}">{{ follower }}</a></td>
-                    <td>
-                        <input class="befriend" type="submit" value="Befriend">
->>>>>>> d2039e968cd9937af2d48491b88e5f182130a9ed
+                        <input class="befriend" type="submit" value="Befriend"/>
                     </td>
                 </tr>
             {% endfor %}
