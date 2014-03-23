@@ -28,7 +28,7 @@ class Post(models.Model):
         (PUBLIC, "Public"),
     )
 
-    guid = models.CharField(max_length=36, default=uuid.uuid4(), unique=True)
+    guid = models.CharField(max_length=36, unique=True, default=uuid.uuid4)
     title = models.CharField(max_length=140, blank=True)
     description = models.CharField(max_length=255, blank=True)
     content = models.TextField()
@@ -51,7 +51,7 @@ class Post(models.Model):
 
     def get_absolute_url(self):
         from django.core.urlresolvers import reverse
-        return reverse('post.views.handlePost', args=[str(self.id)])
+        return reverse('post.views.handlePost', args=[self.guid])
 
     # TODO: Need to add admin logic.
     def isAllowedToViewPost(self, author):

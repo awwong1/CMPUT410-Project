@@ -10,4 +10,5 @@ urlpatterns = patterns('',
     url(r'^friends/$', views.friends),
     url(r'^search_results/$', views.search),
     url(r'^edit_profile/$', views.editProfile),
+    url(r'^(?P<author_id>[-\w]+)/$', views.profile),
 )

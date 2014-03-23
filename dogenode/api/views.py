@@ -17,6 +17,7 @@ from categories.models import Category
 from api.serializers import AuthorSerializer, FullPostSerializer
 
 import json
+import yaml
 
 def areFriends(request, userid1, userid2):
 
@@ -141,20 +142,12 @@ def buildFullPostContent(post):
     Should find a better way to go through all the fields of a post
     """
     # Post object
-    postContent = {}
-    postContent['guid'] = post.guid
-    postContent['title'] = post.title
-    postContent['description'] = post.description
-    postContent['content'] = post.content
-    postContent['visibility'] = post.visibility
-    postContent['contentType'] = post.contentType
-    postContent['origin'] = post.origin
-    postContent['pubDate'] = post.pubDate
-    postContent['modifiedDate'] = post.modifiedDate
+    postContent = buildPost(post)
 
     # other objects
-    postContent["author"] = AuthorPost.objects.get(post=post).author
-    postContent["comments"] = Comment.objects.filter(post_ref=post)
+    author = AuthorPost.objects.get(post=post).author
+    postContent["author"] = buildAuthor(author)
+    postContent["comments"] = buildComment(post)
 
     categoryIds = PostCategory.objects.filter(post=post).values_list('category', flat=True)
 
@@ -162,6 +155,36 @@ def buildFullPostContent(post):
 
     return postContent
 
+def buildPost(post):
+    return {'guid' : post.guid,
+             'title' : post.title,
+             'description' : post.description,
+             'content' : post.content,
+             'visibility': post.visibility,
+             'contentType' : post.contentType,
+             'origin' : post.origin,
+             'pubDate' : post.pubDate,
+             'modifiedDate' : post.modifiedDate }
+
+def buildAuthor(author):
+    return {"id": author.author_id,
+            "displayName": author.user.username,
+            "host": author.host,
+            "url": author.url }
+
+def buildComment(post):
+    comments = Comment.objects.filter(post_ref=post)
+    commentContent = []
+    for comment in comments:
+        currentComment = {}
+        currentComment = {"guid": comment.guid,
+                           "author": buildAuthor(comment.author),
+                           "comment": comment.comment,
+                           "pub_date": comment.pub_date
+                          }
+        commentContent.append(currentComment)
+
+    return commentContent
 
 def buildFullPost(rawposts):
     """
@@ -203,11 +226,12 @@ def getPublicPosts(request):
         rawposts = Post.objects.filter(visibility=Post.PUBLIC)
 
         posts = buildFullPost(rawposts)
+        print(posts)
 
         return Response(serializeFullPost(posts))
 
 @api_view(['GET','POST','PUT'])
-def postSingle(request, pk):
+def postSingle(request, post_id):
     """
     Retrieve a post. Currently does not properly update/create a post.
 
@@ -217,32 +241,51 @@ def postSingle(request, pk):
         a POST should get the post
         a GET should get the post
     """
-    try:
-        rawpost = Post.objects.get(id=pk)
-    except Post.DoesNotExist:
-        return Response(status=404)
 
     # Check if the current author is allowed to view the post
+    if not request.user.is_authenticated():
+        return Response(status=status.HTTP_401_UNAUTHORIZED)
     user = User.objects.get(username=request.user)
     author = Author.objects.get(user=user)
 
-    if not rawpost.isAllowedToViewPost(author):
-        return Response(status=403) 
-
     # Get the post
     if request.method == 'GET' or request.method == 'POST':
+        try:
+            rawpost = Post.objects.get(guid=post_id)
+        except Post.DoesNotExist:
+            return Response(status=404)
+
+        if not rawpost.isAllowedToViewPost(author):
+            return Response(status=403) 
         post = buildFullPost(rawpost)
         serializer = FullPostSerializer(post)
         return Response({"posts":serializer.data})
 
     # Update the post
     elif request.method == 'PUT':
-        post = buildFullPost(rawpost)
-        serializer = FullPostSerializer(post, data=request.DATA)
-        if serializer.is_valid():
-            serializer.save()
-            return Response({"posts":serializer.data})
-        return Response(serializer.errors, status=400)
+        # for post in request.DATA:
+        data = request.DATA
+        posts = Post.objects.filter(guid=post_id)
+
+        # post exists, so it will update
+        if len(posts) > 0:
+            for key, value in data.items():
+                setattr(posts[0], key, value)
+            posts[0].save()
+        else:    # post doesn't exist, a new one will be created
+            post = Post.objects.create(**data)
+            post.origin = request.build_absolute_uri(post.get_absolute_url())
+            post.guid = post_id
+            post.save()
+            AuthorPost.objects.create(post=post, author=author)
+    
+        return Response(status=status.HTTP_200_OK)
+        #serializer = FullPostSerializer(post, data=request.DATA)
+        #if serializer.is_valid():
+          #  print "yay"
+            #serializer.save()
+            #return Response({"posts":serializer.data})
+        #return Response(serializer.errors, status=400)
 
 @api_view(['GET'])
 def getAuthorPosts(request, requestedUserid):
@@ -258,7 +301,7 @@ def getAuthorPosts(request, requestedUserid):
         viewingAuthor = Author.objects.get(user=user)
 
         try:
-            requestedAuthor = Author.objects.get(user=requestedUserid)
+            requestedAuthor = Author.objects.get(author_id=requestedUserid)
         except Author.DoesNotExist:
             return Response(status=404)
 
@@ -290,7 +333,7 @@ def getStream(request):
         return Response(status=403)
 
 @api_view(['GET'])
-def authorProfile(request, userid):
+def authorProfile(request, authorId):
     """
     Gets the author's information. Does not support updating your profile.
     
@@ -298,19 +341,14 @@ def authorProfile(request, userid):
     implement author profiles via http://service/author/userid
     """
     try:
-        author = Author.objects.get(user=userid)
+        author = Author.objects.get(author_id=authorId)
     except Author.DoesNotExist:
         return Response(status=404)
 
+    authorInfo = buildAuthor(author)
+
     # Get the author's information
     if request.method == 'GET':
-        serializer = AuthorSerializer(author)
+        serializer = AuthorSerializer(authorInfo)
         return Response(serializer.data)
 
-    # Update the author's information?
-    #elif request.method == 'PUT':
-    #    serializer = AuthorSerializer(author, data=request.DATA)
-    #    if serializer.is_valid():
-    #        serializer.save()
-    #        return Response(serializer.data)
-    #    return Response(serializer.errors, status=400)

@@ -37,8 +37,8 @@
       <div class="panel-footer">
         <div class="row">
           <div class="col-sm-4">
-            by <a href="{% url 'author.views.profile' author.id %}">
-                <strong>{{ author.displayname }}</strong>
+            by <a href="{% url 'author.views.profile' author.author_id %}">
+                <strong>{{ author.user.username }}</strong>
               </a>
             on {{ post.pubDate }}
           </div>
@@ -54,8 +54,8 @@
           {% for comment in comments %}
           <tr>
             <td><small>
-              <a href="{% url 'author.views.profile' comment.author.id %}">
-                <strong>{{comment.author.displayname}}</strong>
+              <a href="{% url 'author.views.profile' comment.author.author_id %}">
+                <strong>{{comment.author.user.username}}</strong>
               </a> on {{comment.pub_date}}:</small> {{comment.comment}}
             </td>
           </tr>
@@ -67,7 +67,7 @@
          action="{% url 'comments.views.add_comment' %}">
           {% csrf_token %}
           <div class="form-group">
-            <input type="hidden" name="post_id" value="{{post.id}}" />
+            <input type="hidden" name="post_id" value="{{post.guid}}" />
             <input type="text" class="form-control" name="newComment"
              placeholder="Make a new comment..." required/>
           </div>

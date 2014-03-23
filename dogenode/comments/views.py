@@ -16,7 +16,7 @@ def get_post_comments(request, post_id):
     Currently, nothing calls this
     """
     context = RequestContext(request)
-    post = Post.objects.get(id=post_id)
+    post = Post.objects.get(guid=post_id)
     comments = Comment.objects.filter(post_ref=post)
     context["comments"] = comments
     return render_to_response("fragments/post_content.html", context)
@@ -29,7 +29,7 @@ def add_comment(request):
         author = Author.objects.get(user=request.user)
         post_id = request.POST['post_id']
         commentText = request.POST['newComment']
-        post = Post.objects.get(id=post_id)
+        post = Post.objects.get(guid=post_id)
         Comment.objects.create(
             author=author,
             comment=commentText,

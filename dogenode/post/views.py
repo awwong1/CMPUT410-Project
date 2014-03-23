@@ -32,7 +32,7 @@ def getPost(request, post_id):
     if request.user.is_authenticated():
         user = request.user
         author = Author.objects.get(user=request.user)
-        post = Post.objects.get(id=post_id) 
+        post = Post.objects.get(guid=post_id) 
         if (post.isAllowedToViewPost(author)):            
             context = RequestContext(request)
 
@@ -48,14 +48,13 @@ def getPost(request, post_id):
                 id__in=authorIds)
             categories = Category.objects.filter(id__in=categoryIds)
 
-            print "BBBRRRONNNNTTTEEE"
             # Convert Markdown into HTML for web browser 
             # django.contrib.markup is deprecated in 1.6, so, workaround
             if post.contentType == post.MARKDOWN:
                 post.content = markdown.markdown(post.content)
             
             context['posts'] = [(post, postAuthor, comments, categories, visibilityExceptions)]
-            context['author_id'] = author.id
+            context['author_id'] = author.author_id
 
             return render_to_response('post/post.html', context)
     else:
@@ -63,11 +62,8 @@ def getPost(request, post_id):
 
 def getAllPublicPosts(request):
     """
-    Retreives all public posts. Can be accessed via REST interface
-    by service/posts/
-    
-    NOT CURRENTLY NEEDED FOR BROWSER
- 
+    Retreives all public posts. 
+    """
     context = RequestContext(request)
     author = Author.objects.get(user=request.user)
     rawposts = Post.objects.filter(visibility=Post.PUBLIC)
@@ -78,24 +74,17 @@ def getAllPublicPosts(request):
     for post in rawposts:
         categoryIds = PostCategory.objects.filter(post=post).values_list(
                         'category', flat=True)
-
         authors.append(AuthorPost.objects.get(post=post).author)
         comments.append(Comment.objects.filter(post_ref=post))
         categories.append(Category.objects.filter(id__in=categoryIds))
 
     # Stream payload
-    context['posts'] = [(post, authors, comments, categories)]
-    return chooseResponseType(request, context, 'post/public_posts.html', data)
-    """
-
-    if 'text/html' in request.META['HTTP_ACCEPT']:
-        return render_to_response(url, context)
+    context['posts'] = zip(rawposts, authors, comments, categories)
+    context['author_id'] = author.author_id
+    return render_to_response('post/public_posts.html', context)
 
 def handlePost(request, post_id):
-    if request.method == "PUT":
-        context = RequestContext(request)
-        return addPost(context, request, post_id)
-    else:
+    if request.method == "GET" or request.method == "POST":
         return getPost(request, post_id)
 
 @ensure_csrf_cookie
@@ -124,7 +113,7 @@ def addFormPost(request):
                                       contentType=contentType)
         newPost.origin = request.build_absolute_uri(newPost.get_absolute_url())
         newPost.save()
-
+    
         AuthorPost.objects.create(post=newPost, author=author)
 
         # I use (abuse) get_or_create to curtail creating duplicates
@@ -154,7 +143,7 @@ def deletePost(request):
         author = Author.objects.get(user=request.user)   
         if request.method == "POST":
             post_id = request.POST["post_id"]
-            post = Post.objects.get(id=post_id)
+            post = Post.objects.get(guid=post_id)
             comments = Comment.objects.filter(post_ref=post)
 
             if (AuthorPost.objects.filter(post=post, 
@@ -163,6 +152,6 @@ def deletePost(request):
                 post.delete();
             # else: send a message?
 
-        return redirect('/author/'+str(author.id)+'/posts/')
+        return redirect('/author/'+str(author.author_id)+'/posts/')
     else:
         return redirect('/login/')
