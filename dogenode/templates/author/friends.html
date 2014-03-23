@@ -71,7 +71,7 @@
                             }
 
                             //TODO: the dynamically created hyperlink isn't brown
-                            $("#" + newRowTable + " tr:last").after('<tr><td><a href="/author/profile/' + user + '">' + user + '</a></td><td><input class="danger ' + newRowClass + '" type="submit" value="' + newRowValue + '"></td></tr>');
+                            $("#" + newRowTable + " tr:last").after('<tr><td><a href="/author/profile/' + user + '">' + user + '</a></td><td><input class="' + newRowClass + '" type="submit" value="' + newRowValue + '"></td></tr>');
 
                         }
                     },
@@ -109,7 +109,7 @@
                 <tr>
                     <td><a href="/author/profile/{{ friend }}">{{ friend }}</a></td>
                     <td>
-                        <input class="danger unfriend" type="submit" value="Unfriend">
+                        <input class="unfriend" type="submit" value="Unfriend">
                     </td>
                 </tr>
             {% endfor %}
@@ -130,7 +130,7 @@
                 <tr>
                     <td><a href="/author/profile/{{ follow }}">{{ follow }}</a></td>
                     <td>
-                        <input class="danger unfollow" type="submit" value="UnFollow">
+                        <input class="unfollow" type="submit" value="UnFollow">
                     </td>
                 </tr>
             {% endfor %}
@@ -151,9 +151,8 @@
             {% for follower in followers %}
                 <tr>
                     <td><a href="/author/profile/{{ follower }}">{{ follower }}</a></td>
-                    <!-- TODO: befriending someone shouldn't be "dangerous" -->
                     <td>
-                        <input class="danger befriend" type="submit" value="Befriend">
+                        <input class="befriend" type="submit" value="Befriend">
                     </td>
                 </tr>
             {% endfor %}
