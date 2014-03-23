@@ -269,7 +269,7 @@ class RESTfulTestCase(TestCase):
         author = Author.objects.get(user=user)
         self.client.login(username="utestuser1", password="testpassword")
 
-        response = self.client.get('/api/author/%s/posts/' % author.author_id,
+        response = self.client.get('/api/author/%s/posts/' % author.guid,
                                     HTTP_ACCEPT = 'application/json')
         
         # Response code check
@@ -302,7 +302,7 @@ class RESTfulTestCase(TestCase):
                             'author': {'url': postAuthor.url, 
                                        'host': postAuthor.host, 
                                        'displayName': postAuthor.user.username, 
-                                       'id': postAuthor.author_id}, 
+                                       'id': postAuthor.guid}, 
                             'comments': [],
                             'categories': [], 
                             }

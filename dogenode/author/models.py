@@ -7,7 +7,7 @@ import uuid
 
 # Create your models here.
 class Author(models.Model):
-    author_id = models.CharField(max_length=36,
+    guid = models.CharField(max_length=36,
                                  unique=True, 
                                  default=uuid.uuid4)
     user = models.OneToOneField(User)
@@ -20,7 +20,7 @@ class Author(models.Model):
 
     def get_absolute_url(self):
         from django.core.urlresolvers import reverse
-        return reverse('author.views.profile', args=[self.author_id])
+        return reverse('author.views.profile', args=[self.guid])
 
     def getFriends(self):
 

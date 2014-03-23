@@ -4,8 +4,7 @@ from author.models import Author
 from post.models import Post
 
 def useAuthorGuid(instance, filename):
-    # TODO: Change author_id to guid
-    return os.path.join(instance.author.author_id, filename)
+    return os.path.join(instance.author.guid, filename)
 
 # Image wrapper model to enforce visibility constraints.
 # This shares a lot of code with the Post model, so if you change anything in

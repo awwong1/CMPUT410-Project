@@ -60,7 +60,7 @@ def getPost(request, post_id):
 
             context['posts'] = [(post, postAuthor, comments, categories,
                                  visibilityExceptions, images)]
-            context['author_id'] = author.author_id
+            context['author_id'] = author.guid
 
             return render_to_response('post/post.html', context)
     else:
@@ -91,7 +91,7 @@ def getAllPublicPosts(request):
 
     # Stream payload
     context['posts'] = zip(rawposts, authors, comments, categories, images)
-    context['author_id'] = author.author_id
+    context['author_id'] = author.guid
     return render_to_response('post/public_posts.html', context)
 
 def handlePost(request, post_id):
@@ -175,6 +175,6 @@ def deletePost(request):
                 post.delete();
             # else: send a message?
 
-        return redirect('/author/'+str(author.author_id)+'/posts/')
+        return redirect('/author/'+str(author.guid)+'/posts/')
     else:
         return redirect('/login/')

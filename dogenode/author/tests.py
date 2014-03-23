@@ -135,7 +135,7 @@ class AuthorRelationshipsTestCase(TestCase):
         user1 = User.objects.get(username="utestuser1")
         author1 = Author.objects.get(user=user1)
 
-        url = "/author/profile/" + str(author1.author_id) + "/"
+        url = "/author/profile/" + str(author1.guid) + "/"
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTemplateUsed(response, "author/profile.html")
@@ -229,7 +229,7 @@ class AuthorRelationshipsTestCase(TestCase):
         author1 = Author.objects.get(user=user1)
         self.client.login(username="utestuser1", password="testpassword")
 
-        url = "/author/"+str(author1.author_id)+"/posts/"
+        url = "/author/"+str(author1.guid)+"/posts/"
 
         response = self.client.get(url, HTTP_ACCEPT='text/html')
         self.assertEqual(response.status_code, status.HTTP_200_OK)

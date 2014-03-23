@@ -1,31 +1,31 @@
 {% extends "user_base.html" %}
 {% block body %}
 <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
-    <h1 class="content-title">All Public Posts</h1>
+<h1 class="content-title">All Public Posts</h1>
 
-    {% if posts %}
-    <div class="table-responsive">
-      <table class="table table-hover">
-        <thead>
-          <tr>
-            <th>Title</th>
-            <th>Author</th>
-            <th>Description</th>
-            <th>Content</th>
-            <th>Categories</th>
-            <th>Date</th>
-          </tr>
-        </thead>
-        <tbody>
-        {% for post, author, comments, categories in posts %}
-          <tr>
-            <td>
-              <a href="{% url 'post.views.handlePost' post.guid %}">
-                {{ post.title}}
-              </a>
-            </td>
-            <td>
-                <a href="{% url 'author.views.profile' author.author_id %}"> {{ author.user.username }}</a>
+{% if posts %}
+<div class="table-responsive">
+  <table class="table table-hover">
+    <thead>
+      <tr>
+        <th>Title</th>
+        <th>Author</th>
+        <th>Description</th>
+        <th>Content</th>
+        <th>Categories</th>
+        <th>Date</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for post, author, comments, categories in posts %}
+      <tr>
+        <td>
+          <a href="{% url 'post.views.handlePost' post.guid %}">
+            {{ post.title}}
+          </a>
+        </td>
+        <td>
+            <a href="{% url 'author.views.profile' author.guid %}"> {{ author.user.username }}</a>
             </td>
             <td>
               <a href="{% url 'post.views.handlePost' post.guid %}">

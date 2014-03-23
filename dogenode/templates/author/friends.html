@@ -114,8 +114,8 @@
             <tbody>  
             {% for friend in friends %}
                 <tr>
-                    <td><a href="{% url 'author.views.profile' friend.author_id %}">{{ friend }}</a>
-                        <input id="{{ friend }}" type="hidden" value="{{ friend.author_id }}"/>
+                    <td><a href="{% url 'author.views.profile' friend.guid %}">{{ friend }}</a>
+                        <input id="{{ friend }}" type="hidden" value="{{ friend.guid }}"/>
                     </td>
                     <td>
                         <input class="unfriend" type="submit" value="Unfriend">
@@ -137,8 +137,8 @@
             <tbody>
             {% for follow in follows %}
                 <tr>
-                    <td><a href="{% url 'author.views.profile' follow.author_id %}">{{ follow.user.username }}</a></td>
-                        <input id="{{ follow }}" type="hidden" value="{{ follow.author_id }}"/>
+                    <td><a href="{% url 'author.views.profile' follow.guid %}">{{ follow.user.username }}</a></td>
+                        <input id="{{ follow }}" type="hidden" value="{{ follow.guid }}"/>
                     <td>
                         <input class="unfollow" type="submit" value="UnFollow">
                     </td>
@@ -160,9 +160,9 @@
             <tbody>
             {% for follower in followers %}
                 <tr>
-                    <td><a href="{% url 'author.views.profile' follower.author_id %}">
+                    <td><a href="{% url 'author.views.profile' follower.guid %}">
                         {{ follower }}</a>
-                        <input id="{{ follower}}" type="hidden" value="{{ follower.author_id }}"/>
+                        <input id="{{ follower}}" type="hidden" value="{{ follower.guid }}"/>
                     </td>
                     <td>
                         <input class="befriend" type="submit" value="Befriend"/>

@@ -167,7 +167,7 @@ def buildPost(post):
              'modifiedDate' : post.modifiedDate }
 
 def buildAuthor(author):
-    return {"id": author.author_id,
+    return {"id": author.guid,
             "displayName": author.user.username,
             "host": author.host,
             "url": author.url }
@@ -302,7 +302,7 @@ def getAuthorPosts(request, requestedUserid):
         viewingAuthor = Author.objects.get(user=user)
 
         try:
-            requestedAuthor = Author.objects.get(author_id=requestedUserid)
+            requestedAuthor = Author.objects.get(guid=requestedUserid)
         except Author.DoesNotExist:
             return Response(status=404)
 
@@ -342,7 +342,7 @@ def authorProfile(request, authorId):
     implement author profiles via http://service/author/userid
     """
     try:
-        author = Author.objects.get(author_id=authorId)
+        author = Author.objects.get(guid=authorId)
     except Author.DoesNotExist:
         return Response(status=404)
 
