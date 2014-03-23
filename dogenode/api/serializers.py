@@ -25,17 +25,17 @@ class FullPostSerializer(serializers.Serializer):
     example-article.json since the model of our post doesn't quite match
     what needs to be sent
     """
-    guid = serializers.CharField(max_length=36)
-    title = serializers.CharField(max_length=140)
-    description = serializers.CharField(max_length=255) 
+    guid = serializers.CharField(max_length=36, required=False)
+    title = serializers.CharField(max_length=140, required=False)
+    description = serializers.CharField(max_length=255, required=False) 
     # CharField for content corresponds to TextField
-    content = serializers.CharField(max_length=None, min_length=None)
-    visibility = serializers.CharField(max_length=10)
-    contentType = serializers.CharField(max_length=15)
-    origin = serializers.URLField()
-    pubDate = serializers.DateTimeField()
-    modifiedDate = serializers.DateTimeField()
+    content = serializers.CharField(max_length=None, min_length=None, required=False)
+    visibility = serializers.CharField(max_length=10, required=False)
+    contentType = serializers.CharField(max_length=15, required=False)
+    origin = serializers.URLField(required=False)
+    pubDate = serializers.DateTimeField(required=False)
+    modifiedDate = serializers.DateTimeField(required=False)
 
-    author = AuthorSerializer()
+    author = AuthorSerializer(required=False)
     comments = CommentSerializer(required = False) # May have no comments    
-    categories = serializers.CharField(max_length=80) 
+    categories = serializers.CharField(max_length=80, required=False) 

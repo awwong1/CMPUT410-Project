@@ -17,6 +17,7 @@ from categories.models import Category
 from api.serializers import AuthorSerializer, FullPostSerializer
 
 import json
+import yaml
 
 def areFriends(request, userid1, userid2):
 
@@ -230,7 +231,7 @@ def getPublicPosts(request):
         return Response(serializeFullPost(posts))
 
 @api_view(['GET','POST','PUT'])
-def postSingle(request, pk):
+def postSingle(request, post_id):
     """
     Retrieve a post. Currently does not properly update/create a post.
 
@@ -241,7 +242,7 @@ def postSingle(request, pk):
         a GET should get the post
     """
     try:
-        rawpost = Post.objects.get(id=pk)
+        rawpost = Post.objects.get(guid=post_id)
     except Post.DoesNotExist:
         return Response(status=404)
 
@@ -260,12 +261,25 @@ def postSingle(request, pk):
 
     # Update the post
     elif request.method == 'PUT':
-        post = buildFullPost(rawpost)
-        serializer = FullPostSerializer(post, data=request.DATA)
-        if serializer.is_valid():
-            serializer.save()
-            return Response({"posts":serializer.data})
-        return Response(serializer.errors, status=400)
+        # for post in request.DATA:
+        data = request.DATA
+        posts = Post.objects.filter(guid=post_id)
+
+        # post exists, so it will update
+        if len(posts) > 0:
+            for key, value in data.items():
+                setattr(posts[0], key, value)
+        else:    # post doesn't exist, a new one will be created
+            pass
+        print posts[0]
+        posts[0].save() 
+        return Response(status=200)
+        #serializer = FullPostSerializer(post, data=request.DATA)
+        #if serializer.is_valid():
+          #  print "yay"
+            #serializer.save()
+            #return Response({"posts":serializer.data})
+        #return Response(serializer.errors, status=400)
 
 @api_view(['GET'])
 def getAuthorPosts(request, requestedUserid):
@@ -332,10 +346,3 @@ def authorProfile(request, authorId):
         serializer = AuthorSerializer(authorInfo)
         return Response(serializer.data)
 
-    # Update the author's information?
-    #elif request.method == 'PUT':
-    #    serializer = AuthorSerializer(author, data=request.DATA)
-    #    if serializer.is_valid():
-    #        serializer.save()
-    #        return Response(serializer.data)
-    #    return Response(serializer.errors, status=400)
