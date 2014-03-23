@@ -3,6 +3,10 @@ from django.test import TestCase
 from django.contrib.auth.models import User
 
 from author.models import Author, Relationship
+from post.models import Post, AuthorPost
+from rest_framework.renderers import JSONRenderer
+from rest_framework.parsers import JSONParser
+
 
 import json
 
@@ -260,42 +264,72 @@ class RESTfulTestCase(TestCase):
         utestuser1 made post 1 and post 2, so those two posts should be 
         retrieved.
         """
-       
+        # Authenicate and send a get request 
         user = User.objects.get(username="utestuser1")
-        author = Author.objects.get(user=user1)
-
+        author = Author.objects.get(user=user)
         self.client.login(username="utestuser1", password="testpassword")
 
         response = self.client.get('/api/author/%s/posts/' % author.author_id,
                                     HTTP_ACCEPT = 'application/json')
         
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        posts = yaml.load(response.content)
-
-        self.assertEqual(len(posts['posts']), 2)
+        # Response code check
+        self.assertEqual(response.status_code, 200)
        
-        titles = ["title1", "title2"] 
-        for post in posts['posts']:
-            self.assertEquals(post["author"][])  TODO: FIX ONCE AUTHOR MODEL DONE
-            self.assertIn(post["title"], titles)
+        # Author should have 2 posts
+        posts = json.loads(response.content, object_hook=_decode_dict)
+        self.assertEqual(len(posts['posts']), 2, 
+                         "%s should have 2 posts!" % "utestuser1")
+
+        # Make sure they are the same!
+        for i in range(len(posts['posts'])):
+            post = posts["posts"][i]
+            self.assertEquals(post["author"]["displayName"], "utestuser1",
+                              "This is not the %s's post!" % "utestuser1")  
+            if post["title"] == "title2":
+                epost = Post.objects.get(title="title2")
+            elif post["title"] == "title1":
+                epost = Post.objects.get(title="title1")
+
+            postAuthor = AuthorPost.objects.get(post=epost).author
+            expectedPost = {
+                            'guid': epost.guid,
+                            'title': epost.title, 
+                            'description': epost.description, 
+                            'content': epost.content, 
+                            'visibility': epost.visibility, 
+                            'contentType': epost.contentType, 
+                            'origin': epost.origin, 
+                            'author': {'url': postAuthor.url, 
+                                       'host': postAuthor.host, 
+                                       'displayName': postAuthor.user.username, 
+                                       'id': postAuthor.author_id}, 
+                            'comments': [],
+                            'categories': [], 
+                            }
+
+            for key in expectedPost.keys():
+                self.assertEquals(expectedPost[key], post[key])
+
 
     def testRESTStream(self):
         """
         Tests retrieving all posts that are visible to the current user.
         Sends a GET request to /author/posts/
-        utestuser1 should be able to see post 1, 2, 6, and 8
-        
-        self.client.login(username="utestuser1", password="testpassword")
-        user1 = User.objects.get(username="utestuser1")
-        author1 = Author.objects.get(user=user1)
-        
-        url = "/author/stream/"
-        response = self.client.get(url, HTTP_ACCEPT="application/json")
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        posts = yaml.load(response.content)
-        self.assertEquals(len(posts["posts"]), 4)	
-
-        titles = ["title1", "title2", "title6", "title8"]
-        for post in posts["posts"]:
-            self.assertIn(post["title"], titles)
+        utestuser1 shouserialize ld be able to see post 1, 2, 6, and 8
         """
+        # Authenicate and send a get request 
+        user = User.objects.get(username="utestuser1")
+        author = Author.objects.get(user=user)
+        self.client.login(username="utestuser1", password="testpassword")
+
+        response = self.client.get('/api/author/posts/', 
+                                    HTTP_ACCEPT = 'application/json')
+        
+        # Response code check
+        self.assertEqual(response.status_code, 200)
+
+        # Author should have 2 posts
+        posts = json.loads(response.content, object_hook=_decode_dict)
+        self.assertEqual(len(posts['posts']), 4, 
+                         "%s should see 4 posts!" % "utestuser1")
+
