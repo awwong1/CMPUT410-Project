@@ -47,6 +47,7 @@
             function changeRelationship(event) {
                 // Ugly jQuery to get the user off the table row
                 var user = $($(event.target).parent().parent().children()[0]).children()[0].innerHTML;
+                user = $.trim(user);
                 var relationship = event.data.currentRelationship;
                 $.ajax({
                     type: "POST",
@@ -106,7 +107,7 @@
             <tbody>  
             {% for friend in friends %}
                 <tr>
-                    <td><a href="/author/profile/{{ friend.author_id }}">{{ friend }}</a></td>
+                    <td><a href="{% url 'author.views.profile' friend.author_id %}">{{ friend }}</a></td>
                     <td>
                         <input class="danger unfriend" type="submit" value="Unfriend">
                     </td>
@@ -127,7 +128,7 @@
             <tbody>
             {% for follow in follows %}
                 <tr>
-                    <td><a href="/author/profile/{{ follow.author_id }}">{{ follow.user.username }}</a></td>
+                    <td><a href="{% url 'author.views.profile' follow.author_id %}">{{ follow.user.username }}</a></td>
                     <td>
                         <input class="danger unfollow" type="submit" value="UnFollow">
                     </td>
@@ -149,7 +150,8 @@
             <tbody>
             {% for follower in followers %}
                 <tr>
-                    <td><a href="/author/profile/{{ follower.author_id }}">{{ follower }}</a></td>
+                    <td><a href="{% url 'author.views.profile' follower.author_id %}">
+                        {{ follower }}</a></td>
                     <!-- TODO: befriending someone shouldn't be "dangerous" -->
                     <td>
                         <input class="danger befriend" type="submit" value="Befriend">

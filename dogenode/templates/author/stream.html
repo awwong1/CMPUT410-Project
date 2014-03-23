@@ -7,7 +7,7 @@
     </div>
     <div class="row">
         <div class="col-md-12">
-            <form class="form-horizontal" role="form" method="POST" action="/posts/add_post/">
+            <form class="form-horizontal" role="form" method="POST" action="{% url 'post.views.addFormPost' %}">
                 <div class="panel panel-default">
                   {% csrf_token %}
                   <div class="panel-heading">

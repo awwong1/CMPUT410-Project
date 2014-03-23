@@ -5,7 +5,7 @@
   <h1 class="section-header"> {{ username }}
     {% if userIsAuthor %}
     <span>
-      <a href="/author/edit_profile/" id="edit-profile" class="button-links">
+      <a href="{% url 'author.views.editProfile' %}" id="edit-profile" class="button-links">
         Edit Profile
       </a>
     </span>
@@ -49,7 +49,7 @@
       <tbody>
 	{% for post in authPosts %}
 	<tr>
-	  <td><a href="{% url 'post.views.handlePost' post.id %}">{{post.title}}</a></td>
+	  <td><a href="{% url 'post.views.handlePost' post.guid %}">{{post.title}}</a></td>
 	  <td>{{post.description}}</td>
 	  <td>
 	    {% if post.contentType == post.HTML or post.contentType == post.MARKDOWN %}

@@ -10,7 +10,7 @@
     {% endif %}
 
 
-  <form method="post" action="/author/edit_profile/">
+  <form method="post" action=" {% url 'author.views.editProfile' %}">
     {% csrf_token %}
   
     <h1 class="section-header">{{ username }} 

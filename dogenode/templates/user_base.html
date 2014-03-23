@@ -50,6 +50,7 @@
                 </div>
               </form>
             </li>
+            <li><a href="{% url 'post.views.getAllPublicPosts' %}">Public Posts</a></li>
             <li><a href="{% url 'author.views.stream' %}">My Stream</a></li>
             <li><a href="{% url 'author.views.profile' author_id %}">My Profile</a></li>
             <li><a href="{% url 'author.views.friends' %}">Manage Friends</a></li>
