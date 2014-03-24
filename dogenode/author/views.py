@@ -12,6 +12,7 @@ from author.models import Author, Relationship
 from post.models import Post, PostVisibilityException, AuthorPost, PostCategory
 from categories.models import Category
 from comments.models import Comment
+from images.models import Image, ImagePost, ImageVisibilityException
 
 import markdown, json
 import uuid
@@ -158,28 +159,34 @@ def getAuthorPosts(request, author_id):
 
     postIds = AuthorPost.objects.filter(author=author).values_list(
                 'post', flat=True)
+
     posts = Post.getViewablePosts(viewer, author)
     comments = []
     categories = []
     visibilityExceptions = []
+    images = []
 
     for post in posts:
         categoryIds = PostCategory.objects.filter(post = post).values_list(
                         'category', flat=True)
         authorIds = PostVisibilityException.objects.filter(
                         post=post).values_list('author', flat=True)
+        imageIds = ImagePost.objects.filter(post=post).values_list(
+                        'image', flat=True)
 
         comments.append(Comment.objects.filter(post_ref=post))
         categories.append(Category.objects.filter(id__in=categoryIds))
         visibilityExceptions.append(Author.objects.filter(
                                         id__in=authorIds))
+        images.append(Image.objects.filter(id__in=imageIds))
 
         # Convert Markdown into HTML for web browser 
         # django.contrib.markup is deprecated in 1.6, so, workaround
         if post.contentType == post.MARKDOWN:
             post.content = markdown.markdown(post.content)
 
-    context["posts"] = zip(posts, comments, categories, visibilityExceptions)
+    context["posts"] = zip(posts, comments, categories, visibilityExceptions,
+                           images)
     context["author_id"] = author.author_id
 
     return render_to_response('post/posts.html', context)
@@ -198,18 +205,22 @@ def stream(request):
         authors = []
         categories = []
         visibilityExceptions = []
+        images = []
 
         for post in rawposts:
             categoryIds = PostCategory.objects.filter(post=post).values_list(
                             'category', flat=True)
             authorIds = PostVisibilityException.objects.filter(
                             post=post).values_list('author', flat=True)
+            imageIds = ImagePost.objects.filter(post=post).values_list(
+                            'image', flat=True)
 
             authors.append(AuthorPost.objects.get(post=post).author)
             comments.append(Comment.objects.filter(post_ref=post))
             categories.append(Category.objects.filter(id__in=categoryIds))
             visibilityExceptions.append(Author.objects.filter(
                 id__in=authorIds))
+            images.append(Image.objects.filter(id__in=imageIds))
 
             # Convert Markdown into HTML for web browser 
             # django.contrib.markup is deprecated in 1.6, so, workaround
@@ -218,7 +229,7 @@ def stream(request):
 
         # Stream payload
         context['posts'] = zip(rawposts, authors, comments, categories, 
-                               visibilityExceptions)
+                               visibilityExceptions, images)
         # Make a Post payload
         context['visibilities'] = Post.VISIBILITY_CHOICES
         context['contentTypes'] = Post.CONTENT_TYPE_CHOICES

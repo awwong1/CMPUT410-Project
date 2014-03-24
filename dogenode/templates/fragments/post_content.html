@@ -1,19 +1,34 @@
-{% for post, author, comments, categories, visibilityExceptions in posts %}
+{% for post, author, comments, categories, visibilityExceptions, images in posts %}
 <div class="row">
   <div class="col-md-12">
     <div class="panel panel-default">
       <div class="panel-heading">
-        {% if post.title %}
-        <h4><strong>{{ post.title }}</strong></h4>
-        {% endif %}
-        {% if post.description %}
-        <h5>{{ post.description }}</h5>
-        {% endif %}
-      </div>
-      <div class="panel-body">
         <div class="row">
           {% if categories %}
           <div class="col-sm-8 col-md-10">
+          {% else %}
+          <div class="col-sm-12">
+          {% endif %}
+            {% if post.title %}
+            <h4><strong>{{ post.title }}</strong></h4>
+            {% endif %}
+            {% if post.description %}
+            <h5>{{ post.description }}</h5>
+            {% endif %}
+          </div>
+          {% if categories %}
+          <div class="col-sm-4 col-md-2 text-right">
+            {% for c in categories %}
+            <span class="label label-default">{{ c.name }}</span>
+            {% endfor %}
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      <div class="panel-body">
+        <div class="row">
+          {% if images %}
+          <div class="col-sm-8 col-lg-9">
           {% else %}
           <div class="col-sm-12">
           {% endif %}
@@ -25,11 +40,18 @@
                 {{ post.content|linebreaks }}
             {% endif %}
           </div>
-          {% if categories %}
-          <div class="col-sm-4 col-md-2">
-            {% for c in categories %}
-            <span class="label label-default">{{ c.name }}</span>
+          {% if images %}
+          <div class="col-sm-4 col-lg-3 text-center">
+            <div class="well">
+            {% comment %}
+              To bypass local caching, timestamp in seconds since the UNIX
+              Epoch is appended to the end to trick browsers into making new
+              GET requests.
+            {% endcomment %}
+            {% for image in images %}
+              <a href='{{ image.file.url }}?{% now "U" %}' target="_blank"><img class="img-responsive-horizontal" src="{{ image.file.url }}?{% now 'U' %}"/></a>
             {% endfor %}
+            </div>
           </div>
           {% endif %}
         </div>
