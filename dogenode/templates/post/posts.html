@@ -12,6 +12,7 @@
             <th>Description</th>
             <th>Content</th>
             <th>Categories</th>
+            <th>Visibility</th>
             <th>Visibility Exceptions</th>
             <th>Date</th>
             <th>Delete?</th>
@@ -47,6 +48,9 @@
             {% endfor %}
             </td>
             <td>
+              {{ post.get_visibility_display }}
+            </td>
+            <td>
             {% for a in visibilityExceptions %}
               <a href="{% url 'author.views.profile' a.author_id %}">{{ a }}</a>
             {% endfor %}
@@ -56,7 +60,7 @@
               <form action="{% url 'post.views.deletePost' %}" method="POST">
                 {% csrf_token %}
                 <input type="hidden" name="post_id" value="{{ post.guid }}">
-                <input type="submit" class="danger" value="Delete Post">
+                <input type="submit" class="danger" value="Delete">
               </form>
             </td>
           </tr>
