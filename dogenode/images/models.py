@@ -1,6 +1,7 @@
 import os
 from django.db import models
 from author.models import Author
+from post.models import Post
 
 def useAuthorGuid(instance, filename):
     # TODO: Change author_id to guid
@@ -29,7 +30,7 @@ class Image(models.Model):
     visibility = models.CharField(max_length=10, 
                                   choices=VISIBILITY_CHOICES, 
                                   default=PRIVATE)
-    content_type = models.CharField(max_length=40)
+    contentType = models.CharField(max_length=40)
 
     def __unicode__(self):
         return self.file.name
@@ -113,3 +114,15 @@ class ImageVisibilityException(models.Model):
 
     def __unicode__(self):
         return "%i: [%s|%s]" % (self.id, str(self.image), str(self.author))
+
+
+class ImagePost(models.Model):
+    image = models.ForeignKey(Image)
+    post = models.ForeignKey(Post)
+
+    class Meta:
+        verbose_name = 'Image Post'
+        verbose_name_plural = 'Image Posts'
+
+    def __unicode__(self):
+        return "%i: [%s|%s]" % (self.id, str(self.image), str(self.post))
