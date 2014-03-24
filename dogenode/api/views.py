@@ -17,7 +17,6 @@ from categories.models import Category
 from api.serializers import AuthorSerializer, FullPostSerializer
 
 import json
-import yaml
 
 def areFriends(request, userid1, userid2):
 
