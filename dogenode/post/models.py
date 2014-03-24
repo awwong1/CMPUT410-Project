@@ -54,6 +54,7 @@ class Post(models.Model):
         return reverse('post.views.handlePost', args=[self.guid])
 
     # TODO: Need to add admin logic.
+    # TODO: Fix SERVERONLY logic
     def isAllowedToViewPost(self, author):
         # Check if post was created by the specified author
         if AuthorPost.objects.filter(post=self, author=author).count() > 0:

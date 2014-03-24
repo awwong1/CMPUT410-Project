@@ -40,6 +40,7 @@ INSTALLED_APPS = (
     'author',
     'comments',
     'post',
+    'images',
     'categories',
     'rest_framework',
     'api',
@@ -97,3 +98,10 @@ TEMPLATE_PATH = os.path.abspath(os.path.join(BASE_DIR, 'templates'))
 TEMPLATE_DIRS = (
     TEMPLATE_PATH,
 )
+
+# Images from users
+
+MEDIA_ROOT = os.path.abspath(os.path.join(BASE_DIR, 'media'))
+MEDIA_URL = '/images/'
+
+LOGIN_URL = '/login/'
