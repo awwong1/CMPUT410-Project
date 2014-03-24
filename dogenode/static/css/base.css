@@ -227,8 +227,17 @@ div.post .date {
     float: right;
 }
 
-.panel-heading {
-    padding-bottom: 0;
+@media (min-width: 768px) {
+	.panel-heading {
+		padding-bottom: 0;
+	}
+}
+
+/* Bootstrap's .img-responsive forces a display: block, which I do not want. */
+.img-responsive-horizontal {
+	display: inline-block;
+	max-width: 100%;
+	max-height: 6em;
 }
 
 /* Search box styling */
