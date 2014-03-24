@@ -55,5 +55,8 @@ docs/_build/
 # database
 *.sqlite3
 
-# remove all buffer/tilda files
+# remove all buffer/tilde files
 *~
+
+# ignore the user media folder
+media/
