@@ -16,6 +16,11 @@ from images.models import Image, ImagePost, ImageVisibilityException
 
 import markdown, json
 import uuid
+import urllib2
+
+# List of other servers we are communicating with
+SERVER_URLS = ['http://127.0.0.1:8001' #BenHoboCo
+              ]
 
 def isUserAccepted(user):
     author = Author.objects.filter(user=user)
@@ -265,6 +270,29 @@ def friends(request):
 
     return render(request, 'author/friends.html', context)
 
+def searchOtherServers(searchString):
+    """
+    Searches other servers using their RESTful APIs for authors
+    """
+
+    authorsFound = []
+
+    # BenHoboCo
+    for server in SERVER_URLS:
+
+        try:
+            authorsFO = urllib2.urlopen("%s/api/authors" % server)
+            allAuthors = authorsFO.read()
+            jsonAllAuthors = json.loads(allAuthors)
+
+            for author in jsonAllAuthors:
+                if searchString in author["displayname"]:
+                    authorsFound.append(author)
+        except urllib2.URLError: # fail silently on connection failure
+            pass
+
+    return authorsFound
+
 def search(request):
     """
     GET: Returns author profile based on username search
@@ -300,6 +328,13 @@ def search(request):
                         usersAndStatus.append([u.username, "Follower", a.author_id])
             else:
                 usersAndStatus.append([u.username, "No Relationship", a.author_id])
+
+        authorsOtherServers = searchOtherServers(username)
+
+        for a in authorsOtherServers:
+            usersAndStatus.append([a["displayname"],
+                                  "No Relationship",
+                                  a["id"]])
 
 
         context = RequestContext(request, {'searchphrase': username,
