@@ -1,7 +1,7 @@
 from django.test import TestCase
 
 from categories.models import Category
-from author.models import Author, Relationship
+from author.models import Author
 from post.models import Post, PostCategory, AuthorPost
 from django.contrib.auth.models import User
 

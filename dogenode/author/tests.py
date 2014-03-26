@@ -1,7 +1,7 @@
 from django.test import TestCase
 
 from post.models import Post, AuthorPost
-from author.models import Author, Relationship
+from author.models import Author, LocalRelationship
 from django.contrib.auth.models import User
 
 from rest_framework import status
@@ -33,20 +33,20 @@ class AuthorRelationshipsTestCase(TestCase):
         author5, _ = Author.objects.get_or_create(user=user5)
 
         # author1 follows author2
-        Relationship.objects.get_or_create(author1=author1,
+        LocalRelationship.objects.get_or_create(author1=author1,
                                            author2=author2,
                                            relationship=False)
         # author1 follows author3
-        Relationship.objects.get_or_create(author1=author1,
+        LocalRelationship.objects.get_or_create(author1=author1,
                                            author2=author3,
                                            relationship=False)
         # author2 is friends with author3
-        Relationship.objects.get_or_create(author1=author2,
+        LocalRelationship.objects.get_or_create(author1=author2,
                                            author2=author3,
                                            relationship=True)
 
         # author3 is friends with author4
-        Relationship.objects.get_or_create(author1=author3,
+        LocalRelationship.objects.get_or_create(author1=author3,
                                            author2=author4,
                                            relationship=True)
 

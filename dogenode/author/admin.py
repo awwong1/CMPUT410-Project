@@ -3,7 +3,7 @@ from django.contrib import admin
 from django.contrib.auth.models import User
 from django.contrib.auth.admin import UserAdmin
 
-from author.models import Author, Relationship
+from author.models import Author, LocalRelationship
 
 # Register your models here.
 
@@ -28,5 +28,5 @@ class UserAdmin(UserAdmin):
 
 admin.site.unregister(User)
 admin.site.register(User, UserAdmin)
-admin.site.register(Relationship)
+admin.site.register(LocalRelationship)
 admin.site.register(Author)

@@ -24,7 +24,7 @@ class Author(models.Model):
 
     def getFriends(self):
 
-        relationships = Relationship.objects.filter(
+        relationships = LocalRelationship.objects.filter(
                             (models.Q(author1=self) | models.Q(author2=self))
                             & models.Q(relationship=True))
 
@@ -40,13 +40,13 @@ class Author(models.Model):
 
     def getPendingSentRequests(self):
 
-        relationships = Relationship.objects.filter(author1=self,
+        relationships = LocalRelationship.objects.filter(author1=self,
                                                     relationship=False)
         return [r.author2 for r in relationships]
 
     def getPendingReceivedRequests(self):
 
-        relationships = Relationship.objects.filter(author2=self,
+        relationships = LocalRelationship.objects.filter(author2=self,
                                                     relationship=False)
         return [r.author1 for r in relationships]
 
@@ -70,7 +70,7 @@ class Author(models.Model):
 #post_save.connect(addAcceptedAttribute, sender=User,
 #                  dispatch_uid="asdf")
 
-class Relationship(models.Model):
+class LocalRelationship(models.Model):
 
     author1 = models.ForeignKey(Author, related_name="author1")
     author2 = models.ForeignKey(Author, related_name="author2")
@@ -78,4 +78,14 @@ class Relationship(models.Model):
     # False means author1 has sent a friend request to author2 but
     # author2 has not accepted yet
     relationship = models.BooleanField(default=False)
+
+class RemoteRelationship(models.Model):
+
+    localAuthor = models.ForeignKey(Author, related_name="localAuthor")
+    remoteAuthor = models.CharField(max_length=36,
+                                    default=uuid.uuid4)
+    # 0 = localAuthor follows remoteAuthor
+    # 1 = remoteAuthor follows localAuthor
+    # 2 = localAuthor is friends with remoteAuthor
+    relationship = models.PositiveSmallIntegerField(default=0)
 

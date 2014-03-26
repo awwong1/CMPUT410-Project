@@ -2,13 +2,16 @@ from django.test import TestCase
 
 from django.contrib.auth.models import User
 
-from author.models import Author, Relationship
+from author.models import Author, LocalRelationship
 from post.models import Post, AuthorPost
 from rest_framework.renderers import JSONRenderer
 from rest_framework.parsers import JSONParser
 
 
-import json
+import json, uuid
+
+# TODO: generate this automatically
+OURHOST = "http://127.0.0.1:8000/"
 
 # The decoding functions are from
 # http://stackoverflow.com/a/6633651
@@ -65,20 +68,20 @@ class RESTfulTestCase(TestCase):
         author6, _ = Author.objects.get_or_create(user=user6)
 
         # author1 follows author2
-        Relationship.objects.get_or_create(author1=author1,
+        LocalRelationship.objects.get_or_create(author1=author1,
                                            author2=author2,
                                            relationship=False)
         # author1 follows author3
-        Relationship.objects.get_or_create(author1=author1,
+        LocalRelationship.objects.get_or_create(author1=author1,
                                            author2=author3,
                                            relationship=False)
         # author2 is friends with author3
-        Relationship.objects.get_or_create(author1=author2,
+        LocalRelationship.objects.get_or_create(author1=author2,
                                            author2=author3,
                                            relationship=True)
 
         # author3 is friends with author4
-        Relationship.objects.get_or_create(author1=author3,
+        LocalRelationship.objects.get_or_create(author1=author3,
                                            author2=author4,
                                            relationship=True)
 
@@ -148,21 +151,26 @@ class RESTfulTestCase(TestCase):
 
     def testRESTrelationships(self):
 
+        # test local friend requests
+
         user5 = User.objects.get(username="utestuser5")
         user6 = User.objects.get(username="utestuser6")
+
+        author5, _ = Author.objects.get_or_create(user=user5)
+        author6, _ = Author.objects.get_or_create(user=user6)
 
         # utestuser5 sends friend request to utestuser6
         friendRequestData = {
                 "query":"friendrequest",
                 "author":{
-                    "id": user5.id,
-                    "host":"http://127.0.0.1:5454/",
+                    "id": author5.guid,
+                    "host": OURHOST,
                     "displayname":"utestuser1"
                 },
                 "friend":{
                     "author":{
-                        "id": user6.id,
-                        "host":"http://127.0.0.1:5454/",
+                        "id": author6.guid,
+                        "host": OURHOST,
                         "displayname":"utestuser2",
                         "url":"http://127.0.0.1:5454/author/utestuser2"
                     }
@@ -189,8 +197,8 @@ class RESTfulTestCase(TestCase):
                            "Already following %s, no change" % user6.username})
 
         # utestuser6 befriends utestuser5
-        friendRequestData["author"]["id"] = user6.id
-        friendRequestData["friend"]["author"]["id"] = user5.id
+        friendRequestData["author"]["id"] = author6.guid
+        friendRequestData["friend"]["author"]["id"] = author5.guid
 
         response = self.client.post('/api/friendrequest',
                                      content_type="application/json",
@@ -200,6 +208,58 @@ class RESTfulTestCase(TestCase):
                       {"status":"success",
                        "message":
                            "You are now friends with %s" % user5.username})
+
+
+        # test remote friend requests
+
+        remoteUser1 = {"id": str(uuid.uuid4()),
+                       "host": "http://127.0.0.1:8001/",
+                       "displayname": "remoteUser1"}
+
+        # remoteUser1 sends a friend request to utestuser5
+
+        friendRequestData["author"] = remoteUser1.copy()
+
+        response = self.client.post('/api/friendrequest',
+                                     content_type="application/json",
+                                     data=json.dumps(friendRequestData))
+
+        self.assertEqual(json.loads(response.content),
+                      {"status":"success",
+                       "message":
+                           "You are now following %s" % user5.username})
+
+        # utestuser6 sends a friend request to remoteUser1
+
+        friendRequestData["author"]["id"] = author6.guid
+        friendRequestData["author"]["host"] = OURHOST
+
+        remoteUser1["url"] = "%sauthor/%s" % (remoteUser1["host"],
+                                              remoteUser1["id"])
+
+        friendRequestData["friend"]["author"] = remoteUser1.copy()
+
+        response = self.client.post('/api/friendrequest',
+                                     content_type="application/json",
+                                     data=json.dumps(friendRequestData))
+
+        self.assertEqual(json.loads(response.content),
+                  {"status":"success",
+                   "message":
+                       "You are now following %s" % remoteUser1["displayname"]})
+
+        # utestuser5 befriends remoteUser1
+
+        friendRequestData["author"]["id"] = author5.guid
+
+        response = self.client.post('/api/friendrequest',
+                                     content_type="application/json",
+                                     data=json.dumps(friendRequestData))
+
+        self.assertEqual(json.loads(response.content),
+              {"status":"success",
+               "message":
+                   "You are now friends with %s" % remoteUser1["displayname"]})
 
     def testRESTfriends(self):
 

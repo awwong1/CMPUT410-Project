@@ -8,7 +8,7 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 
-from author.models import Author, Relationship
+from author.models import Author, LocalRelationship, RemoteRelationship
 from post.models import Post, PostVisibilityException, AuthorPost, PostCategory
 from categories.models import Category
 from comments.models import Comment
@@ -310,9 +310,10 @@ def search(request):
 
         author, _ = Author.objects.get_or_create(user=request.user)
 
+        # search locally
         for u in users:
             a, _ = Author.objects.get_or_create(user=u)
-            r = Relationship.objects.filter(
+            r = LocalRelationship.objects.filter(
                     (Q(author1=author) & Q(author2=a))
                    |(Q(author2=author) & Q(author1=a)))
 
@@ -332,11 +333,33 @@ def search(request):
 
         authorsOtherServers = searchOtherServers(username)
 
+        # search remotely
         for a in authorsOtherServers:
-            usersAndStatus.append([a["displayname"],
-                                  "No Relationship",
-                                  a["id"]])
 
+            r = RemoteRelationship.objects.filter(localAuthor=author,
+                                                  remoteAuthor=a["id"])
+
+            # These 2 authors have a relationship
+            if len(r) > 0:
+
+                if (r[0].relationship): # They are friends
+                    usersAndStatus.append([a["displayname"],
+                                           "Friend",
+                                           a["id"]])
+
+                else:
+                    if r[0].author1 == author:
+                        usersAndStatus.append([a["displayname"],
+                                               "Following",
+                                               a["id"]])
+                    else:
+                        usersAndStatus.append([a["displayname"],
+                                               "Follower",
+                                               a["id"]])
+            else:
+                usersAndStatus.append([a["displayname"],
+                                      "No Relationship",
+                                      a["id"]])
 
         context = RequestContext(request, {'searchphrase': username,
                                            'results': usersAndStatus,
@@ -344,61 +367,95 @@ def search(request):
 
     return render(request, 'author/search_results.html', context)
 
-def updateRelationship(request, username):
+def updateRelationship(request, guid):
     """
     POST: Updates the relationship of the current user with <username>
     """
-    #context = RequestContext(request)
 
     if request.method == 'POST' and request.is_ajax:
 
         currentRelationship = request.POST["relationship"]
         requestAuthor, _ = Author.objects.get_or_create(user=request.user)
 
-        # assume the user exists
-        user = User.objects.get(username=username)
+        # check if the guid is a local or remote user
 
-        author = Author.objects.get(user=user)
+        author = Author.objects.filter(guid=guid)
+
         status = currentRelationship
 
-        if currentRelationship == "Friend":
-            # Unfriend
-            relationship = Relationship.objects.get(
+        if len(author) > 0: # author is local
+
+            if currentRelationship == "Friend":
+                # Unfriend
+                relationship = LocalRelationship.objects.get(
                                 ((Q(author1=author) & Q(author2=requestAuthor))
                                 |(Q(author2=author) & Q(author1=requestAuthor)))
                                 &Q(relationship=True))
-            relationship.delete()
-            Relationship.objects.get_or_create(
-                                        author1=author,
-                                        author2=requestAuthor,
-                                        relationship=False)
-            status = "Unfriended"
+                relationship.delete()
+                LocalRelationship.objects.get_or_create(
+                                            author1=author,
+                                            author2=requestAuthor,
+                                            relationship=False)
+                status = "Unfriended"
 
-        elif currentRelationship == "Following":
-            # Unfollow
-            relationship, _ = Relationship.objects.get_or_create(
-                                               author1=requestAuthor,
-                                               author2=author,
-                                               relationship=False)
-            relationship.delete()
-            status = "Unfollowed"
+            elif currentRelationship == "Following":
+                # Unfollow
+                relationship, _ = LocalRelationship.objects.get_or_create(
+                                                   author1=requestAuthor,
+                                                   author2=author,
+                                                   relationship=False)
+                relationship.delete()
+                status = "Unfollowed"
 
-        elif currentRelationship == "Follower":
-            # Befriend
-            relationship, _ = Relationship.objects.get_or_create(
-                                               author1=author,
-                                               author2=requestAuthor)
-            relationship.relationship = True
-            relationship.save()
-            status = "Befriended"
+            elif currentRelationship == "Follower":
+                # Befriend
+                relationship, _ = LocalRelationship.objects.get_or_create(
+                                                   author1=author,
+                                                   author2=requestAuthor)
+                relationship.relationship = True
+                relationship.save()
+                status = "Befriended"
 
-        elif currentRelationship == "No Relationship":
-            # Follow
-            _, _ = Relationship.objects.get_or_create(
-                                               author1=requestAuthor,
-                                               author2=author,
-                                               relationship=False)
-            status = "Followed"
+            elif currentRelationship == "No Relationship":
+                # Follow
+                _, _ = LocalRelationship.objects.get_or_create(
+                                                   author1=requestAuthor,
+                                                   author2=author,
+                                                   relationship=False)
+                status = "Followed"
+
+        else: # author is remote (assume it exists remotely)
+
+            if currentRelationship == "Friend":
+                # Unfriend
+                relationship, _ = RemoteRelationship.objects.get_or_create(
+                                        localAuthor=author, remoteAuthor=guid)
+                relationship.relationship = 1
+                relationship.save()
+                status = "Unfriended"
+
+            elif currentRelationship == "Following":
+                # Unfollow
+                relationship, _ = RemoteRelationship.objects.get_or_create(
+                                        localAuthor=author, remoteAuthor=guid)
+                relationship.delete()
+                status = "Unfollowed"
+
+            elif currentRelationship == "Follower":
+                # Befriend
+                relationship, _ = RemoteRelationship.objects.get_or_create(
+                                        localAuthor=author, remoteAuthor=guid)
+                relationship.relationship = 2
+                relationship.save()
+                status = "Befriended"
+
+            elif currentRelationship == "No Relationship":
+                # Follow
+                relationship, _ = RemoteRelationship.objects.get_or_create(
+                                        localAuthor=author, remoteAuthor=guid)
+                relationship.relationship = 0
+                relationship.save()
+                status = "Followed"
 
         return HttpResponse(status)
 
