@@ -342,20 +342,20 @@ def search(request):
             # These 2 authors have a relationship
             if len(r) > 0:
 
-                if (r[0].relationship): # They are friends
+                if r[0].relationship == 0: # user follow the author
                     usersAndStatus.append([a["displayname"],
-                                           "Friend",
+                                           "Following",
                                            a["id"]])
 
-                else:
-                    if r[0].author1 == author:
-                        usersAndStatus.append([a["displayname"],
-                                               "Following",
-                                               a["id"]])
-                    else:
+                elif r[0].relationship == 1: # the author follows the user
+                    if r[0].localAuthor == author:
                         usersAndStatus.append([a["displayname"],
                                                "Follower",
                                                a["id"]])
+                else: # relationship value should be 2: they are friends
+                    usersAndStatus.append([a["displayname"],
+                                           "Friend",
+                                           a["id"]])
             else:
                 usersAndStatus.append([a["displayname"],
                                       "No Relationship",
@@ -384,6 +384,8 @@ def updateRelationship(request, guid):
         status = currentRelationship
 
         if len(author) > 0: # author is local
+
+            author = author[0]
 
             if currentRelationship == "Friend":
                 # Unfriend
@@ -429,7 +431,8 @@ def updateRelationship(request, guid):
             if currentRelationship == "Friend":
                 # Unfriend
                 relationship, _ = RemoteRelationship.objects.get_or_create(
-                                        localAuthor=author, remoteAuthor=guid)
+                                        localAuthor=requestAuthor,
+                                        remoteAuthor=guid)
                 relationship.relationship = 1
                 relationship.save()
                 status = "Unfriended"
@@ -437,14 +440,16 @@ def updateRelationship(request, guid):
             elif currentRelationship == "Following":
                 # Unfollow
                 relationship, _ = RemoteRelationship.objects.get_or_create(
-                                        localAuthor=author, remoteAuthor=guid)
+                                        localAuthor=requestAuthor,
+                                        remoteAuthor=guid)
                 relationship.delete()
                 status = "Unfollowed"
 
             elif currentRelationship == "Follower":
                 # Befriend
                 relationship, _ = RemoteRelationship.objects.get_or_create(
-                                        localAuthor=author, remoteAuthor=guid)
+                                        localAuthor=requestAuthor,
+                                        remoteAuthor=guid)
                 relationship.relationship = 2
                 relationship.save()
                 status = "Befriended"
@@ -452,7 +457,8 @@ def updateRelationship(request, guid):
             elif currentRelationship == "No Relationship":
                 # Follow
                 relationship, _ = RemoteRelationship.objects.get_or_create(
-                                        localAuthor=author, remoteAuthor=guid)
+                                        localAuthor=requestAuthor,
+                                        remoteAuthor=guid)
                 relationship.relationship = 0
                 relationship.save()
                 status = "Followed"

@@ -38,8 +38,8 @@
             });
             $(".changeRelationship").click(function(event) {
                 // Ugly jQuery to get the user and relationship off the table row
-                var user = $($(event.target).parent().parent().children()[0]).children()[0].innerHTML;
-                var relationship = $(event.target).parent().parent().children()[1];
+                var user = $(event.target).parent().parent().children()[0].innerHTML;
+                var relationship = $(event.target).parent().parent().children()[2];
                 $.ajax({
                     type: "POST",
                     url: "/author/relationship/" + user + "/",
@@ -84,7 +84,8 @@
         <table class="table table-hover">
             <tbody>
                 {% for ur in results %}
-                <tr> <!-- should it link to their profile page? -->
+                <tr> <!-- TODO: remote link to author's page -->
+                    <td style="display:none;">{{ ur.2 }}</td>
                     <td><a href="/author/profile/{{ ur.2 }}">{{ ur.0 }}</a></td>
                     <td>{{ ur.1 }}</td>
                     <td>
