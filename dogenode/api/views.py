@@ -319,18 +319,12 @@ def postSingle(request, post_id):
     """
     Retrieve a post. Currently does not properly update/create a post.
 
-    Semi-Fulfills:
+    Fulfills:
     Implement a restful API for http://service/post/{POST_ID}
         a PUT should insert/update a post
         a POST should get the post
         a GET should get the post
     """
-
-    # Check if the current author is allowed to view the post
-    if not request.user.is_authenticated():
-        return Response(status=status.HTTP_401_UNAUTHORIZED)
-    user = User.objects.get(username=request.user)
-    author = Author.objects.get(user=user)
 
     # Get the post
     if request.method == 'GET' or request.method == 'POST':
@@ -339,8 +333,14 @@ def postSingle(request, post_id):
         except Post.DoesNotExist:
             return Response(status=404)
 
+        # Extract the requesting author's information to check for visibility
+        jsonData = json.loads(request.body)
+        authorId = jsonData["author"]["id"]
+        author = Author.objects.get(guid=authorId)
+
         if not rawpost.isAllowedToViewPost(author):
             return Response(status=403) 
+
         post = buildFullPost(rawpost)
         serializer = FullPostSerializer(post)
         return Response({"posts":serializer.data})
@@ -350,27 +350,27 @@ def postSingle(request, post_id):
         # for post in request.DATA:
         data = request.DATA
         posts = Post.objects.filter(guid=post_id)
+        user = User.objects.get(username=request.user)
+        author = Author.objects.get(user=user)
 
         # post exists, so it will update
         if len(posts) > 0:
-            for key, value in data.items():
-                setattr(posts[0], key, value)
-            posts[0].modifiedDate = datetime.datetime.now()
-            posts[0].save()
+            # Only the author who made the post should be able to edit it
+            if AuthorPost.objects.get(post=posts[0]).author.guid == author.guid:
+                for key, value in data.items():
+                    setattr(posts[0], key, value)
+                posts[0].modifiedDate = datetime.datetime.now()
+                posts[0].save()
+            else:
+                return Response(status=403) 
         else:    # post doesn't exist, a new one will be created
             post = Post.objects.create(**data)
-            post.origin = request.build_absolute_uri(post.get_absolute_url())
             post.guid = post_id
+            post.origin = request.build_absolute_uri(post.get_absolute_url())
             post.save()
             AuthorPost.objects.create(post=post, author=author)
     
         return Response(status=status.HTTP_200_OK)
-        #serializer = FullPostSerializer(post, data=request.DATA)
-        #if serializer.is_valid():
-          #  print "yay"
-            #serializer.save()
-            #return Response({"posts":serializer.data})
-        #return Response(serializer.errors, status=400)
 
 @api_view(['GET'])
 def getAuthorPosts(request, requestedUserid):
