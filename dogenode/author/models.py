@@ -24,35 +24,56 @@ class Author(models.Model):
 
     def getFriends(self):
 
-        relationships = LocalRelationship.objects.filter(
+        localRelationships = LocalRelationship.objects.filter(
                             (models.Q(author1=self) | models.Q(author2=self))
                             & models.Q(relationship=True))
+        remoteRelationships = RemoteRelationship.objects.filter(
+                            localAuthor=self, relationship=2)
 
-        friends = []
+        friends = { "local":[], "remote":[] }
 
-        for r in relationships:
+        # Make the querysets into lists
+
+        for r in localRelationships:
             if r.author1 == self:
-                friends.append(r.author2)
+                friends["local"].append(r.author2)
             else:
-                friends.append(r.author1)
+                friends["local"].append(r.author1)
+
+        friends["remote"] = [r.remoteAuthor for r in remoteRelationships]
 
         return friends
 
     def getPendingSentRequests(self):
 
-        relationships = LocalRelationship.objects.filter(author1=self,
+        localRelationships = LocalRelationship.objects.filter(author1=self,
                                                     relationship=False)
-        return [r.author2 for r in relationships]
+        remoteRelationships = RemoteRelationship.objects.filter(
+                            localAuthor=self, relationship=0)
+
+        return { "local":  [r.author2 for r in localRelationships],
+                 "remote": [r.remoteAuthor for r in remoteRelationships] }
 
     def getPendingReceivedRequests(self):
 
-        relationships = LocalRelationship.objects.filter(author2=self,
+        localRelationships = LocalRelationship.objects.filter(author2=self,
                                                     relationship=False)
-        return [r.author1 for r in relationships]
+        remoteRelationships = RemoteRelationship.objects.filter(
+                            localAuthor=self, relationship=1)
+
+        return { "local":  [r.author1 for r in localRelationships],
+                 "remote": [r.remoteAuthor for r in remoteRelationships] }
 
     def isFriendOfAFriend(self, author):
 
-        if set(self.getFriends()) & set(author.getFriends()):
+        selfFriends = self.getFriends()
+        authorFriends = author.getFriends()
+
+        # Flatten the lists
+        selfFriendsList = selfFriends["local"] + selfFriends["remote"]
+        authorFriendsList = authorFriends["local"] + authorFriends["remote"]
+
+        if set(selfFriendsList) & set(authorFriendsList):
             return True
 
         return False
@@ -70,6 +91,25 @@ class Author(models.Model):
 #post_save.connect(addAcceptedAttribute, sender=User,
 #                  dispatch_uid="asdf")
 
+class RemoteAuthor(models.Model):
+
+    guid = models.CharField(max_length=36,
+                            unique=True,
+                            default=uuid.uuid4)
+    displayName = models.CharField(max_length=36)
+    host = models.CharField(max_length=100, default="http://benhoboco/")
+    url = models.URLField(blank=True)
+
+    # if the attributes for this guid changed, assume it was changed
+    # on the remote server; update on our local server
+    def update(self, displayName=None, host=None, url=None):
+
+        self.displayName = displayName or self.displayName
+        self.host = host or self.host
+        self.url = url or self.url
+
+        self.save()
+
 class LocalRelationship(models.Model):
 
     author1 = models.ForeignKey(Author, related_name="author1")
@@ -82,8 +122,10 @@ class LocalRelationship(models.Model):
 class RemoteRelationship(models.Model):
 
     localAuthor = models.ForeignKey(Author, related_name="localAuthor")
-    remoteAuthor = models.CharField(max_length=36,
-                                    default=uuid.uuid4)
+    remoteAuthor = models.ForeignKey(RemoteAuthor)
+    #remoteAuthor = models.CharField(max_length=36,
+    #                                default=uuid.uuid4)
+
     # 0 = localAuthor follows remoteAuthor
     # 1 = remoteAuthor follows localAuthor
     # 2 = localAuthor is friends with remoteAuthor
