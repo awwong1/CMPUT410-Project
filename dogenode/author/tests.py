@@ -107,18 +107,25 @@ class AuthorRelationshipsTestCase(TestCase):
         author3 = Author.objects.get(user=user3)
         author4 = Author.objects.get(user=user4)
 
-        self.assertEqual(author1.getFriends(), [])
+        self.assertEqual(author1.getFriends(), {"local":[], "remote":[]})
         self.assertEqual(author1.getPendingSentRequests(),
-                              [author2, author3])
-        self.assertEqual(author1.getPendingReceivedRequests(), [])
+                         {"local": [author2, author3], "remote":[]})
+        self.assertEqual(author1.getPendingReceivedRequests(),
+                         {"local": [], "remote": []})
 
-        self.assertEqual(author2.getFriends(), [author3])
-        self.assertEqual(author2.getPendingSentRequests(), [])
-        self.assertEqual(author2.getPendingReceivedRequests(), [author1])
+        self.assertEqual(author2.getFriends(),
+                         {"local": [author3], "remote":[]})
+        self.assertEqual(author2.getPendingSentRequests(),
+                         {"local":[], "remote":[]})
+        self.assertEqual(author2.getPendingReceivedRequests(),
+                         {"local": [author1], "remote": []})
 
-        self.assertItemsEqual(author3.getFriends(), [author2, author4])
-        self.assertEqual(author3.getPendingSentRequests(), [])
-        self.assertEqual(author3.getPendingReceivedRequests(), [author1])
+        self.assertItemsEqual(author3.getFriends(),
+                              {"local": [author2, author4], "remote":[]})
+        self.assertEqual(author3.getPendingSentRequests(),
+                         {"local": [], "remote": []})
+        self.assertEqual(author3.getPendingReceivedRequests(),
+                         {"local": [author1], "remote": []})
 
         self.assertTrue(author2.isFriendOfAFriend(author4))
         self.assertTrue(author4.isFriendOfAFriend(author2))

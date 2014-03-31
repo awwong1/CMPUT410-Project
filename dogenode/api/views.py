@@ -10,7 +10,8 @@ from rest_framework.response import Response
 from rest_framework.renderers import JSONRenderer
 from rest_framework.parsers import JSONParser
 
-from author.models import Author, LocalRelationship, RemoteRelationship
+from author.models import (Author, RemoteAuthor,
+                           LocalRelationship, RemoteRelationship)
 from post.models import Post, AuthorPost, PostCategory
 from comments.models import Comment
 from categories.models import Category
@@ -23,23 +24,44 @@ import json
 #TODO: find a way to get this value automatically
 OURHOST = "http://127.0.0.1:8000/"
 
-def areFriends(request, userid1, userid2):
+def areFriends(request, guid1, guid2):
 
     response = {"query":"friends",
                 "friends":"NO"}
 
     if request.method == 'POST':
 
-        user1 = User.objects.filter(id=userid1)
-        user2 = User.objects.filter(id=userid2)
+        author1 = Author.objects.filter(guid=guid1)
+        author2 = Author.objects.filter(guid=guid2)
 
-        if len(user1) > 0 and len(user2) > 0:
+        # Both authors are local
+        if len(author1) > 0 and len(author2) > 0:
 
-            author1, _ = Author.objects.get_or_create(user=user1[0])
-            author2, _ = Author.objects.get_or_create(user=user2[0])
+            author1 = author1[0]
+            author2 = author2[0]
 
-            if author2 in author1.getFriends():
-                response["friends"] = [int(userid1), int(userid2)]
+            if author2 in author1.getFriends()["local"]:
+                response["friends"] = [guid1, guid2]
+
+        # author1 is local, author2 is remote
+        elif len(author1) > 0 and len(author2) == 0:
+
+            author1 = author1[0]
+            remoteFriendGUIDs = [a.guid for a in author1.getFriends()["remote"]]
+
+            if guid2 in remoteFriendGUIDs:
+                response["friends"] = [guid1, guid2]
+
+        # author1 is remote, author2 is local
+        elif len(author1) == 0 and len(author2) > 0:
+
+            author2 = author2[0]
+
+            remoteFriendGUIDs = [a.guid for a in author2.getFriends()["remote"]]
+
+            if guid1 in remoteFriendGUIDs:
+                response["friends"] = [guid1, guid2]
+
 
     return HttpResponse(json.dumps(response),
                         content_type="application/json")
@@ -47,39 +69,34 @@ def areFriends(request, userid1, userid2):
 # The POST request is sent to a url which includes the user ID, but the user
 # ID is also sent in the POST request body.
 # Right now I am using the user ID sent in the request body
-def getFriendsFromList(request, userid):
+def getFriendsFromList(request, guid):
 
-    # check if userid is actually an int first
-    if userid.isdigit():
+    response = {"query":"friends",
+                "author":guid,
+                "friends":[]}
 
-        response = {"query":"friends",
-                    "author":int(userid),
-                    "friends":[]}
+    if request.method == 'POST':
 
-        if request.method == 'POST':
+        jsonData = json.loads(request.body)
 
-            jsonData = json.loads(request.body)
+        guid = jsonData['author']
+        author = Author.objects.filter(guid=guid)
 
-            userid = jsonData['author']
-            user = User.objects.filter(id=userid)
+        if len(author) > 0:
 
-            if len(user) > 0:
+            author = author[0]
 
-                author, _ = Author.objects.get_or_create(user=user)
+            authorFriends = author.getFriends()
 
-                friendUserids = [a.user.id for a in author.getFriends()]
-                
-                friends = list(set(friendUserids) & set(jsonData["authors"]))
-                
-                response["author"] = userid
-                response["friends"] = friends
+            localFriendGUIDs = [a.guid for a in authorFriends["local"]]
+            remoteFriendGUIDs = [a.guid for a in authorFriends["remote"]]
 
-    else:
+            allFriendGUIDs = localFriendGUIDs + remoteFriendGUIDs
 
-        response = {"query":"friends",
-                    "author":userid,
-                    "friends":[]}
-
+            friends = list(set(allFriendGUIDs) & set(jsonData["authors"]))
+            
+            response["author"] = guid
+            response["friends"] = friends
 
     return HttpResponse(json.dumps(response),
                         content_type="application/json")
@@ -148,8 +165,13 @@ def sendFriendRequest(request):
 
             author1 = author1[0]
 
+            remoteAuthor, _ = RemoteAuthor.objects.get_or_create(guid=guid2)
+            remoteAuthor.update(jsonData["friend"]["author"]["displayname"],
+                                jsonData["friend"]["author"]["host"],
+                                jsonData["friend"]["author"]["url"])
+
             relationship = RemoteRelationship.objects.filter(
-                                localAuthor=author1, remoteAuthor=guid2)
+                                localAuthor=author1, remoteAuthor=remoteAuthor)
 
             if len(relationship) > 0:
 
@@ -171,7 +193,7 @@ def sendFriendRequest(request):
                 # author1 will follow author2
                 _, _ = RemoteRelationship.objects.get_or_create(
                                                    localAuthor=author1,
-                                                   remoteAuthor=guid2,
+                                                   remoteAuthor=remoteAuthor,
                                                    relationship=0)
                 response["status"] = "success"
                 response["message"] = ("You are now following %s" %
@@ -182,8 +204,13 @@ def sendFriendRequest(request):
 
             author2 = author2[0]
 
+            remoteAuthor, _ = RemoteAuthor.objects.get_or_create(guid=guid1)
+            remoteAuthor.update(jsonData["author"]["displayname"],
+                                jsonData["author"]["host"],
+                                jsonData["author"]["url"])
+
             relationship = RemoteRelationship.objects.filter(
-                                localAuthor=author2, remoteAuthor=guid1)
+                                localAuthor=author2, remoteAuthor=remoteAuthor)
 
             if len(relationship) > 0:
 
@@ -203,10 +230,11 @@ def sendFriendRequest(request):
                                             author2.user.username)
             else:
                 # author1 will follow author2
-                _, _ = RemoteRelationship.objects.get_or_create(
+                _, c = RemoteRelationship.objects.get_or_create(
                                                    localAuthor=author2,
-                                                   remoteAuthor=guid1,
+                                                   remoteAuthor=remoteAuthor,
                                                    relationship=1)
+
                 response["status"] = "success"
                 response["message"] = ("You are now following %s" %
                                             author2.user.username)

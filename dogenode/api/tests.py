@@ -2,7 +2,8 @@ from django.test import TestCase
 
 from django.contrib.auth.models import User
 
-from author.models import Author, LocalRelationship
+from author.models import (Author, RemoteAuthor,
+                           LocalRelationship, RemoteRelationship)
 from post.models import Post, AuthorPost
 from rest_framework.renderers import JSONRenderer
 from rest_framework.parsers import JSONParser
@@ -67,6 +68,16 @@ class RESTfulTestCase(TestCase):
         author5, _ = Author.objects.get_or_create(user=user5)
         author6, _ = Author.objects.get_or_create(user=user6)
 
+        remoteAuthor1, _ = RemoteAuthor.objects.get_or_create(
+                            displayName="remoteAuthor1",
+                            host="http://127.0.0.1:8001/",
+                            url="http://127.0.0.1:8001/author/remoteAuthor1")
+
+        remoteAuthor2, _ = RemoteAuthor.objects.get_or_create(
+                            displayName="remoteAuthor2",
+                            host="http://127.0.0.1:8001/",
+                            url="http://127.0.0.1:8001/author/remoteAuthor2")
+
         # author1 follows author2
         LocalRelationship.objects.get_or_create(author1=author1,
                                            author2=author2,
@@ -80,10 +91,25 @@ class RESTfulTestCase(TestCase):
                                            author2=author3,
                                            relationship=True)
 
+        # author2 follows remoteAuthor1
+        RemoteRelationship.objects.get_or_create(localAuthor=author2,
+                                           remoteAuthor=remoteAuthor1,
+                                           relationship=0)
+
         # author3 is friends with author4
         LocalRelationship.objects.get_or_create(author1=author3,
                                            author2=author4,
                                            relationship=True)
+
+        # author3 is friends with remoteAuthor1
+        RemoteRelationship.objects.get_or_create(localAuthor=author3,
+                                           remoteAuthor=remoteAuthor1,
+                                           relationship=2)
+
+        # remoteAuthor2 follows author2
+        RemoteRelationship.objects.get_or_create(localAuthor=author2,
+                                           remoteAuthor=remoteAuthor2,
+                                           relationship=1)
 
         # creating some posts for authors
         post1 = Post.objects.create(content="content1",
@@ -124,19 +150,38 @@ class RESTfulTestCase(TestCase):
 
     def testRESTareFriends(self):
 
-        userid1 = User.objects.get(username="utestuser1").id
-        userid2 = User.objects.get(username="utestuser2").id
-        userid3 = User.objects.get(username="utestuser3").id
+        user1 = User.objects.get(username="utestuser1")
+        user2 = User.objects.get(username="utestuser2")
+        user3 = User.objects.get(username="utestuser3")
+
+        author1, _ = Author.objects.get_or_create(user=user1)
+        author2, _ = Author.objects.get_or_create(user=user2)
+        author3, _ = Author.objects.get_or_create(user=user3)
+
+        remoteAuthor1, _ = RemoteAuthor.objects.get_or_create(
+                                displayName="remoteAuthor1")
+        remoteAuthor2, _ = RemoteAuthor.objects.get_or_create(
+                                displayName="remoteAuthor2")
 
         response1 = self.client.post(
-                        '/api/friends/%s/%s' % (userid1, userid2),
+                        '/api/friends/%s/%s' % (author1.guid, author2.guid),
                         content_type="application/json")
         response2 = self.client.post(
-                        '/api/friends/%s/%s' % (userid2, userid1),
+                        '/api/friends/%s/%s' % (author2.guid, author1.guid),
                         content_type="application/json")
         response3 = self.client.post(
-                        '/api/friends/%s/%s' % (userid2, userid3),
+                        '/api/friends/%s/%s' % (author2.guid, author3.guid),
                         content_type="application/json")
+
+        response4 = self.client.post(
+                    '/api/friends/%s/%s' % (author3.guid, remoteAuthor1.guid),
+                    content_type="application/json")
+        response5 = self.client.post(
+                    '/api/friends/%s/%s' % (remoteAuthor1.guid, author3.guid),
+                    content_type="application/json")
+        response6 = self.client.post(
+                    '/api/friends/%s/%s' % (author2.guid, remoteAuthor2.guid),
+                    content_type="application/json")
 
         self.assertEqual(json.loads(response1.content),
                               {"query":"friends",
@@ -147,7 +192,20 @@ class RESTfulTestCase(TestCase):
         self.assertEqual(json.loads(response3.content,
                          object_hook=_decode_dict),
                               {"query":"friends",
-                               "friends":[userid2, userid3]})
+                               "friends":[author2.guid, author3.guid]})
+
+        self.assertEqual(json.loads(response4.content,
+                         object_hook=_decode_dict),
+                              {"query":"friends",
+                               "friends":[author3.guid, remoteAuthor1.guid]})
+        self.assertEqual(json.loads(response5.content,
+                         object_hook=_decode_dict),
+                              {"query":"friends",
+                               "friends":[remoteAuthor1.guid, author3.guid]})
+        self.assertEqual(json.loads(response6.content,
+                         object_hook=_decode_dict),
+                              {"query":"friends",
+                               "friends":"NO"})
 
     def testRESTrelationships(self):
 
@@ -186,6 +244,13 @@ class RESTfulTestCase(TestCase):
                        "message":
                            "You are now following %s" % user6.username})
 
+        localRelationship = LocalRelationship.objects.filter(
+                                author1=author5,
+                                author2=author6,
+                                relationship=False)
+
+        self.assertEqual(len(localRelationship), 1)
+
         # test the same thing, there should be no change
         response = self.client.post('/api/friendrequest',
                                      content_type="application/json",
@@ -195,6 +260,13 @@ class RESTfulTestCase(TestCase):
                       {"status":"success",
                        "message":
                            "Already following %s, no change" % user6.username})
+
+        localRelationship = LocalRelationship.objects.filter(
+                                author1=author5,
+                                author2=author6,
+                                relationship=False)
+
+        self.assertEqual(len(localRelationship), 1)
 
         # utestuser6 befriends utestuser5
         friendRequestData["author"]["id"] = author6.guid
@@ -209,11 +281,20 @@ class RESTfulTestCase(TestCase):
                        "message":
                            "You are now friends with %s" % user5.username})
 
+        localRelationship = LocalRelationship.objects.filter(
+                                author1=author5,
+                                author2=author6,
+                                relationship=True)
+
+        self.assertEqual(len(localRelationship), 1)
+
 
         # test remote friend requests
 
+        #TODO: current specs do not include url as part of the post request
         remoteUser1 = {"id": str(uuid.uuid4()),
                        "host": "http://127.0.0.1:8001/",
+                       "url": "http://127.0.0.1:8001/author/remoteUser1",
                        "displayname": "remoteUser1"}
 
         # remoteUser1 sends a friend request to utestuser5
@@ -228,6 +309,23 @@ class RESTfulTestCase(TestCase):
                       {"status":"success",
                        "message":
                            "You are now following %s" % user5.username})
+
+        remoteAuthor1 = RemoteAuthor.objects.filter(
+                                guid=remoteUser1["id"],
+                                host=remoteUser1["host"],
+                                url=remoteUser1["url"],
+                                displayName=remoteUser1["displayname"])
+
+        self.assertEqual(len(remoteAuthor1), 1)
+
+        remoteAuthor1 = remoteAuthor1[0]
+
+        remoteRelationship = RemoteRelationship.objects.filter(
+                                localAuthor=author5,
+                                remoteAuthor=remoteAuthor1,
+                                relationship=1)
+
+        self.assertEqual(len(remoteRelationship), 1)
 
         # utestuser6 sends a friend request to remoteUser1
 
@@ -248,6 +346,13 @@ class RESTfulTestCase(TestCase):
                    "message":
                        "You are now following %s" % remoteUser1["displayname"]})
 
+        remoteRelationship = RemoteRelationship.objects.filter(
+                                localAuthor=author6,
+                                remoteAuthor=remoteAuthor1,
+                                relationship=0)
+
+        self.assertEqual(len(remoteRelationship), 1)
+
         # utestuser5 befriends remoteUser1
 
         friendRequestData["author"]["id"] = author5.guid
@@ -261,62 +366,92 @@ class RESTfulTestCase(TestCase):
                "message":
                    "You are now friends with %s" % remoteUser1["displayname"]})
 
+        remoteRelationship = RemoteRelationship.objects.filter(
+                                localAuthor=author5,
+                                remoteAuthor=remoteAuthor1,
+                                relationship=2)
+
+        self.assertEqual(len(remoteRelationship), 1)
+
     def testRESTfriends(self):
 
-        userid1 = User.objects.get(username="utestuser1").id
-        userid2 = User.objects.get(username="utestuser2").id
-        userid3 = User.objects.get(username="utestuser3").id
-        userid4 = User.objects.get(username="utestuser4").id
+        user1 = User.objects.get(username="utestuser1")
+        user2 = User.objects.get(username="utestuser2")
+        user3 = User.objects.get(username="utestuser3")
+        user4 = User.objects.get(username="utestuser4")
 
-        # 2 friends
-        response1 = self.client.post('/api/friends/%s' % userid3,
+        author1, _ = Author.objects.get_or_create(user=user1)
+        author2, _ = Author.objects.get_or_create(user=user2)
+        author3, _ = Author.objects.get_or_create(user=user3)
+        author4, _ = Author.objects.get_or_create(user=user4)
+
+        remoteAuthor1, _ = RemoteAuthor.objects.get_or_create(
+                            displayName="remoteAuthor1")
+
+        author1guid = str(author1.guid)
+        author2guid = str(author2.guid)
+        author3guid = str(author3.guid)
+        author4guid = str(author4.guid)
+
+        remoteAuthor1guid = str(remoteAuthor1.guid)
+
+        # 3 friends
+        response1 = self.client.post('/api/friends/%s' % author3guid,
                      content_type="application/json",
                      data=json.dumps({'query':"friends",
-                                      'author':userid3,
-                                      'authors': [userid1, userid2,
-                                                  userid3, userid4]}))
+                                      'author':author3guid,
+                                      'authors': [author1guid, author2guid,
+                                                  author3guid, author4guid,
+                                                  remoteAuthor1guid]}))
 
         # 1 friend
-        response2 = self.client.post('/api/friends/%s' % userid3,
+        response2 = self.client.post('/api/friends/%s' % author3guid,
                      content_type="application/json",
                      data=json.dumps({'query':"friends",
-                                      'author':userid3,
-                                      'authors': [userid1, userid2,
-                                                  userid3]}))
+                                      'author':author3guid,
+                                      'authors': [author1guid, author2guid,
+                                                  author3guid]}))
 
         # no friends
-        response3 = self.client.post('/api/friends/%s' % userid3,
+        response3 = self.client.post('/api/friends/%s' % author3guid,
                      content_type="application/json",
                      data=json.dumps({'query':"friends",
-                                      'author':userid3,
-                                      'authors': [userid1]}))
+                                      'author':author3guid,
+                                      'authors': [author1guid]}))
 
         # user doesn't exist
         response4 = self.client.post('/api/friends/0',
                      content_type="application/json",
                      data=json.dumps({'query':"friends",
                                       'author':0,
-                                      'authors': [userid1, userid2,
-                                                  userid3, userid4]}))
+                                      'authors': [author1guid, author2guid,
+                                                  author3guid, author4guid]}))
 
-        self.assertEqual(json.loads(response1.content),
+        #TODO: sometimes this test fails because the friends aren't returned
+        # in the same order. This is a failure of the test not the view
+
+        self.assertEqual(json.loads(response1.content,
+                                    object_hook=_decode_dict),
                               {"query":"friends",
-                               "author":userid3,
-                               "friends":[userid2, userid4]})
-        self.assertEqual(json.loads(response2.content),
+                               "author":author3guid,
+                               "friends":[author2guid, author4guid,
+                                          remoteAuthor1guid]})
+        self.assertEqual(json.loads(response2.content,
+                                    object_hook=_decode_dict),
                               {"query":"friends",
-                               "author":userid3,
-                               "friends":[userid2]})
-        self.assertEqual(json.loads(response3.content),
+                               "author":author3guid,
+                               "friends":[author2guid]})
+        self.assertEqual(json.loads(response3.content,
+                                    object_hook=_decode_dict),
                               {"query":"friends",
-                               "author":userid3,
+                               "author":author3guid,
                                "friends":[]})
         self.assertEqual(json.loads(response4.content,
-                         object_hook=_decode_dict),
+                                    object_hook=_decode_dict),
                               {"query":"friends",
-                               "author":0,
-
+                               "author":"0",
                                "friends":[]})
+
     def testRESTGetAllAuthorPosts(self):
         """
         Tests getting all the posts of an author that are visible by user

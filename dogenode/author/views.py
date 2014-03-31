@@ -8,7 +8,8 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 
-from author.models import Author, LocalRelationship, RemoteRelationship
+from author.models import (Author, RemoteAuthor,
+                           LocalRelationship, RemoteRelationship)
 from post.models import Post, PostVisibilityException, AuthorPost, PostCategory
 from categories.models import Category
 from comments.models import Comment
@@ -336,8 +337,16 @@ def search(request):
         # search remotely
         for a in authorsOtherServers:
 
+            #TODO: make sure the url is absolute (includes remote hostname)
+
+            remoteAuthor, _ = RemoteAuthor.objects.get_or_create(
+                                    guid=a["id"],
+                                    displayName=a["displayname"],
+                                    host=a["host"],
+                                    url=a["url"])
+
             r = RemoteRelationship.objects.filter(localAuthor=author,
-                                                  remoteAuthor=a["id"])
+                                                  remoteAuthor=remoteAuthor)
 
             # These 2 authors have a relationship
             if len(r) > 0:
@@ -427,12 +436,22 @@ def updateRelationship(request, guid):
                 status = "Followed"
 
         else: # author is remote (assume it exists remotely)
+            # We assume we have already created the RemoteAuthor in our
+            # model, either from the REST friend request or from the AJAX
+            # on the search page.
+
+            remoteAuthor = RemoteAuthor.objects.filter(guid=guid)
+
+            if len(remoteAuthor) == 0:
+                return HttpResponse("Failure: No such GUID: %s" % guid)
+            else:
+                remoteAuthor = remoteAuthor[0]
 
             if currentRelationship == "Friend":
                 # Unfriend
                 relationship, _ = RemoteRelationship.objects.get_or_create(
                                         localAuthor=requestAuthor,
-                                        remoteAuthor=guid)
+                                        remoteAuthor=remoteAuthor)
                 relationship.relationship = 1
                 relationship.save()
                 status = "Unfriended"
@@ -441,7 +460,7 @@ def updateRelationship(request, guid):
                 # Unfollow
                 relationship, _ = RemoteRelationship.objects.get_or_create(
                                         localAuthor=requestAuthor,
-                                        remoteAuthor=guid)
+                                        remoteAuthor=remoteAuthor)
                 relationship.delete()
                 status = "Unfollowed"
 
@@ -449,7 +468,7 @@ def updateRelationship(request, guid):
                 # Befriend
                 relationship, _ = RemoteRelationship.objects.get_or_create(
                                         localAuthor=requestAuthor,
-                                        remoteAuthor=guid)
+                                        remoteAuthor=remoteAuthor)
                 relationship.relationship = 2
                 relationship.save()
                 status = "Befriended"
@@ -458,7 +477,7 @@ def updateRelationship(request, guid):
                 # Follow
                 relationship, _ = RemoteRelationship.objects.get_or_create(
                                         localAuthor=requestAuthor,
-                                        remoteAuthor=guid)
+                                        remoteAuthor=remoteAuthor)
                 relationship.relationship = 0
                 relationship.save()
                 status = "Followed"
