@@ -90,7 +90,7 @@
 			
 			// deal with categories
 			var catHTML = "";
-			if (len(categories) > 0) {
+			if (categories.length > 0) {
                             var postWidth = '<div class="col-sm-8 col-md-10">';
 			    catHTML += '<div class="col-sm-4 col-md-2 text-right">';
 			    // building html for categories
@@ -99,26 +99,27 @@
 				    +   categories[cat] + '</span>';
 			    }    
 			    catHTML += '</div>';
-			else {
+			} else {
 			    var postWidth = '<div class="col-sm-12">';
                         }   
 			
 			// deal with images
-			    var imagesHTML = "";
-			if (len(images) > 0) {
-			    contentSize = '<div class="col-sm-8 col-lg-9">';
-			    imagesHTML += '<div class="col-sm-4 col-lg-3 text-center">'
-				+ '<div class="well">';
+			var imagesHTML = "";
+			//if (len(images) > 0) {
+			//    contentSize = '<div class="col-sm-8 col-lg-9">';
+			//    imagesHTML += '<div class="col-sm-4 col-lg-3 text-center">'
+			//	+ '<div class="well">';
 //			    for (img in images) {   TODO XXX: FIX THIS!!!
 //				 imagesHTML += '<a href='{{ image.file.url }}?{% now "U" %}' target="_blank"><img class="img-responsive-horizontal" src="{{ image.file.url }}?{% now 'U' %}"/></a>
 //			    }
-			    imagesHTML += '</div></div>';
+			//    imagesHTML += '</div></div>';
 			    
-			} else {
-			    contentSize = '<div class="col-sm-12">';
-			}
+			//} else {
+			//    contentSize = '<div class="col-sm-12">';
+			//}
+			var contentSize = '<div class="col-sm-12">';
 
-			commentsHTML = "";
+			var commentsHTML = "";
 			// deal with comments
                         for (comment in comments) {
                            commentsHTML += '<tr>'
@@ -149,7 +150,7 @@
                          +          contentSize
 			 +           content
                          +          '</div>'
-			 +           imageshtml
+			 +           imagesHTML
                          +        '</div>'
                          +      '</div>'
                          +      '<div class="panel-footer">'
@@ -175,7 +176,7 @@
                          +      '<div class="panel-footer">'
                          +        '<form role="form" method="POST"'
                          +         ' action="/comments/add_comment/">'
-                         +          '{% csrf_token %}'
+                      //   +          '{% csrf_token %}'
                          +          '<div class="form-group">'
                          +            '<input type="hidden" name="post_id" value="' + guid + '" />'
                          +            '<input type="text" class="form-control" name="newComment"'
