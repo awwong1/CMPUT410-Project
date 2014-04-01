@@ -415,7 +415,9 @@ def postSingle(request, post_id):
             newPost.save()
             AuthorPost.objects.create(post=newPost, author=author)
     
-        return Response(status=status.HTTP_200_OK)
+        post = buildFullPost(newPost)
+        serializer = FullPostSerializer(post)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 @api_view(['GET'])
 def getAuthorPosts(request, requestedUserid):
