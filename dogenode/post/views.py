@@ -98,63 +98,6 @@ def handlePost(request, post_id):
     if request.method == "GET" or request.method == "POST":
         return getPost(request, post_id)
 
-@ensure_csrf_cookie
-def addFormPost(request):
-    """
-    Adds a new post and displays
-    """
-    context = RequestContext(request)
-
-    if request.method == "POST":
-        title = request.POST.get("title", "")
-        description = request.POST.get("description", "")
-        content = request.POST.get("content", "")
-        visibility = request.POST.get("visibility", Post.PRIVATE)
-        visibilityExceptionsString = request.POST.get("visibilityExceptions",
-                                                      "")
-        categoriesString = request.POST.get("categories", "")
-        contentType = request.POST.get("content-type", Post.PLAIN)
-
-        images = request.FILES.getlist('image')
-
-        categoryNames = categoriesString.split()
-        exceptionUsernames = visibilityExceptionsString.split()
-
-        author = Author.objects.get(user=request.user)
-        newPost = Post.objects.create(title=title, description=description,
-                                      content=content, visibility=visibility,
-                                      contentType=contentType)
-        newPost.origin = request.build_absolute_uri(newPost.get_absolute_url())
-        newPost.save()
-
-        # If there are also images, handle that too
-        for image in images:
-            newImage = Image.objects.create(author=author, file=image,
-                                            visibility=visibility,
-                                            contentType=image.content_type)
-            ImagePost.objects.create(image=newImage, post=newPost)
-
-        AuthorPost.objects.create(post=newPost, author=author)
-
-        # I use (abuse) get_or_create to curtail creating duplicates
-        for name in categoryNames:
-            categoryObject, _ = Category.objects.get_or_create(name=name)
-            PostCategory.objects.get_or_create(post=newPost,
-                                               category=categoryObject)
-        for name in exceptionUsernames:
-            try:
-                userObject = User.objects.get(username=name)
-                authorObject = Author.objects.get(user=userObject)
-                PostVisibilityException.objects.get_or_create(post=newPost,
-                    author=authorObject)
-                for image in images:
-                    ImageVisibilityException.objects.get_or_create(
-                            image=newImage, author=authorObject)
-            except ObjectDoesNotExist:
-                pass
-
-    return redirect(request.META['HTTP_REFERER'])
-
 def deletePost(request):
     """
     Deletes the Post based on the post id given in the request.

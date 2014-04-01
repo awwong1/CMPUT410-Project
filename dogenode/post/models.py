@@ -28,7 +28,7 @@ class Post(models.Model):
         (PUBLIC, "Public"),
     )
 
-    guid = models.CharField(max_length=36, unique=True, default=uuid.uuid4)
+    guid = models.CharField(max_length=36, unique=True)
     title = models.CharField(max_length=140, blank=True)
     description = models.CharField(max_length=255, blank=True)
     content = models.TextField()

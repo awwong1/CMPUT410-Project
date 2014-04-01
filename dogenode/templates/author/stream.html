@@ -4,18 +4,19 @@
 
     <script type="text/javascript">
         $(document).ready(function() {
-        /* the CSRF stuff is from:
-         * https://docs.djangoproject.com/en/1.6/ref/contrib/csrf/#ajax
-         */
+            /* the CSRF stuff is from:
+             * https://docs.djangoproject.com/en/1.6/ref/contrib/csrf/#ajax
+             * TODO: find a better way to do this cleanly...
+             */
             function getCookie(name) {
                 var cookieValue = null;
                 if (document.cookie && document.cookie != '') {
                     var cookies = document.cookie.split(';');
                     for (var i = 0; i < cookies.length; i++) {
                         var cookie = jQuery.trim(cookies[i]);
-                        
+                        // Does this cookie string begin with the name we want?
                         if (cookie.substring(0, name.length + 1) == (name + '=')) {
-                            cookieValue = decodeURIComponent(cookie.substring(name.length+1));
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
                             break;
                         }
                     }
@@ -23,11 +24,12 @@
                 return cookieValue;
             }
             var csrftoken = getCookie('csrftoken');
-            function csrfsafeMethod(method) {
+            function csrfSafeMethod(method) {
+                // these HTTP methods do not require CSRF protection
                 return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
             }
-            $ajaxSetup({
-                crossDomain: false,
+            $.ajaxSetup({
+                crossDomain: false, // obviates need for sameOrigin test
                 beforeSend: function(xhr, settings) {
                     if (!csrfSafeMethod(settings.type)) {
                         xhr.setRequestHeader("X-CSRFToken", csrftoken);
@@ -50,40 +52,41 @@
                 return _p8() + _p8(true) + _p8(true) + _p8();
             }
 
-             
             // On click of make new post button, send an AJAX PUT request to create post
-            function makePost(event) {
+            $("#makePost").on("click", function() {
                 var guid = generateGUID();
-                var postData = JSON.stringify();  // TODO : get json2 file 
+                // var images = TODO XXX: DEAL WITH IMAGES
+                var postData = JSON.stringify({
+                    "guid": guid,
+                    "title": $("#title").val(),
+                    "text": $("#description").val(),
+                    "content": $("#content").val(),
+                    "categories": $("#categories").val(),
+                    "privacyOptions": $("#privacyOptions").val(),
+                    "visibilityExceptions": $("#visibilityExceptions").val(),
+                    "content-type": $("#content-type").val(), 
+                });  
+                
+                // send ajax request
                 $.ajax({
                     type: "PUT",
-                    url: "http://127.0.0.1:8000/api/post/" + guid,
+                    url: "http://127.0.0.1:8000/api/post/" + guid + "/",
                     data: postData,
+                    contentType: "application/json",
                     success: function(request) {
-
-
+                        alert("success");
+                    },
+                    error: function(xhr, status, error) {
+                        console.log(xhr.responseText);
                     }
-                },
-                error: function() {
-                    console.log("error");
-                }
+                });
+                return false;
+
             });
-            return false;
-        }
-
-            }
-
             
-            $("#makePost).on("click", makePost);
-  
-            // make new post guid
-            
+        });
         
-
-
-
-
-
+    </script>
 
 <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
     <div class="row">
@@ -143,7 +146,9 @@
                           </div>
                           <label for="visibilityExceptions" class="control-label col-sm-1 col-lg-1" style="text-align: center">and</label>
                           <div class="col-sm-3 col-md-4">
-                              <input type="text" class="form-control" name="visibilityExceptions" id="visibilityExceptions"
+                              <input type="text" class="form-control" 
+                               id="visibilityExceptions" 
+                               name="visibilityExceptions"
                                placeholder="Enter names(s) separated by spaces"/>
                           </div>
                       </div>
@@ -151,9 +156,9 @@
                       </div>
 
                       <div class="form-group" id="contentTypeOptions">
-                          <label for="contentType" class="col-sm-2 col-lg-1 control-label">Format:</label>
+                          <label for="content-type" class="col-sm-2 col-lg-1 control-label">Format:</label>
                           <div class="col-sm-3 col-md-2">
-                              <select id="contentType" name="content-type" class="form-control">
+                              <select id="content-type" name="content-type" class="form-control">
                               {% for type in contentTypes %}
                                   <option value="{{ type.0 }}">{{ type.1 }}</option>
                               {% endfor %}

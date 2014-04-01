@@ -380,7 +380,6 @@ def postSingle(request, post_id):
         posts = Post.objects.filter(guid=post_id)
         user = User.objects.get(username=request.user)
         author = Author.objects.get(user=user)
-
         # post exists, so it will update
         if len(posts) > 0:
             # Only the author who made the post should be able to edit it
@@ -392,11 +391,29 @@ def postSingle(request, post_id):
             else:
                 return Response(status=403) 
         else:    # post doesn't exist, a new one will be created
-            post = Post.objects.create(**data)
-            post.guid = post_id
-            post.origin = request.build_absolute_uri(post.get_absolute_url())
-            post.save()
-            AuthorPost.objects.create(post=post, author=author)
+            guid = data.get("guid")
+            title = data.get("title")
+            description = data.get("description", "")
+            content = data.get("content")
+            visibility = data.get("visibility", Post.PRIVATE)
+            visibilityExceptionsString = data.get("visibilityExceptions", "")
+            categoriesString = data.get("categories", "")
+            contentType = data.get("content-type", Post.PLAIN)
+            
+            categoryNames = categoriesString.split()
+            exceptionUsernames = visibilityExceptionsString.split()
+            author = Author.objects.get(user=request.user)
+
+            newPost = Post.objects.create(guid=guid, title=title, 
+                                          description=description,
+                                          content=content, visibility=visibility,
+                                          contentType=contentType)
+            newPost.origin = request.build_absolute_uri(newPost.get_absolute_url())
+            newPost.save()   
+            
+            newPost.origin = request.build_absolute_uri(newPost.get_absolute_url())
+            newPost.save()
+            AuthorPost.objects.create(post=newPost, author=author)
     
         return Response(status=status.HTTP_200_OK)
 
