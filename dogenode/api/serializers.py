@@ -6,7 +6,7 @@ class AuthorSerializer(serializers.Serializer):
     """
     id = serializers.CharField(max_length=36)
     host = serializers.CharField(max_length=100)
-    displayName = serializers.CharField(max_length=30)
+    displayname = serializers.CharField(max_length=30)
     url = serializers.URLField()
 
 class CommentSerializer(serializers.Serializer):
@@ -38,4 +38,6 @@ class FullPostSerializer(serializers.Serializer):
 
     author = AuthorSerializer(required=False)
     comments = CommentSerializer(required = False) # May have no comments    
-    categories = serializers.CharField(max_length=80, required=False) 
+    categories = serializers.CharField(max_length=80, required=False)
+    # Other Authors who can view the post outside of normal visibility options
+    visibilityExceptions = AuthorSerializer(required=False) 

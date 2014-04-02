@@ -18,3 +18,13 @@ class Comment(models.Model):
     def __unicode__(self):
         return "%i: [%s|%s|%s]"%(self.id,self.author,self.comment,
                                  self.pub_date)
+
+    def as_dict(self):
+        return {
+            "guid": self.guid,
+            "author": self.author.as_dict(),
+            "comment": self.comment,
+            "pub_date": self.pub_date
+        }
+
+        

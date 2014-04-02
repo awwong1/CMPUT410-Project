@@ -81,116 +81,116 @@
                         var description = response["description"];
                         var contentType = response["contentType"];
                         var content = response["content"];
-			var author = response["author"];
-			var categories = response["categories"];
-			var comments = response["comments"];
-			var pubDate = response["pubDate"];
-			var guid = response["guid"];
-			var visibility = response["visibility"];
-			
-			// deal with categories
-			var catHTML = "";
-			if (categories.length > 0) {
+                        var author = response["author"];
+                        var categories = response["categories"];
+                        var comments = response["comments"];
+                        var pubDate = response["pubDate"];
+                        var guid = response["guid"];
+                        var visibility = response["visibility"];
+                        
+                        // deal with categories
+                        var catHTML = "";
+                        if (categories.length > 0) {
                             var postWidth = '<div class="col-sm-8 col-md-10">';
-			    catHTML += '<div class="col-sm-4 col-md-2 text-right">';
-			    // building html for categories
+                            catHTML += '<div class="col-sm-4 col-md-2 text-right">';
+                            // building html for categories
                             for (cat in categories) {
-				catHTML += '<span class="label label-default">' 
-				    +   categories[cat] + '</span>';
-			    }    
-			    catHTML += '</div>';
-			} else {
-			    var postWidth = '<div class="col-sm-12">';
+                            catHTML += '<span class="label label-default">' 
+                                +   categories[cat] + '</span>';
+                            }    
+                            catHTML += '</div>';
+                        } else {
+                            var postWidth = '<div class="col-sm-12">';
                         }   
-			
-			// deal with images
-			var imagesHTML = "";
-			//if (len(images) > 0) {
-			//    contentSize = '<div class="col-sm-8 col-lg-9">';
-			//    imagesHTML += '<div class="col-sm-4 col-lg-3 text-center">'
-			//	+ '<div class="well">';
-//			    for (img in images) {   TODO XXX: FIX THIS!!!
-//				 imagesHTML += '<a href='{{ image.file.url }}?{% now "U" %}' target="_blank"><img class="img-responsive-horizontal" src="{{ image.file.url }}?{% now 'U' %}"/></a>
-//			    }
-			//    imagesHTML += '</div></div>';
-			    
-			//} else {
-			//    contentSize = '<div class="col-sm-12">';
-			//}
-			var contentSize = '<div class="col-sm-12">';
+                        
+                        // deal with images
+                        var imagesHTML = "";
+                        //if (len(images) > 0) {
+                        //    contentSize = '<div class="col-sm-8 col-lg-9">';
+                        //    imagesHTML += '<div class="col-sm-4 col-lg-3 text-center">'
+                        //	+ '<div class="well">';
+            //			    for (img in images) {   TODO XXX: FIX THIS!!!
+            //				 imagesHTML += '<a href='{{ image.file.url }}?{% now "U" %}' target="_blank"><img class="img-responsive-horizontal" src="{{ image.file.url }}?{% now 'U' %}"/></a>
+            //			    }
+                        //    imagesHTML += '</div></div>';
+                            
+                        //} else {
+                        //    contentSize = '<div class="col-sm-12">';
+                        //}
+                        var contentSize = '<div class="col-sm-12">';
 
-			var commentsHTML = "";
-			// deal with comments
+                        var commentsHTML = "";
+                        // deal with comments
                         for (comment in comments) {
-                           commentsHTML += '<tr>'
-				+ '<td><small>'
-				+  '<a href="' + comments[comment]["author"]["url"] + '">'
-				+    '<strong>' + comments[comment]["author"]["displayname"] 
-				+    '</strong>'
-				+  '</a> on ' + comments[comment]["pubDate"] + '</small>'
-				+ '</td></tr>';
+                            commentsHTML += '<tr>'
+                                + '<td><small>'
+                                +  '<a href="' + comments[comment]["author"]["url"] + '">'
+                                +    '<strong>' + comments[comment]["author"]["displayname"] 
+                                +    '</strong>'
+                                +  '</a> on ' + comments[comment]["pubDate"] + '</small>'
+                                + '</td></tr>';
                         }
- 
+     
 
-                        // add new post to stream
-                        $(".stream-title").after('<div class="row">'
-			 +  '<div class="col-md-12">'
-			 +   '<div class="panel panel-default">'
-			 +      '<div class="panel-heading">'
-			 +        '<div class="row">'
-                         +         postWidth
-			 +         '<h4><strong>' + title + '</strong></h4>'
-			 +         '<h5>' + description + '</h5>'
-                         +         '</div>'
-			 +         catHTML
-                         +       '</div>'
-                         +      '</div>'
-                         +      '<div class="panel-body">'
-                         +        '<div class="row">'
-                         +          contentSize
-			 +           content
-                         +          '</div>'
-			 +           imagesHTML
-                         +        '</div>'
-                         +      '</div>'
-                         +      '<div class="panel-footer">'
-                         +        '<div class="row">'
-                         +          '<div class="col-sm-4">'
-                         +            'by <a href="' + author["url"] + '">'
-                         +               '<strong>' + author["displayname"] + '</strong>'
-                         +               '</a>'
-                         +            'on' + pubDate 
-			 +          '</div>'
-                         +          '<div class="col-sm-8 text-right">'
-                         +            '<a href="' + origin + '" class="text-muted">'
-                         +              origin
-                         +            '</a>'
-                         +          '</div>'
-                         +        '</div>'
-                         +      '</div>'
-                         +      '<table class="table">'
-                         +        '<tbody>'
-			 +         commentsHTML
-			 +        '</tbody>'
-                         +      '</table>'
-                         +      '<div class="panel-footer">'
-                         +        '<form role="form" method="POST"'
-                         +         ' action="/comments/add_comment/">'
-                      //   +          '{% csrf_token %}'
-                         +          '<div class="form-group">'
-                         +            '<input type="hidden" name="post_id" value="' + guid + '" />'
-                         +            '<input type="text" class="form-control" name="newComment"'
-                         +             ' placeholder="Make a new comment..." required/>'
-                         +          '</div>'
-                         +          '<div class="form-group">'
-                         +            '<input type="submit" value="Comment"/>'
-                         +          '</div>'
-                         +        '</form>'
-                         +      '</div>'
-                         +    '</div>'
-                         +  '</div>'
-			 + '</div>');
-			},
+                       // add new post to stream
+                       $(".stream-title").after('<div class="row">'
+                            +  '<div class="col-md-12">'
+                            +   '<div class="panel panel-default">'
+                            +      '<div class="panel-heading">'
+                            +        '<div class="row">'
+                            +         postWidth
+                            +         '<h4><strong>' + title + '</strong></h4>'
+                            +         '<h5>' + description + '</h5>'
+                            +         '</div>'
+                            +         catHTML
+                            +       '</div>'
+                            +      '</div>'
+                            +      '<div class="panel-body">'
+                            +        '<div class="row">'
+                            +          contentSize
+                            +           content
+                            +          '</div>'
+                            +           imagesHTML
+                            +        '</div>'
+                            +      '</div>'
+                            +      '<div class="panel-footer">'
+                            +        '<div class="row">'
+                            +          '<div class="col-sm-4">'
+                            +            'by <a href="' + author["url"] + '">'
+                            +               '<strong>' + author["displayname"] + '</strong>'
+                            +               '</a>'
+                            +            'on' + pubDate 
+                            +          '</div>'
+                            +          '<div class="col-sm-8 text-right">'
+                            +            '<a href="' + origin + '" class="text-muted">'
+                            +              origin
+                            +            '</a>'
+                            +          '</div>'
+                            +        '</div>'
+                            +      '</div>'
+                            +      '<table class="table">'
+                            +        '<tbody>'
+                            +         commentsHTML
+                            +        '</tbody>'
+                            +      '</table>'
+                            +      '<div class="panel-footer">'
+                            +        '<form role="form" method="POST"'
+                            +         ' action="/comments/add_comment/">'
+                            //  +          '{% csrf_token %}'
+                            +          '<div class="form-group">'
+                            +            '<input type="hidden" name="post_id" value="' + guid + '" />'
+                            +            '<input type="text" class="form-control" name="newComment"'
+                            +             ' placeholder="Make a new comment..." required/>'
+                            +          '</div>'
+                            +          '<div class="form-group">'
+                            +            '<input type="submit" value="Comment"/>'
+                            +          '</div>'
+                            +        '</form>'
+                            +      '</div>'
+                            +    '</div>'
+                            +  '</div>'
+                            + '</div>');
+                    },
                     error: function(xhr, status, error) {
                         console.log(xhr.responseText);
                     }

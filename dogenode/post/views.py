@@ -98,6 +98,61 @@ def handlePost(request, post_id):
     if request.method == "GET" or request.method == "POST":
         return getPost(request, post_id)
 
+def createPost(request, data):
+    guid = data.get("guid")
+    title = data.get("title")
+    description = data.get("description", "")
+    content = data.get("content")
+    visibility = data.get("visibility", Post.PRIVATE)
+    visibilityExceptionsString = data.get("visibilityExceptions", "")
+    categoriesString = data.get("categories", "")
+    contentType = data.get("content-type", Post.PLAIN)
+
+    categoryNames = categoriesString.split()
+    exceptionUsernames = visibilityExceptionsString.split()
+    author = Author.objects.get(user=request.user)
+    newPost = Post.objects.create(guid=guid, title=title,
+                                  description=description,
+                                  content=content, visibility=visibility,
+                                  contentType=contentType)
+    newPost.origin = request.build_absolute_uri(newPost.get_absolute_url())
+    newPost.save()
+
+    # If there are also images, handle that too
+    #for image in images:
+    #    newImage = Image.objects.create(author=author, file=image,
+    #                                    visibility=visibility,
+    #                                    contentType=image.content_type)
+    #ImagePost.objects.create(image=newImage, post=newPost)
+
+    AuthorPost.objects.create(post=newPost, author=author)
+
+   # I use (abuse) get_or_create to curtail creating duplicates
+    for name in categoryNames:
+        categoryObject, _ = Category.objects.get_or_create(name=name)
+        PostCategory.objects.get_or_create(post=newPost,
+                                           category=categoryObject)
+    for name in exceptionUsernames:
+        try:
+            userObject = User.objects.get(username=name)
+            authorObject = Author.objects.get(user=userObject)
+            PostVisibilityException.objects.get_or_create(post=newPost,
+                author=authorObject)
+            #for image in images:
+            #    ImageVisibilityException.objects.get_or_create(
+            #            image=newImage, author=authorObject)
+        except ObjectDoesNotExist:
+            pass
+
+    return newPost
+
+def updatePost(post, data):
+    for key, value in data.items():
+        setattr(post, key, value)
+    post.modifiedDate = datetime.datetime.now()
+    post.save()
+    return post
+
 def deletePost(request):
     """
     Deletes the Post based on the post id given in the request.
