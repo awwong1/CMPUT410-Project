@@ -32,11 +32,11 @@ class Post(models.Model):
     title = models.CharField(max_length=140, blank=True)
     description = models.CharField(max_length=255, blank=True)
     content = models.TextField()
-    visibility = models.CharField(max_length=10, 
-                                  choices=VISIBILITY_CHOICES, 
+    visibility = models.CharField(max_length=10,
+                                  choices=VISIBILITY_CHOICES,
                                   default=PRIVATE)
-    contentType = models.CharField(max_length=15, 
-                                    choices=CONTENT_TYPE_CHOICES, 
+    contentType = models.CharField(max_length=15,
+                                    choices=CONTENT_TYPE_CHOICES,
                                     default=PLAIN)
     origin = models.URLField(blank=True)
     pubDate = models.DateTimeField(auto_now_add=True)
@@ -45,7 +45,7 @@ class Post(models.Model):
     class Meta:
         verbose_name = 'Post'
         verbose_name_plural = 'Posts'
-    
+
     def __unicode__(self):
         return "%i: [%s|%s|%s]" % (self.id, self.title, self.description, self.content)
 
@@ -53,63 +53,100 @@ class Post(models.Model):
         from django.core.urlresolvers import reverse
         return reverse('post.views.handlePost', args=[self.guid])
 
+    # Pass in an Author object, and this function will check if the Post
+    # instance is viewable by the author.
+    # Pass in a True checkFollow flag, and this function will return True for
+    # public posts that were written by the viewer's followed authors.  Else,
+    # any public post returns True.
     # TODO: Need to add admin logic.
-    # TODO: Fix SERVERONLY logic
-    def isAllowedToViewPost(self, author):
-        # Check if post was created by the specified author
-        if AuthorPost.objects.filter(post=self, author=author).count() > 0:
+    def isAllowedToViewPost(self, viewer, checkFollow=False):
+        if viewer.user.is_staff:
             return True
-        # Check if post is public or server-only
-        elif (self.visibility == Post.PUBLIC or 
-              self.visibility == Post.SERVERONLY):
+
+        postAuthor = AuthorPost.objects.get(post=self).author
+
+        friends = viewer.getFriends()
+        followed = viewer.getPendingSentRequests()
+
+        # Check if post was created by the specified viewer
+        if AuthorPost.objects.filter(post=self, author=viewer).count() > 0:
             return True
-        # Check if this post's author is friends, and if the post is set to
-        # friends-only or friends of friends
-        elif (author in AuthorPost.objects.get(post=self).author.getFriends()
-              and
-              (self.visibility == Post.FRIENDS or 
-               self.visibility == Post.FOAF)):
+        # Check if the post has a visibility exception for the viewer
+        elif (PostVisibilityException.objects.filter(post=self,
+                author=viewer).count() > 0):
             return True
-        # Check if this post's author is friends of friends with the specified
-        # author, and if the post is set to friends of friends
-        elif (author.isFriendOfAFriend(
-                AuthorPost.objects.get(post=self).author)
+        # Check if this post's author is friends with the viewer
+        elif postAuthor in friends['local'] or postAuthor in friends['remote']:
+            if (self.visibility == Post.FRIENDS or
+                    self.visibility == Post.FOAF):
+                return True
+            elif self.visibility == Post.SERVERONLY:
+                if author in friends['local']:
+                    return True
+                # SERVERONLY disallows remote viewers from viewing this post
+                else:
+                    return False
+        # Check if this post's author is friends of friends with the viewer,
+        # and if the post is set to friends of friends
+        elif (viewer.isFriendOfAFriend(postAuthor)
               and self.visibility == Post.FOAF):
             return True
-        # Check if the post has a visibility exception for the specified author
-        elif (PostVisibilityException.objects.filter(post=self, 
-                author=author).count() > 0):
-            return True
+        # Check if post is public, and if necessary, if post is by someone the
+        # viewer is following.
+        elif self.visibility == Post.PUBLIC:
+            if not checkFollow:
+                return True
+            elif (postAuthor in followed['local'] or
+                  postAuthor in followed['remote']):
+                return True
+            else:
+                return False
         else:
             return False
 
     # TODO: Apparently I'm supposed to use some kind of Custom Manager for this...
     # See: https://docs.djangoproject.com/en/1.6/topics/db/managers/#django.db.models.Manager
+    # checkFollow is set to False if you want to get every single post a user
+    # can see, based on visibility.  Set it to True if out of all public posts,
+    # you only want posts from authors the user follows.
     # Also, this way of doing things is VERY VERY VERY INEFFICIENT.
     @staticmethod
-    def getAllowedPosts(author):
+    def getAllowedPosts(author, checkFollow=False):
         posts = []
-        # TODO: To save CPU cycles, can also check if a user is the admin.  If
-        # so, return all the posts.
-        for post in Post.objects.all().order_by('pubDate'):
-            if post.isAllowedToViewPost(author):
-                posts.insert(0, post)
+        followed = author.getPendingSentRequests()
+        allPosts = Post.objects.all().order_by('-pubDate')
+
+        # TODO: In here, we probably need to make remote calls to get posts from
+        #       other servers.
+
+        # Staff-level users can see every post
+        if author.user.is_staff:
+            # Remember to also get remote posts
+            return allPosts
+
+        for post in allPosts:
+            postAuthor = AuthorPost.objects.get(post=post).author
+            if post.isAllowedToViewPost(author, checkFollow):
+                posts.append(post)
         return posts
 
-    # also inefficient, but w.e
     @staticmethod
     def getViewablePosts(viewer, author):
         """
-        Returns all the posts of an author that a viewer can see
+        Returns all the posts of an author that the viewer can see
         """
-        # Get all the posts that the viewer can see
-        allposts = Post.getAllowedPosts(viewer)
-        viewposts = []
-        # Filter out all the posts that aren't by author
-        for checkpost in allposts:
-            if AuthorPost.objects.get(post=checkpost).author == author:
-                viewposts.append(checkpost)
-        return viewposts
+        postIds = AuthorPost.objects.filter(author=author).values_list(
+                            'post', flat=True)
+        postsByAuthor = Post.objects.filter(id__in=postIds).order_by(
+                            '-pubDate')
+        viewablePosts = []
+
+        # Check if viewer can view this author's post
+        for post in postsByAuthor:
+            if post.isAllowedToViewPost(viewer):
+                viewablePosts.append(post)
+
+        return viewablePosts
 
 # Removes Many-to-Many relationship between Posts and Categories
 class PostCategory(models.Model):
