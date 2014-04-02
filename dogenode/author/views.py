@@ -30,6 +30,7 @@ def isUserAccepted(user):
 
     return False
 
+@ensure_csrf_cookie
 def index(request):
     context = RequestContext(request)
 
@@ -63,6 +64,7 @@ def logUserOut(request):
         logout(request)
     return redirect("/")
 
+@ensure_csrf_cookie
 def register(request):
     context = RequestContext(request)
 
