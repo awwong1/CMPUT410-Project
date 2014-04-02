@@ -14,14 +14,11 @@ from post.models import Post, PostVisibilityException, AuthorPost, PostCategory
 from categories.models import Category
 from comments.models import Comment
 from images.models import Image, ImagePost, ImageVisibilityException
+from api.views import postFriendRequest, SERVER_URLS
 
 import markdown, json
 import uuid
 import urllib2
-
-# List of other servers we are communicating with
-SERVER_URLS = ['http://127.0.0.1:8001' #BenHoboCo
-              ]
 
 def isUserAccepted(user):
     author = Author.objects.filter(user=user)
@@ -468,6 +465,7 @@ def updateRelationship(request, guid):
 
             elif currentRelationship == "Follower":
                 # Befriend
+                postFriendRequest(requestAuthor, remoteAuthor)
                 relationship, _ = RemoteRelationship.objects.get_or_create(
                                         localAuthor=requestAuthor,
                                         remoteAuthor=remoteAuthor)
@@ -477,6 +475,7 @@ def updateRelationship(request, guid):
 
             elif currentRelationship == "No Relationship":
                 # Follow
+                postFriendRequest(requestAuthor, remoteAuthor)
                 relationship, _ = RemoteRelationship.objects.get_or_create(
                                         localAuthor=requestAuthor,
                                         remoteAuthor=remoteAuthor)

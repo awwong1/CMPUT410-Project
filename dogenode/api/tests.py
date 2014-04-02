@@ -427,15 +427,20 @@ class RESTfulTestCase(TestCase):
                                       'authors': [author1guid, author2guid,
                                                   author3guid, author4guid]}))
 
-        #TODO: sometimes this test fails because the friends aren't returned
-        # in the same order. This is a failure of the test not the view
+        # This next 2 asserts are required because assertItemsEqual only
+        # checks the keys, and assertItemsEqual fails if the lists contain
+        # the same values but are in different orders. Aaaaargh.
+        jsonResponse1 = json.loads(response1.content, object_hook=_decode_dict)
 
-        self.assertEqual(json.loads(response1.content,
-                                    object_hook=_decode_dict),
-                              {"query":"friends",
-                               "author":author3guid,
-                               "friends":[author2guid, author4guid,
-                                          remoteAuthor1guid]})
+        self.assertItemsEqual(jsonResponse1,
+                                  {"query":"friends",
+                                   "author":author3guid,
+                                   "friends":[author2guid, author4guid,
+                                              remoteAuthor1guid]})
+        self.assertItemsEqual(jsonResponse1["friends"],
+                                   [author2guid, author4guid,
+                                    remoteAuthor1guid])
+
         self.assertEqual(json.loads(response2.content,
                                     object_hook=_decode_dict),
                               {"query":"friends",
