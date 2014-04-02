@@ -6,7 +6,7 @@ class AuthorSerializer(serializers.Serializer):
     """
     id = serializers.CharField(max_length=36)
     host = serializers.CharField(max_length=100)
-    displayName = serializers.CharField(max_length=30)
+    displayname = serializers.CharField(max_length=30)
     url = serializers.URLField()
 
 class CommentSerializer(serializers.Serializer):

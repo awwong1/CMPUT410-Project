@@ -22,6 +22,14 @@ class Author(models.Model):
         from django.core.urlresolvers import reverse
         return reverse('author.views.profile', args=[self.guid])
 
+    def as_dict(self):
+        return {
+            "id":self.guid,
+            "displayname":self.user.username,
+            "host": self.host,
+            "url": self.url
+        }
+
     def getFriends(self):
 
         relationships = LocalRelationship.objects.filter(

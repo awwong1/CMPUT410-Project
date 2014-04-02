@@ -53,6 +53,19 @@ class Post(models.Model):
         from django.core.urlresolvers import reverse
         return reverse('post.views.handlePost', args=[self.guid])
 
+    def as_dict(self):
+        return {
+            'guid' : self.guid,
+            'title' : self.title,
+            'description' : self.description,
+            'content' : self.content,
+            'visibility': self.visibility,
+            'contentType' : self.contentType,
+            'origin' : self.origin,
+            'pubDate' : self.pubDate,
+            'modifiedDate' : self.modifiedDate
+        }
+
     # TODO: Need to add admin logic.
     # TODO: Fix SERVERONLY logic
     def isAllowedToViewPost(self, author):

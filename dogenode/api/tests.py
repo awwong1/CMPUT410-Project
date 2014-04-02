@@ -348,7 +348,7 @@ class RESTfulTestCase(TestCase):
         # Make sure they are the same!
         for i in range(len(posts['posts'])):
             post = posts["posts"][i]
-            self.assertEquals(post["author"]["displayName"], "utestuser1",
+            self.assertEquals(post["author"]["displayname"], "utestuser1",
                               "This is not the %s's post!" % "utestuser1") 
             if post["title"] == "title2":
                 epost = Post.objects.get(title="title2")
@@ -366,7 +366,7 @@ class RESTfulTestCase(TestCase):
                             'origin': epost.origin, 
                             'author': {'url': postAuthor.url, 
                                        'host': postAuthor.host, 
-                                       'displayName': postAuthor.user.username, 
+                                       'displayname': postAuthor.user.username, 
                                        'id': postAuthor.guid}, 
                             'comments': [],
                             'categories': [], 
@@ -522,3 +522,20 @@ class RESTfulTestCase(TestCase):
         # Get it and delete it
         newPost = Post.objects.get(guid=newPostId)
         newPost.delete()
+
+    def testRESTauthorProfile(self):
+        """
+        Gets an author's profile.
+        """ 
+        user = User.objects.get(username="utestuser1")
+        author = Author.objects.get(user=user)
+    
+        response = self.client.get('/api/author/%s/' % author.guid, 
+                                    HTTP_ACCEPT = 'application/json')
+
+        self.assertEqual(response.status_code, 200)             
+        authorContent = json.loads(response.content, object_hook=_decode_dict)
+        self.assertEqual(authorContent["id"], author.guid)
+        self.assertEqual(authorContent["host"], author.host)
+        self.assertEqual(authorContent["displayname"], user.username)
+        self.assertEqual(authorContent["url"], author.url)

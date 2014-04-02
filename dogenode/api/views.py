@@ -222,84 +222,44 @@ def sendFriendRequest(request):
 
 def buildFullPostContent(post):
     """
-    Goes through all the fields of a Post 
-    Should find a better way to go through all the fields of a post
+    Bullds up one post dictionary from the Post Object for the post content 
+    for the full response. Adds in the author, comments, categories 
+    and visibility exceptions. Based on example-article.json 
     """
     # Post object
-    postContent = buildPost(post)
+    postContent = post.as_dict()
 
-    # other objects
+    # Post Author Object
     author = AuthorPost.objects.get(post=post).author
-    postContent["author"] = buildAuthor(author)
-    postContent["comments"] = buildComment(post)
+    postContent["author"] = author.as_dict()
 
+    # Comments for the Post
+    comments = Comment.objects.filter(post_ref=post)
+    postContent["comments"] = [c.as_dict() for c in comments] 
+
+    # Categories
     categoryIds = PostCategory.objects.filter(post=post).values_list(
         'category', flat=True)
-
     postContent["categories"] = Category.objects.filter(id__in=categoryIds)
 
-    # Get Author visibility exceptions
+    # Visibility exceptions: a list of author dictionaries
     otherAuthorIds = PostVisibilityException.objects.filter(
                         post=post).values_list('author', flat=True)
-
     othAuthors = Author.objects.filter(id__in=otherAuthorIds)
-    otherAuthors = [buildAuthor(auth) for auth in othAuthors]
+    otherAuthors = [auth.as_dict() for auth in othAuthors]
     postContent["visibilityExceptions"] = otherAuthors
 
     return postContent
 
-def buildPost(post):
-    return {'guid' : post.guid,
-             'title' : post.title,
-             'description' : post.description,
-             'content' : post.content,
-             'visibility': post.visibility,
-             'contentType' : post.contentType,
-             'origin' : post.origin,
-             'pubDate' : post.pubDate,
-             'modifiedDate' : post.modifiedDate }
-
-def buildAuthor(author):
-    return {"id": author.guid,
-            "displayName": author.user.username,
-            "host": author.host,
-            "url": author.url }
-
-def buildComment(post):
-    comments = Comment.objects.filter(post_ref=post)
-    commentContent = []
-    for comment in comments:
-        currentComment = {}
-        currentComment = {"guid": comment.guid,
-                           "author": buildAuthor(comment.author),
-                           "comment": comment.comment,
-                           "pub_date": comment.pub_date
-                          }
-        commentContent.append(currentComment)
-
-    return commentContent
-
 def buildFullPost(rawposts):
     """
-    From a list of just the posts, add in the author, comments, and 
-    categories to the actual post information we are sending,
-    as in example-article.json 
+    Builds the full Post as a list of dictionaries as in example-article.json
     """
     # If there is only one Post
     if type(rawposts) is Post:
-        post= []
-        fullpost = buildFullPostContent(rawposts)
-        post.append(fullpost)
-        return post 
+        return [buildFullPostContent(rawposts)]
     else:
-        posts = []
-
-        for post in rawposts:
-            fullpost = buildFullPostContent(post)
-
-            posts.append(fullpost)            
-
-        return posts
+        return [buildFullPostContent(post) for post in rawposts]
 
 def serializeFullPost(posts):
     """
@@ -318,10 +278,7 @@ def getPublicPosts(request):
     """
     if request.method == 'GET':
         rawposts = Post.objects.filter(visibility=Post.PUBLIC)
-
         posts = buildFullPost(rawposts)
-        print(posts)
-
         return Response(serializeFullPost(posts))
 
 @api_view(['GET','POST','PUT'])
@@ -335,7 +292,6 @@ def postSingle(request, post_id):
         a POST should get the post
         a GET should get the post
     """
-
     # Get the post
     if request.method == 'GET' or request.method == 'POST':
         try:
@@ -404,9 +360,7 @@ def getAuthorPosts(request, requestedUserid):
 
         if request.method == 'GET':
             rawposts = Post.getViewablePosts(viewingAuthor, requestedAuthor)
-
             posts = buildFullPost(rawposts)
-
             return Response(serializeFullPost(posts))
 
 @api_view(['GET'])
@@ -442,10 +396,7 @@ def authorProfile(request, authorId):
     except Author.DoesNotExist:
         return Response(status=404)
 
-    authorInfo = buildAuthor(author)
-
     # Get the author's information
     if request.method == 'GET':
-        serializer = AuthorSerializer(authorInfo)
+        serializer = AuthorSerializer(author.as_dict())
         return Response(serializer.data)
-
