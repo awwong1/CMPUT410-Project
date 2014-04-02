@@ -15,7 +15,7 @@ class CommentSerializer(serializers.Serializer):
     """
     guid = serializers.CharField(max_length=36)
     comment= serializers.CharField(max_length=None,min_length=None)
-    pub_date= serializers.DateTimeField()
+    pub_date= serializers.DateTimeField(format="%a %b %d %H:%M:%S %Z %Y")
 
     author = AuthorSerializer()
 
@@ -33,8 +33,10 @@ class FullPostSerializer(serializers.Serializer):
     visibility = serializers.CharField(max_length=10, required=False)
     contentType = serializers.CharField(max_length=15, required=False)
     origin = serializers.URLField(required=False)
-    pubDate = serializers.DateTimeField(required=False)
-    modifiedDate = serializers.DateTimeField(required=False)
+    pubDate = serializers.DateTimeField(required=False, 
+                                        format="%a %b %d %H:%M:%S %Z %Y")
+    modifiedDate = serializers.DateTimeField(required=False,
+                                        format="%a %b %d %H:%M:%S %Z %Y")
 
     author = AuthorSerializer(required=False)
     comments = CommentSerializer(required = False) # May have no comments    
