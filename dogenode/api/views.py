@@ -11,7 +11,7 @@ from rest_framework.renderers import JSONRenderer
 from rest_framework.parsers import JSONParser
 
 from author.models import Author, LocalRelationship, RemoteRelationship
-from post.models import Post, AuthorPost, PostCategory
+from post.models import Post, PostVisibilityException, AuthorPost, PostCategory
 from comments.models import Comment
 from categories.models import Category
 from api.serializers import AuthorSerializer, FullPostSerializer
@@ -233,9 +233,18 @@ def buildFullPostContent(post):
     postContent["author"] = buildAuthor(author)
     postContent["comments"] = buildComment(post)
 
-    categoryIds = PostCategory.objects.filter(post=post).values_list('category', flat=True)
+    categoryIds = PostCategory.objects.filter(post=post).values_list(
+        'category', flat=True)
 
     postContent["categories"] = Category.objects.filter(id__in=categoryIds)
+
+    # Get Author visibility exceptions
+    otherAuthorIds = PostVisibilityException.objects.filter(
+                        post=post).values_list('author', flat=True)
+
+    othAuthors = Author.objects.filter(id__in=otherAuthorIds)
+    otherAuthors = [buildAuthor(auth) for auth in othAuthors]
+    postContent["visibilityExceptions"] = otherAuthors
 
     return postContent
 

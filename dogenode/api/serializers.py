@@ -38,4 +38,6 @@ class FullPostSerializer(serializers.Serializer):
 
     author = AuthorSerializer(required=False)
     comments = CommentSerializer(required = False) # May have no comments    
-    categories = serializers.CharField(max_length=80, required=False) 
+    categories = serializers.CharField(max_length=80, required=False)
+    # Other Authors who can view the post outside of normal visibility options
+    visibilityExceptions = AuthorSerializer(required=False) 

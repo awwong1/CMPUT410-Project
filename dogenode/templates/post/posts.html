@@ -52,7 +52,7 @@
             </td>
             <td>
             {% for a in visibilityExceptions %}
-              <a href="{% url 'author.views.profile' a.author_id %}">{{ a }}</a>
+              <a href="{% url 'author.views.profile' a.guid %}">{{ a }}</a>
             {% endfor %}
             </td>
             <td>{{ post.pubDate }}</td>

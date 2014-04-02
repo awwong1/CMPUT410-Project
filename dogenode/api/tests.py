@@ -3,7 +3,7 @@ from django.test import TestCase
 from django.contrib.auth.models import User
 
 from author.models import Author, LocalRelationship
-from post.models import Post, AuthorPost
+from post.models import Post, PostVisibilityException, AuthorPost
 from rest_framework.renderers import JSONRenderer
 from rest_framework.parsers import JSONParser
 
@@ -109,7 +109,10 @@ class RESTfulTestCase(TestCase):
         post8 = Post.objects.create(content="content8",
                                     title="title8",
                                     visibility=Post.SERVERONLY)
-        
+        post9 = Post.objects.create(content="content9",
+                                    title="title9",
+                                    visibility=Post.PRIVATE)
+
         # Author1 should see post 1, post 2, post 6, post 8
         AuthorPost.objects.create(post=post1, author=author1)
         AuthorPost.objects.create(post=post2, author=author1)
@@ -119,6 +122,10 @@ class RESTfulTestCase(TestCase):
         AuthorPost.objects.create(post=post6, author=author2)
         AuthorPost.objects.create(post=post7, author=author3)
         AuthorPost.objects.create(post=post8, author=author3)
+        AuthorPost.objects.create(post=post9, author=author3)
+
+        # Author1 should be able to view post9 too
+        PostVisibilityException.objects.create(post=post9, author=author1)
 
     def testRESTareFriends(self):
 
@@ -319,8 +326,8 @@ class RESTfulTestCase(TestCase):
         """
         Tests getting all the posts of an author that are visible by user
         making the request. Sends a GET request to /author/authorid/posts.
-        utestuser1 made post 1 and post 2, so those two posts should be 
-        retrieved.
+        Author1 made post 1 and post 2, so those two posts should be 
+        retrieved when Author1 makes the request.
         """
         # Authenicate and send a get request 
         user = User.objects.get(username="utestuser1")
@@ -342,7 +349,7 @@ class RESTfulTestCase(TestCase):
         for i in range(len(posts['posts'])):
             post = posts["posts"][i]
             self.assertEquals(post["author"]["displayName"], "utestuser1",
-                              "This is not the %s's post!" % "utestuser1")  
+                              "This is not the %s's post!" % "utestuser1") 
             if post["title"] == "title2":
                 epost = Post.objects.get(title="title2")
             elif post["title"] == "title1":
@@ -368,12 +375,11 @@ class RESTfulTestCase(TestCase):
             for key in expectedPost.keys():
                 self.assertEquals(expectedPost[key], post[key])
 
-
     def testRESTStream(self):
         """
         Tests retrieving all posts that are visible to the current user.
         Sends a GET request to /author/posts/
-        utestuser1 shouserialize ld be able to see post 1, 2, 6, and 8
+        utestuser1 should be able to see post 1, 2, 6, 8 and 9
         """
         # Authenicate and send a get request 
         user = User.objects.get(username="utestuser1")
@@ -386,17 +392,17 @@ class RESTfulTestCase(TestCase):
         # Response code check
         self.assertEqual(response.status_code, 200)
 
-        # Author should have 2 posts
         posts = json.loads(response.content, object_hook=_decode_dict)
-        self.assertEqual(len(posts['posts']), 4, 
-                         "%s should see 4 posts!" % "utestuser1")
+        self.assertEqual(len(posts['posts']), 5, 
+                         "%s should see 5 posts!" % "utestuser1")
 
     def testGetPost(self):
         """
         Tests the following with utestuser1:
-            Get a public post               (post1)
-            Get a private post (your own)   (post2)
-            Get a private post (not yours)  (post7)
+            Get a public post                       (post1)
+            Get a private post (your own)           (post2)
+            Get a private post (not yours)          (post7)
+            Get a post with a Visibility Exception  (post9)
             Get a post that does not exist
         """
         # Authenicate and send a get request 
@@ -406,7 +412,7 @@ class RESTfulTestCase(TestCase):
 
         # Get the posts of 1 (public), 2 (private to utestuser1)
         # 3 (private to utestuser3) and their postids
-        titles = ["title1", "title2", "title7"]
+        titles = ["title1", "title2", "title7", "title9"]
         posts = [Post.objects.get(title=t) for t in titles] 
         postIds = [str(p.guid) for p in posts]
 
@@ -430,23 +436,29 @@ class RESTfulTestCase(TestCase):
             responses.append(resp)
 
         # Should be able to view the first two posts without a problem
+        # the fourth post had author1 as a visibility exception
         # Some small checks for getting the proper post
-        for i in range(2):
+        for i in [0, 1, 3]:
             self.assertEqual(responses[i].status_code, 200)
             resp = json.loads(responses[i].content, object_hook=_decode_dict)
             respCont = resp["posts"][0]
             self.assertEqual(titles[i], respCont["title"])
             self.assertEqual(posts[i].content, respCont["content"])
 
+            # post9 should only have one visibilty exception
+            if len(respCont["visibilityExceptions"]) == 1:
+                self.assertEqual(respCont["visibilityExceptions"][0]["id"],
+                                str(author.guid))
+
         # Post 7 is private to another author. 
         self.assertEqual(responses[2].status_code, 403)
-   
+
         # Last post (with an id of 1) should not exist
-        self.assertEqual(responses[3].status_code, 404)
+        self.assertEqual(responses[4].status_code, 404)
 
     def testPutPost(self):
         """
-        Tests Creating a post and updating said post. 
+        Tests creating a post and updating said post with PUT
         Deletes the new post when finished.
         """
         # Authenicate and put a new post
