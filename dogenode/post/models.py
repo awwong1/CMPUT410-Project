@@ -56,6 +56,10 @@ class Post(models.Model):
     # TODO: Need to add admin logic.
     # TODO: Fix SERVERONLY logic
     def isAllowedToViewPost(self, author):
+        friends = AuthorPost.objects.get(post=self).author.getFriends()
+        localFriends = friends["local"]
+        remoteFriends = friends["remote"]
+
         # Check if post was created by the specified author
         if AuthorPost.objects.filter(post=self, author=author).count() > 0:
             return True
@@ -65,7 +69,7 @@ class Post(models.Model):
             return True
         # Check if this post's author is friends, and if the post is set to
         # friends-only or friends of friends
-        elif (author in AuthorPost.objects.get(post=self).author.getFriends()
+        elif (author in localFriends or author in remoteFriends
               and
               (self.visibility == Post.FRIENDS or 
                self.visibility == Post.FOAF)):
