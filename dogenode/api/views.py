@@ -22,9 +22,47 @@ from api.utils import *
 import sys
 import datetime
 import json
+import urllib, urllib2
+
+# List of other servers we are communicating with
+SERVER_URLS = ['http://127.0.0.1:8001/' #BenHoboCo
+              ]
 
 #TODO: find a way to get this value automatically
 OURHOST = "http://127.0.0.1:8000/"
+
+#TODO: not sure where best to put this POST request (authors/views uses it too)
+def postFriendRequest(localAuthor, remoteAuthor):
+
+    postData = {
+                    "query":"friendrequest",
+                    "author":{
+                        "id":localAuthor.guid,
+                        "host":OURHOST,
+                        "displayname":localAuthor.user.username
+                    },
+                    "friend":{
+                        "author":{
+                            "id":remoteAuthor.guid,
+                            "host":remoteAuthor.host,
+                            "displayname":remoteAuthor.displayName,
+                            "url":remoteAuthor.url
+                        }
+                    }
+                }
+
+    #TODO: this needs to be customized for each remote server
+    if remoteAuthor.host == SERVER_URLS[0]:
+        try:
+            result = urllib2.urlopen(
+                        '%s/api/authors/%s/friends/' %
+                                 (SERVER_URLS[0],
+                                  remoteAuthor.displayName),
+                         urllib.urlencode(postData))
+        except urllib2.URLError:
+            #TODO: we should really let the user know the remote server
+            # is down
+            pass
 
 def areFriends(request, guid1, guid2):
 
@@ -191,6 +229,7 @@ def sendFriendRequest(request):
                     response["status"] = "success"
                     response["message"] = ("You are now friends with %s" %
                                     jsonData["friend"]["author"]["displayname"])
+                    postFriendRequest(author1, remoteAuthor)
             else:
                 # author1 will follow author2
                 _, _ = RemoteRelationship.objects.get_or_create(
@@ -200,6 +239,7 @@ def sendFriendRequest(request):
                 response["status"] = "success"
                 response["message"] = ("You are now following %s" %
                                     jsonData["friend"]["author"]["displayname"])
+                postFriendRequest(author1, remoteAuthor)
 
         # author1 is remote, author2 is local
         elif len(author1) == 0 and len(author2) > 0:

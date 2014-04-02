@@ -14,14 +14,11 @@ from post.models import Post, PostVisibilityException, AuthorPost, PostCategory
 from categories.models import Category
 from comments.models import Comment
 from images.models import Image, ImagePost, ImageVisibilityException
+from api.views import postFriendRequest, SERVER_URLS
 
 import markdown, json
 import uuid
 import urllib2
-
-# List of other servers we are communicating with
-SERVER_URLS = ['http://127.0.0.1:8001' #BenHoboCo
-              ]
 
 def isUserAccepted(user):
     author = Author.objects.filter(user=user)
@@ -30,6 +27,7 @@ def isUserAccepted(user):
 
     return False
 
+@ensure_csrf_cookie
 def index(request):
     context = RequestContext(request)
 
@@ -48,13 +46,13 @@ def index(request):
             else:
                 context['message'] = ("Server admin has not accepted your "
                                       "registration yet!")
-                return render(request, 'login/index.html', context)
+                return render_to_response('login/index.html', context)
         else:
             # Incorrect username and password
             context['message'] = "Incorrect username and password."
-            return render(request, 'login/index.html', context)
+            return render_to_response('login/index.html', context)
 
-    return render(request, 'login/index.html', context)
+    return render_to_response('login/index.html', context)
 
 @ensure_csrf_cookie
 def logUserOut(request):
@@ -63,6 +61,7 @@ def logUserOut(request):
         logout(request)
     return redirect("/")
 
+@ensure_csrf_cookie
 def register(request):
     context = RequestContext(request)
 
@@ -81,7 +80,7 @@ def register(request):
                 user.save()
                 return redirect('/login/')
 
-    return render(request, 'login/register.html', context)
+    return render_to_response('login/register.html', context)
 
 def profile(request, author_id):
     """
@@ -105,7 +104,7 @@ def profile(request, author_id):
         viewer = Author.objects.get(user=User.objects.get(
                 username=request.user))
         context['authPosts'] = Post.getViewablePosts(viewer, author)
-        return render(request, 'author/profile.html', context)
+        return render_to_response('author/profile.html', context)
     else:
         return redirect('/login/')
 
@@ -146,7 +145,7 @@ def editProfile(request):
         payload['author_id'] = author.guid
 
         context = RequestContext(request, payload)
-        return render(request, 'author/edit_profile.html', context)
+        return render_to_response('author/edit_profile.html', context)
     else:
         return redirect('/login/')
 
@@ -159,7 +158,7 @@ def getAuthorPosts(request, author_id):
     context = RequestContext(request)
 
     if not request.user.is_authenticated():
-       return render(request, 'login/index.html', context)
+       return render_to_response('login/index.html', context)
 
     viewer = Author.objects.get(user=request.user)
     author = Author.objects.get(guid=author_id)
@@ -207,7 +206,7 @@ def stream(request):
     if request.user.is_authenticated():
         context = RequestContext(request)
         author = Author.objects.get(user=request.user)
-        rawposts = Post.getAllowedPosts(author)
+        rawposts = Post.getAllowedPosts(author, checkFollow=True)
         comments = []
         authors = []
         categories = []
@@ -257,7 +256,7 @@ def friends(request):
     context = RequestContext(request)
 
     if not request.user.is_authenticated():
-        return render(request, 'login/index.html', context)
+        return redirect('/login/')
 
     author, _ = Author.objects.get_or_create(user=request.user)
 
@@ -270,7 +269,7 @@ def friends(request):
                        "followers": author.getPendingReceivedRequests(),
                        "author_id": author.guid })
 
-    return render(request, 'author/friends.html', context)
+    return render_to_response('author/friends.html', context)
 
 def searchOtherServers(searchString):
     """
@@ -374,7 +373,7 @@ def search(request):
                                            'results': usersAndStatus,
                                            'author_id': author.guid})
 
-    return render(request, 'author/search_results.html', context)
+    return render_to_response('author/search_results.html', context)
 
 def updateRelationship(request, guid):
     """
@@ -466,6 +465,7 @@ def updateRelationship(request, guid):
 
             elif currentRelationship == "Follower":
                 # Befriend
+                postFriendRequest(requestAuthor, remoteAuthor)
                 relationship, _ = RemoteRelationship.objects.get_or_create(
                                         localAuthor=requestAuthor,
                                         remoteAuthor=remoteAuthor)
@@ -475,6 +475,7 @@ def updateRelationship(request, guid):
 
             elif currentRelationship == "No Relationship":
                 # Follow
+                postFriendRequest(requestAuthor, remoteAuthor)
                 relationship, _ = RemoteRelationship.objects.get_or_create(
                                         localAuthor=requestAuthor,
                                         remoteAuthor=remoteAuthor)
