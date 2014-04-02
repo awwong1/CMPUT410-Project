@@ -49,13 +49,13 @@ def index(request):
             else:
                 context['message'] = ("Server admin has not accepted your "
                                       "registration yet!")
-                return render(request, 'login/index.html', context)
+                return render_to_response('login/index.html', context)
         else:
             # Incorrect username and password
             context['message'] = "Incorrect username and password."
-            return render(request, 'login/index.html', context)
+            return render_to_response('login/index.html', context)
 
-    return render(request, 'login/index.html', context)
+    return render_to_response('login/index.html', context)
 
 @ensure_csrf_cookie
 def logUserOut(request):
@@ -83,7 +83,7 @@ def register(request):
                 user.save()
                 return redirect('/login/')
 
-    return render(request, 'login/register.html', context)
+    return render_to_response('login/register.html', context)
 
 def profile(request, author_id):
     """
@@ -107,7 +107,7 @@ def profile(request, author_id):
         viewer = Author.objects.get(user=User.objects.get(
                 username=request.user))
         context['authPosts'] = Post.getViewablePosts(viewer, author)
-        return render(request, 'author/profile.html', context)
+        return render_to_response('author/profile.html', context)
     else:
         return redirect('/login/')
 
@@ -148,7 +148,7 @@ def editProfile(request):
         payload['author_id'] = author.guid
 
         context = RequestContext(request, payload)
-        return render(request, 'author/edit_profile.html', context)
+        return render_to_response('author/edit_profile.html', context)
     else:
         return redirect('/login/')
 
@@ -161,7 +161,7 @@ def getAuthorPosts(request, author_id):
     context = RequestContext(request)
 
     if not request.user.is_authenticated():
-       return render(request, 'login/index.html', context)
+       return render_to_response('login/index.html', context)
 
     viewer = Author.objects.get(user=request.user)
     author = Author.objects.get(guid=author_id)
@@ -209,7 +209,7 @@ def stream(request):
     if request.user.is_authenticated():
         context = RequestContext(request)
         author = Author.objects.get(user=request.user)
-        rawposts = Post.getAllowedPosts(author)
+        rawposts = Post.getAllowedPosts(author, checkFollow=True)
         comments = []
         authors = []
         categories = []
@@ -259,7 +259,7 @@ def friends(request):
     context = RequestContext(request)
 
     if not request.user.is_authenticated():
-        return render(request, 'login/index.html', context)
+        return redirect('/login/')
 
     author, _ = Author.objects.get_or_create(user=request.user)
 
@@ -272,7 +272,7 @@ def friends(request):
                        "followers": author.getPendingReceivedRequests(),
                        "author_id": author.guid })
 
-    return render(request, 'author/friends.html', context)
+    return render_to_response('author/friends.html', context)
 
 def searchOtherServers(searchString):
     """
@@ -376,7 +376,7 @@ def search(request):
                                            'results': usersAndStatus,
                                            'author_id': author.guid})
 
-    return render(request, 'author/search_results.html', context)
+    return render_to_response('author/search_results.html', context)
 
 def updateRelationship(request, guid):
     """
