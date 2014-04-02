@@ -278,9 +278,10 @@ def buildFullPost(rawposts):
     """
     # If there is only one Post
     if type(rawposts) is Post:
+        post= []
         fullpost = buildFullPostContent(rawposts)
-
-        return fullpost 
+        post.append(fullpost)
+        return post 
     else:
         posts = []
 
@@ -334,15 +335,17 @@ def postSingle(request, post_id):
             return Response(status=404)
 
         # Extract the requesting author's information to check for visibility
+
         jsonData = json.loads(request.body)
         authorId = jsonData["author"]["id"]
         author = Author.objects.get(guid=authorId)
+
 
         if not rawpost.isAllowedToViewPost(author):
             return Response(status=403) 
 
         post = buildFullPost(rawpost)
-        serializer = FullPostSerializer(post)
+        serializer = FullPostSerializer(post,many=True)
         return Response({"posts":serializer.data})
 
     # Update the post
@@ -370,7 +373,7 @@ def postSingle(request, post_id):
             post.save()
             AuthorPost.objects.create(post=post, author=author)
     
-        return Response(status=status.HTTP_200_OK)
+        return Response(status=status.HTTP_201_CREATED)
 
 @api_view(['GET'])
 def getAuthorPosts(request, requestedUserid):

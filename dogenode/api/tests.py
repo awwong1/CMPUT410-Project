@@ -7,7 +7,6 @@ from post.models import Post, AuthorPost
 from rest_framework.renderers import JSONRenderer
 from rest_framework.parsers import JSONParser
 
-
 import json, uuid
 
 # TODO: generate this automatically
@@ -120,7 +119,6 @@ class RESTfulTestCase(TestCase):
         AuthorPost.objects.create(post=post6, author=author2)
         AuthorPost.objects.create(post=post7, author=author3)
         AuthorPost.objects.create(post=post8, author=author3)
-
 
     def testRESTareFriends(self):
 
@@ -393,3 +391,106 @@ class RESTfulTestCase(TestCase):
         self.assertEqual(len(posts['posts']), 4, 
                          "%s should see 4 posts!" % "utestuser1")
 
+    def testGetPost(self):
+        """
+        Tests the following with utestuser1:
+            Get a public post               (post1)
+            Get a private post (your own)   (post2)
+            Get a private post (not yours)  (post7)
+            Get a post that does not exist
+        """
+        # Authenicate and send a get request 
+        user = User.objects.get(username="utestuser1")
+        author = Author.objects.get(user=user)
+        self.client.login(username="utestuser1", password="testpassword")
+
+        # Get the posts of 1 (public), 2 (private to utestuser1)
+        # 3 (private to utestuser3) and their postids
+        titles = ["title1", "title2", "title7"]
+        posts = [Post.objects.get(title=t) for t in titles] 
+        postIds = [str(p.guid) for p in posts]
+
+        # This is the non-existant post id. With UUIDs, shouldn't generate this
+        postIds.append("1")     
+
+        # Same author will make the requests
+        getRequestData = { "id": str(author.guid),
+                           "author":{ "id": str(author.guid) }
+                         }
+
+        # Make those requests!
+        responses = []
+        for pid in postIds:
+
+            resp = self.client.post('/api/post/%s/' % pid, 
+                                    content_type = "application/json",
+                                    data=json.dumps(getRequestData),
+                                    follow=True,
+                                    HTTP_ACCEPT = 'application/json')
+            responses.append(resp)
+
+        # Should be able to view the first two posts without a problem
+        # Some small checks for getting the proper post
+        for i in range(2):
+            self.assertTrue(responses[i].status_code, 200)
+            resp = json.loads(responses[i].content, object_hook=_decode_dict)
+            respCont = resp["posts"][0]
+            self.assertTrue(titles[i], respCont["title"])
+            self.assertTrue(posts[i].content, respCont["content"])
+
+        # Post 7 is private to another author. 
+        self.assertTrue(responses[2].status_code, 403)
+   
+        # Last post (with an id of 1) should not exist
+        self.assertTrue(responses[3].status_code, 404)
+
+    def testPutPost(self):
+        """
+        Tests Creating a post and updating said post. 
+        Deletes the new post when finished.
+        """
+        # Authenicate and put a new post
+        user = User.objects.get(username="utestuser1")
+        author = Author.objects.get(user=user)
+        self.client.login(username="utestuser1", password="testpassword")
+
+        newPostId = uuid.uuid4()
+        testResponse = self.client.get('/api/post/%s/' % newPostId, 
+                                    HTTP_ACCEPT = 'application/json')
+
+        # Let's make sure the post doesn't already exist
+        if testResponse.status_code != 404:
+            newPostId = uuid.uuid4()
+            testResponse = self.client.get('/api/post/%s/' % newPostId, 
+                                        HTTP_ACCEPT = 'application/json')
+
+        # Make a new post with minimum fields required
+        newContent = "HI Imma new post!"
+        newPostRequestData = { "content":newContent}
+        response = self.client.put('/api/post/%s/' % newPostId, 
+                                    data=json.dumps(newPostRequestData),
+                                    content_type = "application/json")
+
+        self.assertTrue(response.status_code, 201)
+      
+        # Want to get the new post 
+        getRequestData = {  "id": str(author.guid),
+                            "author":{ "id": str(author.guid) }
+                         }
+
+        getResponse = self.client.post('/api/post/%s/' % newPostId, 
+                                    data=json.dumps(getRequestData),
+                                    content_type = "application/json",
+                                    HTTP_ACCEPT = 'application/json')
+
+        self.assertTrue(getResponse.status_code, 200)
+        posts = json.loads(getResponse.content, object_hook=_decode_dict)
+
+        # Some content testing
+        self.assertTrue(posts["posts"][0]["guid"], newPostId)
+        self.assertTrue(posts["posts"][0]["content"], newContent)
+        self.assertTrue(posts["posts"][0]["author"]["id"], author.guid)
+
+        # Get it and delete it
+        newPost = Post.objects.get(guid=newPostId)
+        newPost.delete()
