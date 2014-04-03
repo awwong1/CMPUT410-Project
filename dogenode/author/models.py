@@ -10,7 +10,7 @@ class Author(models.Model):
     guid = models.CharField(max_length=36,
                                  unique=True, 
                                  default=uuid.uuid4)
-    user = models.OneToOneField(User)
+    user = models.OneToOneField(User, primary_key=True)
     accepted = models.BooleanField(default=False)   
     host = models.CharField(max_length=100, default="http://dogenode/")
     url = models.URLField(blank=True)
@@ -84,12 +84,12 @@ class Author(models.Model):
 # Note: this is causing django to try and create a new author
 # twice (even though dispatch_uid should prevent this), so this is
 # being commented out.
-#def addAcceptedAttribute(sender, instance, created, **kwargs):
-#    if created:
-#        _, _ = Author.objects.get_or_create(user=instance)
+def addAcceptedAttribute(sender, instance, created, **kwargs):
+    if created:
+        _, _ = Author.objects.get_or_create(user=instance)
 
-#post_save.connect(addAcceptedAttribute, sender=User,
-#                  dispatch_uid="asdf")
+post_save.connect(addAcceptedAttribute, sender=User,
+                  dispatch_uid="asdf")
 
 class RemoteAuthor(models.Model):
 

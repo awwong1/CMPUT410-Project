@@ -26,11 +26,11 @@ class AuthorRelationshipsTestCase(TestCase):
         user5 = User.objects.create_user(username="utestuser5",
                                          password="testpassword")
 
-        author1, _ = Author.objects.get_or_create(user=user1)
-        author2, _ = Author.objects.get_or_create(user=user2)
-        author3, _ = Author.objects.get_or_create(user=user3)
-        author4, _ = Author.objects.get_or_create(user=user4)
-        author5, _ = Author.objects.get_or_create(user=user5)
+        author1 = Author.objects.get(user=user1)
+        author2 = Author.objects.get(user=user2)
+        author3 = Author.objects.get(user=user3)
+        author4 = Author.objects.get(user=user4)
+        author5 = Author.objects.get(user=user5)
 
         # author1 follows author2
         LocalRelationship.objects.get_or_create(author1=author1,

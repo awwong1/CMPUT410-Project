@@ -74,7 +74,7 @@ def search(request):
 
     # search locally
     for u in users:
-        a, _ = Author.objects.get_or_create(user=u)
+        a = Author.objects.get(user=u)
 
         authors.append({"url": "%sauthor/profile/%s" % (OURHOST, a.guid),
                         "host": OURHOST,
