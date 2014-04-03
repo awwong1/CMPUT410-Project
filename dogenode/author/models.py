@@ -89,7 +89,10 @@ class Author(models.Model):
 # Create an Author automatically when a User is created
 def createAuthor(sender, instance, created, **kwargs):
     if created:
-        _, _ = Author.objects.get_or_create(user=instance)
+        author, _ = Author.objects.get_or_create(user=instance)
+        # author.url = author.host + author.get_absolute_url() TODO XXX: switch to this
+        author.url = "http://127.0.0.1:8000/author/" + str(author.guid)
+        author.save()
 
 post_save.connect(createAuthor, sender=User, dispatch_uid="auto_create_author")
 
