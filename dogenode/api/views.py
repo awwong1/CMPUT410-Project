@@ -351,6 +351,7 @@ def postSingle(request, post_id):
    
         # return new / updated post in body 
         serializer = FullPostSerializer(buildFullPost(newPost), many=True)
+        print serializer.data
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 @api_view(['GET'])

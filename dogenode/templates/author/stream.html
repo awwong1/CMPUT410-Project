@@ -52,6 +52,18 @@
                 return _p8() + _p8(true) + _p8(true) + _p8();
             }
 
+            /* Clears fields to make a new post in */
+            function clearFields() {
+                    $("#title").val('');
+                    $("#description").val('');
+                    $("#content").val('');
+                    $("#categories").val('');
+                    $("#visibility").val('{{ visibilities.0.option.0 }}');
+                    $("#visibilityExceptions").val('');
+                    $("#content-type").val('{{ contentTypes.0.type.0 }}'); 
+                    $("#image").replaceWith('<input type="file" id="image" name="image" accept="image/*" multiple="multiple"/>'); 
+            }
+
             // On click of make new post button, send an AJAX PUT request to create post
             $("#makePost").on("click", function() {
                 var guid = generateGUID();
@@ -62,11 +74,13 @@
                     "text": $("#description").val(),
                     "content": $("#content").val(),
                     "categories": $("#categories").val(),
-                    "privacyOptions": $("#privacyOptions").val(),
+                    "visibility": $("#visibility").val(),
                     "visibilityExceptions": $("#visibilityExceptions").val(),
                     "content-type": $("#content-type").val(), 
                 });  
-                
+               
+                clearFields();
+ 
                 // send ajax request
                 $.ajax({
                     type: "PUT",
@@ -75,18 +89,19 @@
                     dataType: "json",
                     contentType: "application/json",
                     success: function(response) {
-                        var title = response["title"];
-                        // var source = response["source"]; TODO XXX:add source field
-                        var origin = response["origin"];
-                        var description = response["description"];
-                        var contentType = response["contentType"];
-                        var content = response["content"];
-                        var author = response["author"];
-                        var categories = response["categories"];
-                        var comments = response["comments"];
-                        var pubDate = response["pubDate"];
-                        var guid = response["guid"];
-                        var visibility = response["visibility"];
+                        post = response[0];
+                        var title = post["title"];
+                        // var source = post["source"]; TODO XXX:add source field
+                        var origin = post["origin"];
+                        var description = post["description"];
+                        var contentType = post["contentType"];
+                        var content = post["content"];
+                        var author = post["author"];
+                        var categories = post["categories"];
+                        var comments = post["comments"];
+                        var pubDate = post["pubDate"];
+                        var guid = post["guid"];
+                        var visibility = post["visibility"];
                         
                         // deal with categories
                         var catHTML = "";
@@ -159,7 +174,7 @@
                             +            'by <a href="' + author["url"] + '">'
                             +               '<strong>' + author["displayname"] + '</strong>'
                             +               '</a>'
-                            +            'on' + pubDate 
+                            +            ' on ' + pubDate 
                             +          '</div>'
                             +          '<div class="col-sm-8 text-right">'
                             +            '<a href="' + origin + '" class="text-muted">'
