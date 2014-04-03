@@ -7,12 +7,9 @@ from django.views.decorators.csrf import csrf_exempt
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from rest_framework.renderers import JSONRenderer
-from rest_framework.parsers import JSONParser
 
 from author.models import Author, LocalRelationship, RemoteRelationship
 from post.models import Post, PostVisibilityException, AuthorPost, PostCategory
-from post.views import createPost, updatePost
 
 from comments.models import Comment
 from categories.models import Category

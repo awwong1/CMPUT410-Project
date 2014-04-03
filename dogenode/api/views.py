@@ -7,12 +7,10 @@ from django.views.decorators.csrf import csrf_exempt
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from rest_framework.renderers import JSONRenderer
-from rest_framework.parsers import JSONParser
 
 from author.models import Author, LocalRelationship, RemoteRelationship
 from post.models import Post, PostVisibilityException, AuthorPost, PostCategory
-from post.views import createPost, updatePost
+from post.views import createPost, updatePost, getJSONPost
 
 from comments.models import Comment
 from categories.models import Category
@@ -22,7 +20,7 @@ from api.utils import *
 import sys
 import datetime
 import json
-import urllib, urllib2
+import urllib, urllib2, urlparse
 
 # List of other servers we are communicating with
 SERVER_URLS = ['http://127.0.0.1:8001/' #BenHoboCo
@@ -319,15 +317,16 @@ def postSingle(request, post_id):
         try:
             rawpost = Post.objects.get(guid=post_id)
         except Post.DoesNotExist:
-            return Response(status=404)
+            return Response(status=status.HTTP_404_NOT_FOUND)
 
         # Extract the requesting author's information to check for visibility
-        jsonData = json.loads(request.body)
-        authorId = jsonData["author"]["id"]
-        author = Author.objects.get(guid=authorId)
+        host = request.META.HTTP_HOST
+        queryParams = urlparse.parse_qs(request.META.QUERY_STRING)
+        viewerId = queryParams["id"]
+        viewable, post = getJSONPost(viewerId, post_id, host)
 
-        if not rawpost.isAllowedToViewPost(author):
-            return Response(status=403) 
+        if not viewable:
+            return Response(status=status.HTTP_403_FORBIDDEN) 
 
         post = buildFullPost(rawpost)
         serializer = FullPostSerializer(post,many=True)
@@ -351,7 +350,6 @@ def postSingle(request, post_id):
    
         # return new / updated post in body 
         serializer = FullPostSerializer(buildFullPost(newPost), many=True)
-        print serializer.data
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 @api_view(['GET'])
@@ -370,7 +368,7 @@ def getAuthorPosts(request, requestedUserid):
         try:
             requestedAuthor = Author.objects.get(guid=requestedUserid)
         except Author.DoesNotExist:
-            return Response(status=404)
+            return Response(status=status.HTTP_404_NOT_FOUND)
 
         if request.method == 'GET':
             rawposts = Post.getViewablePosts(viewingAuthor, requestedAuthor)

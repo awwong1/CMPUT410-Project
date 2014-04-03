@@ -15,18 +15,69 @@ from comments.models import Comment
 
 import markdown
 import json
+import urllib2
 
+
+def getJSONPost(viewer_id, post_id, host): 
+    """
+    Returns a post. The currently authenticated
+    user must also have permissions to view the post, else it will not be
+    shown.
+
+    Return value will be a tuple. The first element will be a boolean,
+    True if the viewer is allowed to see the post, and False if they
+    are not allowed.
+
+    The second element will be the post retrieved. If no post matching
+    the post id given was found, it will be None.
+    """
+    try:
+        post = Post.objects.get(guid=post_id)
+    except Post.DoesNotExist:
+        return (False, None)
+
+    postAuthor = AuthorPost.objects.get(post=post).author
+    components = getPostComponents(post)
+
+    if post.visibility == Post.PUBLIC:
+        return post
+
+    # dealing with local authors
+    if len(Author.objects.filter(guid=viewer_id)) > 0:
+        return (post.isAllowedToViewPost(Author.objects.get(guid=viewer_id)),
+                post)
+
+    # dealing with remote authors
+    viewer = RemoteAuthor.objects.get_or_create(guid=viewer_id, host=host)
+    viewable = False
+
+    if post.visibility == Post.SERVERONLY:
+        if host == OUR_HOST:    
+            viewable = True
+    elif post.visibility == Post.FOAF:
+        authorFriends = postAuthor.getFriends()
+        allFriends = authorFriends["remote"] + authorFriends["local"]
+        for friend in authorFriends["local"]:
+            response = urllib2.urlopen("%s/api/friends/%s/%s" % 
+                                        friend.host,   
+                                        str(viewer.guid),
+                                        str(postAuthor.guid))
+            if json.loads(response)["friends"] != "NO":
+                viewable = True
+                break 
+    elif post.visibility == Post.FRIENDS:
+        if viewer in postAuthor.getFriends()["remote"]:
+            viewable = True
+    elif post.visibility == Post.PRIVATE:
+        if viewer.guid == postAuthor.guid:
+            viewable = True
+
+    return (viewable, post)
 
 def getPost(request, post_id):
     """
     Returns a post and displays it in the web browser if the request
-    HTTP_ACCEPT header was set to text/html. The currently authenticated
-    user must also have permissions to view the post, else it will not be
-    shown.
-
-    If the request HTTP_ACCEPT header was set to json, then the json
-    representation of the post will be returned. This representation could
-    be accessed by http://service/posts/{post_id}, which would return a list
+    be accessed by http://service/post/{post_id}, which would return a list
     of posts containing the requested post. If the currently authenticated
     user does not have the permission to view the post, the list will be
     empty.
@@ -37,34 +88,47 @@ def getPost(request, post_id):
         post = Post.objects.get(guid=post_id)
         if (post.isAllowedToViewPost(author)):
             context = RequestContext(request)
-
-            categoryIds = PostCategory.objects.filter(
-                            post=post).values_list('category', flat=True)
-            authorIds = PostVisibilityException.objects.filter(
-                            post=post).values_list('author', flat=True)
-            imageIds = ImagePost.objects.filter(post=post).values_list(
-                            'image', flat=True)
-
-            postAuthor = AuthorPost.objects.get(post=post).author
-
-            comments = Comment.objects.filter(post_ref=post)
-            visibilityExceptions = Author.objects.filter(
-                id__in=authorIds)
-            categories = Category.objects.filter(id__in=categoryIds)
-            images = Image.objects.filter(id__in=imageIds)
+            components = getPostComponents(post);
 
             # Convert Markdown into HTML for web browser
             # django.contrib.markup is deprecated in 1.6, so, workaround
             if post.contentType == post.MARKDOWN:
                 post.content = markdown.markdown(post.content)
 
-            context['posts'] = [(post, postAuthor, comments, categories,
-                                 visibilityExceptions, images)]
+            context['posts'] = [(post, postAuthor, components["comments"], 
+                                components["categories"],
+                                components["visibilityExceptions"], 
+                                components["images"])]
             context['author_id'] = author.guid
 
             return render_to_response('post/post.html', context)
     else:
         return redirect('/login/')
+
+def getPostComponents(post):
+    """
+    Gets all componenets of a post, including images, comments, categories,
+    and visibility exceptions.
+
+    Returns a dictionary containing all the information.
+    """
+    components = {}
+    categoryIds = PostCategory.objects.filter(
+                    post=post).values_list('category', flat=True)
+    authorIds = PostVisibilityException.objects.filter(
+                    post=post).values_list('author', flat=True)
+    imageIds = ImagePost.objects.filter(post=post).values_list(
+                    'image', flat=True)
+
+    postAuthor = AuthorPost.objects.get(post=post).author
+
+    components["comments"] = Comment.objects.filter(post_ref=post)
+    components["visibilityExceptions"] = Author.objects.filter(
+        id__in=authorIds)
+    components["categories"] = Category.objects.filter(id__in=categoryIds)
+    components["images"] = Image.objects.filter(id__in=imageIds)
+
+    return components
 
 def getAllPublicPosts(request):
     """
