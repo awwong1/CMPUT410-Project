@@ -79,12 +79,11 @@ class Author(models.Model):
         return False
 
 # Create an Author automatically when a User is created
-def addAcceptedAttribute(sender, instance, created, **kwargs):
+def createAuthor(sender, instance, created, **kwargs):
     if created:
         _, _ = Author.objects.get_or_create(user=instance)
 
-post_save.connect(addAcceptedAttribute, sender=User,
-                  dispatch_uid="asdf")
+post_save.connect(createAuthor, sender=User, dispatch_uid="auto_create_author")
 
 class RemoteAuthor(models.Model):
 
@@ -118,8 +117,6 @@ class RemoteRelationship(models.Model):
 
     localAuthor = models.ForeignKey(Author, related_name="localAuthor")
     remoteAuthor = models.ForeignKey(RemoteAuthor)
-    #remoteAuthor = models.CharField(max_length=36,
-    #                                default=uuid.uuid4)
 
     # 0 = localAuthor follows remoteAuthor
     # 1 = remoteAuthor follows localAuthor
