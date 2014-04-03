@@ -529,7 +529,7 @@ class RESTfulTestCase(TestCase):
         """
         Tests retrieving all posts that are visible to the current user.
         Sends a GET request to /author/posts/
-        utestuser1 shouserialize ld be able to see post 1, 2, 6, and 8
+        utestuser1 should be able to see post 1, 2, 6, and 8
         """
         # Authenicate and send a get request 
         user = User.objects.get(username="utestuser1")
@@ -544,6 +544,6 @@ class RESTfulTestCase(TestCase):
 
         # Author should have 2 posts
         posts = json.loads(response.content, object_hook=_decode_dict)
-        self.assertEqual(len(posts['posts']), 4, 
-                         "%s should see 4 posts!" % "utestuser1")
+        self.assertEqual(len(posts['posts']), 3, 
+                         "%s should see 3 posts!" % "utestuser1")
 

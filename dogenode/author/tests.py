@@ -68,7 +68,7 @@ class AuthorRelationshipsTestCase(TestCase):
                                     visibility=Post.FOAF)
         post6 = Post.objects.create(content="content6",
                                     title="title6",
-                                   visibility=Post.PUBLIC)
+                                    visibility=Post.PUBLIC)
         post7 = Post.objects.create(content="content7",
                                     title="title7",
                                     visibility=Post.PRIVATE)
@@ -193,7 +193,7 @@ class AuthorRelationshipsTestCase(TestCase):
         url = "/author/stream/"
         response = self.client.get(url, HTTP_ACCEPT="text/html")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEquals(len(response.context['posts']), 4)	
+        self.assertEquals(len(response.context['posts']), 3)
         self.assertTemplateUsed(response, "author/stream.html")
 
         titles = ["title1", "title2", "title6", "title8"]

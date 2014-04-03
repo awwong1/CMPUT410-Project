@@ -78,12 +78,7 @@ class Author(models.Model):
 
         return False
 
-
-# Post-save stuff from:
-# http://stackoverflow.com/questions/44109/extending-the-user-model-with-custom-fields-in-django
-# Note: this is causing django to try and create a new author
-# twice (even though dispatch_uid should prevent this), so this is
-# being commented out.
+# Create an Author automatically when a User is created
 def addAcceptedAttribute(sender, instance, created, **kwargs):
     if created:
         _, _ = Author.objects.get_or_create(user=instance)

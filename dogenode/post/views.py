@@ -49,7 +49,7 @@ def getPost(request, post_id):
 
             comments = Comment.objects.filter(post_ref=post)
             visibilityExceptions = Author.objects.filter(
-                id__in=authorIds)
+                guid__in=authorIds)
             categories = Category.objects.filter(id__in=categoryIds)
             images = Image.objects.filter(id__in=imageIds)
 

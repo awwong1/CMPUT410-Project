@@ -183,7 +183,7 @@ def getAuthorPosts(request, author_id):
         comments.append(Comment.objects.filter(post_ref=post))
         categories.append(Category.objects.filter(id__in=categoryIds))
         visibilityExceptions.append(Author.objects.filter(
-                                        id__in=authorIds))
+                                        guid__in=authorIds))
         images.append(Image.objects.filter(id__in=imageIds))
 
         # Convert Markdown into HTML for web browser 
@@ -225,7 +225,7 @@ def stream(request):
             comments.append(Comment.objects.filter(post_ref=post))
             categories.append(Category.objects.filter(id__in=categoryIds))
             visibilityExceptions.append(Author.objects.filter(
-                id__in=authorIds))
+                guid__in=authorIds))
             images.append(Image.objects.filter(id__in=imageIds))
 
             # Convert Markdown into HTML for web browser 
