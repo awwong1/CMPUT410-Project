@@ -26,11 +26,11 @@ class AuthorRelationshipsTestCase(TestCase):
         user5 = User.objects.create_user(username="utestuser5",
                                          password="testpassword")
 
-        author1, _ = Author.objects.get_or_create(user=user1)
-        author2, _ = Author.objects.get_or_create(user=user2)
-        author3, _ = Author.objects.get_or_create(user=user3)
-        author4, _ = Author.objects.get_or_create(user=user4)
-        author5, _ = Author.objects.get_or_create(user=user5)
+        author1 = Author.objects.get(user=user1)
+        author2 = Author.objects.get(user=user2)
+        author3 = Author.objects.get(user=user3)
+        author4 = Author.objects.get(user=user4)
+        author5 = Author.objects.get(user=user5)
 
         # author1 follows author2
         LocalRelationship.objects.get_or_create(author1=author1,
@@ -68,7 +68,7 @@ class AuthorRelationshipsTestCase(TestCase):
                                     visibility=Post.FOAF)
         post6 = Post.objects.create(content="content6",
                                     title="title6",
-                                   visibility=Post.PUBLIC)
+                                    visibility=Post.PUBLIC)
         post7 = Post.objects.create(content="content7",
                                     title="title7",
                                     visibility=Post.PRIVATE)
@@ -193,7 +193,7 @@ class AuthorRelationshipsTestCase(TestCase):
         url = "/author/stream/"
         response = self.client.get(url, HTTP_ACCEPT="text/html")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEquals(len(response.context['posts']), 4)	
+        self.assertEquals(len(response.context['posts']), 3)
         self.assertTemplateUsed(response, "author/stream.html")
 
         titles = ["title1", "title2", "title6", "title8"]

@@ -113,7 +113,7 @@ class CommentTestCase(TestCase):
 	in coments/views.py
 	"""
 	self.client.login(username="mockuser1", password="mockpassword")
-	post1_id = Post.objects.filter(title="title1")[0].id
+	post1_id = Post.objects.filter(title="title1")[0].guid
 	
 	url = self.base_url + "/comments/" + str(post1_id) + "/"
 	
@@ -132,7 +132,7 @@ class CommentTestCase(TestCase):
 	"""	
 	self.client.login(username="mockuser1", password="mockpassword")
 	url = self.base_url + "/comments/add_comment/"
-	post1_id = Post.objects.filter(title="title1")[0].id
+	post1_id = Post.objects.filter(title="title1")[0].guid
 	
 	response = self.client.post(url,
 				    {'post_id':post1_id,

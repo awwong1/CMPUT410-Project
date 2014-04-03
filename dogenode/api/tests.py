@@ -8,11 +8,9 @@ from post.models import Post, PostVisibilityException, AuthorPost
 
 from rest_framework.renderers import JSONRenderer
 from rest_framework.parsers import JSONParser
+from api.views import OURHOST
 
 import json, uuid
-
-# TODO: generate this automatically
-OURHOST = "http://127.0.0.1:8000/"
 
 # The decoding functions are from
 # http://stackoverflow.com/a/6633651
@@ -61,12 +59,12 @@ class RESTfulTestCase(TestCase):
         user6 = User.objects.create_user(username="utestuser6",
                                          password="testpassword")
 
-        author1, _ = Author.objects.get_or_create(user=user1)
-        author2, _ = Author.objects.get_or_create(user=user2)
-        author3, _ = Author.objects.get_or_create(user=user3)
-        author4, _ = Author.objects.get_or_create(user=user4)
-        author5, _ = Author.objects.get_or_create(user=user5)
-        author6, _ = Author.objects.get_or_create(user=user6)
+        author1 = Author.objects.get(user=user1)
+        author2 = Author.objects.get(user=user2)
+        author3 = Author.objects.get(user=user3)
+        author4 = Author.objects.get(user=user4)
+        author5 = Author.objects.get(user=user5)
+        author6 = Author.objects.get(user=user6)
 
         remoteAuthor1, _ = RemoteAuthor.objects.get_or_create(
                             displayName="remoteAuthor1",
@@ -154,15 +152,33 @@ class RESTfulTestCase(TestCase):
         # Author1 should be able to view post9 too
         PostVisibilityException.objects.create(post=post9, author=author1)
 
+    def testRESTfriends(self):
+
+        user5 = User.objects.create_user(username="utestuser5",
+                                         password="testpassword")
+
+        author5 = Author.objects.get(user=user5)
+
+        response1 = self.client.post('/api/search/query=user5',
+                                     content_type="application/json")
+
+        self.assertEqual(json.loads(response1.content,
+                                    object_hook=_decode_dict),
+            [{"url": "%sauthor/profile/%s" % (OURHOST, str(author5.guid)),
+              "host": OURHOST,
+              "displayname": user5.username,
+              "id": author5.guid}])
+
+
     def testRESTareFriends(self):
 
         user1 = User.objects.get(username="utestuser1")
         user2 = User.objects.get(username="utestuser2")
         user3 = User.objects.get(username="utestuser3")
 
-        author1, _ = Author.objects.get_or_create(user=user1)
-        author2, _ = Author.objects.get_or_create(user=user2)
-        author3, _ = Author.objects.get_or_create(user=user3)
+        author1 = Author.objects.get(user=user1)
+        author2 = Author.objects.get(user=user2)
+        author3 = Author.objects.get(user=user3)
 
         remoteAuthor1, _ = RemoteAuthor.objects.get_or_create(
                                 displayName="remoteAuthor1")
@@ -220,8 +236,8 @@ class RESTfulTestCase(TestCase):
         user5 = User.objects.get(username="utestuser5")
         user6 = User.objects.get(username="utestuser6")
 
-        author5, _ = Author.objects.get_or_create(user=user5)
-        author6, _ = Author.objects.get_or_create(user=user6)
+        author5 = Author.objects.get(user=user5)
+        author6 = Author.objects.get(user=user6)
 
         # utestuser5 sends friend request to utestuser6
         friendRequestData = {
@@ -386,10 +402,10 @@ class RESTfulTestCase(TestCase):
         user3 = User.objects.get(username="utestuser3")
         user4 = User.objects.get(username="utestuser4")
 
-        author1, _ = Author.objects.get_or_create(user=user1)
-        author2, _ = Author.objects.get_or_create(user=user2)
-        author3, _ = Author.objects.get_or_create(user=user3)
-        author4, _ = Author.objects.get_or_create(user=user4)
+        author1 = Author.objects.get(user=user1)
+        author2 = Author.objects.get(user=user2)
+        author3 = Author.objects.get(user=user3)
+        author4 = Author.objects.get(user=user4)
 
         remoteAuthor1, _ = RemoteAuthor.objects.get_or_create(
                             displayName="remoteAuthor1")

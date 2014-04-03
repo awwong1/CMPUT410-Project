@@ -10,7 +10,7 @@ class Author(models.Model):
     guid = models.CharField(max_length=36,
                                  unique=True, 
                                  default=uuid.uuid4)
-    user = models.OneToOneField(User)
+    user = models.OneToOneField(User, primary_key=True)
     accepted = models.BooleanField(default=False)   
     host = models.CharField(max_length=100, default="http://dogenode/")
     url = models.URLField(blank=True)
@@ -86,18 +86,12 @@ class Author(models.Model):
 
         return False
 
+# Create an Author automatically when a User is created
+def createAuthor(sender, instance, created, **kwargs):
+    if created:
+        _, _ = Author.objects.get_or_create(user=instance)
 
-# Post-save stuff from:
-# http://stackoverflow.com/questions/44109/extending-the-user-model-with-custom-fields-in-django
-# Note: this is causing django to try and create a new author
-# twice (even though dispatch_uid should prevent this), so this is
-# being commented out.
-#def addAcceptedAttribute(sender, instance, created, **kwargs):
-#    if created:
-#        _, _ = Author.objects.get_or_create(user=instance)
-
-#post_save.connect(addAcceptedAttribute, sender=User,
-#                  dispatch_uid="asdf")
+post_save.connect(createAuthor, sender=User, dispatch_uid="auto_create_author")
 
 class RemoteAuthor(models.Model):
 
@@ -131,8 +125,6 @@ class RemoteRelationship(models.Model):
 
     localAuthor = models.ForeignKey(Author, related_name="localAuthor")
     remoteAuthor = models.ForeignKey(RemoteAuthor)
-    #remoteAuthor = models.CharField(max_length=36,
-    #                                default=uuid.uuid4)
 
     # 0 = localAuthor follows remoteAuthor
     # 1 = remoteAuthor follows localAuthor
