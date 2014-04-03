@@ -62,6 +62,27 @@ def postFriendRequest(localAuthor, remoteAuthor):
             # is down
             pass
 
+# Searches local authors whose username contains the query string
+#TODO: there's some repeated code here for searching authors in author/views
+def search(request):
+
+    query = request.GET.get("query", "")
+
+    users = User.objects.filter(username__contains=query)
+
+    authors = []
+
+    # search locally
+    for u in users:
+        a, _ = Author.objects.get_or_create(user=u)
+
+        authors.append({"url": "%sauthor/profile/%s" % (OURHOST, a.guid),
+                        "host": OURHOST,
+                        "displayname": a.user.username,
+                        "id": a.guid})
+
+    return HttpResponse(json.dumps(authors))
+
 def areFriends(request, guid1, guid2):
 
     response = {"query":"friends",

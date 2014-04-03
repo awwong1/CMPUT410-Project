@@ -7,12 +7,9 @@ from author.models import (Author, RemoteAuthor,
 from post.models import Post, AuthorPost
 from rest_framework.renderers import JSONRenderer
 from rest_framework.parsers import JSONParser
-
+from api.views import OURHOST
 
 import json, uuid
-
-# TODO: generate this automatically
-OURHOST = "http://127.0.0.1:8000/"
 
 # The decoding functions are from
 # http://stackoverflow.com/a/6633651
@@ -146,6 +143,23 @@ class RESTfulTestCase(TestCase):
         AuthorPost.objects.create(post=post6, author=author2)
         AuthorPost.objects.create(post=post7, author=author3)
         AuthorPost.objects.create(post=post8, author=author3)
+
+    def testRESTfriends(self):
+
+        user5 = User.objects.create_user(username="utestuser5",
+                                         password="testpassword")
+
+        author5, _ = Author.objects.get_or_create(user=user5)
+
+        response1 = self.client.post('/api/search/query=user5',
+                                     content_type="application/json")
+
+        self.assertEqual(json.loads(response1.content,
+                                    object_hook=_decode_dict),
+            [{"url": "%sauthor/profile/%s" % (OURHOST, str(author5.guid)),
+              "host": OURHOST,
+              "displayname": user5.username,
+              "id": author5.guid}])
 
 
     def testRESTareFriends(self):
