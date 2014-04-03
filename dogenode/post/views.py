@@ -10,13 +10,13 @@ from django.contrib.auth.models import User
 from post.models import Post, PostVisibilityException, AuthorPost, PostCategory
 from images.models import Image, ImagePost, ImageVisibilityException
 from categories.models import Category
-from author.models import Author
+from author.models import Author, RemoteAuthor
 from comments.models import Comment
 
 import markdown
 import json
 import urllib2
-
+import datetime
 
 def getJSONPost(viewer_id, post_id, host): 
     """
@@ -48,7 +48,9 @@ def getJSONPost(viewer_id, post_id, host):
                 post)
 
     # dealing with remote authors
-    viewer = RemoteAuthor.objects.get_or_create(guid=viewer_id, host=host)
+    viewerObj = RemoteAuthor.objects.get_or_create(guid=viewer_id, host=host)
+    viewer = viewerObj[0]
+    viewerGuid = viewer.guid[0]
     viewable = False
 
     if post.visibility == Post.SERVERONLY:
@@ -59,9 +61,9 @@ def getJSONPost(viewer_id, post_id, host):
         allFriends = authorFriends["remote"] + authorFriends["local"]
         for friend in authorFriends["local"]:
             response = urllib2.urlopen("%s/api/friends/%s/%s" % 
-                                        friend.host,   
-                                        str(viewer.guid),
-                                        str(postAuthor.guid))
+                                        (friend.host,   
+                                        str(viewerGuid),
+                                        str(postAuthor.guid)))
             if json.loads(response)["friends"] != "NO":
                 viewable = True
                 break 
@@ -69,7 +71,7 @@ def getJSONPost(viewer_id, post_id, host):
         if viewer in postAuthor.getFriends()["remote"]:
             viewable = True
     elif post.visibility == Post.PRIVATE:
-        if viewer.guid == postAuthor.guid:
+        if viewerGuid == postAuthor.guid:
             viewable = True
 
     return (viewable, post)
@@ -124,7 +126,7 @@ def getPostComponents(post):
 
     components["comments"] = Comment.objects.filter(post_ref=post)
     components["visibilityExceptions"] = Author.objects.filter(
-        id__in=authorIds)
+        guid__in=authorIds)
     components["categories"] = Category.objects.filter(id__in=categoryIds)
     components["images"] = Image.objects.filter(id__in=imageIds)
 
@@ -162,8 +164,8 @@ def handlePost(request, post_id):
     if request.method == "GET" or request.method == "POST":
         return getPost(request, post_id)
 
-def createPost(request, data):
-    guid = data.get("guid")
+def createPost(request, post_id, data):
+    guid = post_id
     title = data.get("title")
     description = data.get("description", "")
     content = data.get("content")

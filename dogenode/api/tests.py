@@ -6,10 +6,9 @@ from author.models import (Author, RemoteAuthor,
                            LocalRelationship, RemoteRelationship)
 from post.models import Post, PostVisibilityException, AuthorPost
 
-from rest_framework.renderers import JSONRenderer
-from rest_framework.parsers import JSONParser
 from api.views import OURHOST
 
+import urllib
 import json, uuid
 
 # The decoding functions are from
@@ -110,31 +109,40 @@ class RESTfulTestCase(TestCase):
                                            relationship=1)
 
         # creating some posts for authors
-        post1 = Post.objects.create(content="content1",
+        post1 = Post.objects.create(guid=uuid.uuid4(),
+                                    content="content1",
                                     title="title1",
                                     visibility=Post.PUBLIC)
-        post2 = Post.objects.create(content="content2",
+        post2 = Post.objects.create(guid=uuid.uuid4(),
+                                    content="content2",
                                     title="title2",
                                     visibility=Post.PRIVATE)
-        post3 = Post.objects.create(content="content3",
+        post3 = Post.objects.create(guid=uuid.uuid4(),
+                                    content="content3",
                                     title="title3",
                                     visibility=Post.PRIVATE)
-        post4 = Post.objects.create(content="content4",
+        post4 = Post.objects.create(guid=uuid.uuid4(),
+                                    content="content4",
                                     title="title4",
                                     visibility=Post.FRIENDS)
-        post5 = Post.objects.create(content="content5",
+        post5 = Post.objects.create(guid=uuid.uuid4(),
+                                    content="content5",
                                     title="title5",
                                     visibility=Post.FOAF)
-        post6 = Post.objects.create(content="content6",
+        post6 = Post.objects.create(guid=uuid.uuid4(),
+                                    content="content6",
                                     title="title6",
-                                   visibility=Post.PUBLIC)
-        post7 = Post.objects.create(content="content7",
+                                    visibility=Post.PUBLIC)
+        post7 = Post.objects.create(guid=uuid.uuid4(),
+                                    content="content7",
                                     title="title7",
                                     visibility=Post.PRIVATE)
-        post8 = Post.objects.create(content="content8",
+        post8 = Post.objects.create(guid=uuid.uuid4(),
+                                    content="content8",
                                     title="title8",
                                     visibility=Post.SERVERONLY)
-        post9 = Post.objects.create(content="content9",
+        post9 = Post.objects.create(guid=uuid.uuid4(),
+                                    content="content9",
                                     title="title9",
                                     visibility=Post.PRIVATE)
 
@@ -585,7 +593,7 @@ class RESTfulTestCase(TestCase):
         responses = []
         for pid in postIds:
 
-            resp = self.client.post('/api/post/%s/' % pid, 
+            resp = self.client.post('/api/post/%s' % pid, 
                                     content_type = "application/json",
                                     data=json.dumps(getRequestData),
                                     follow=True,
@@ -618,37 +626,26 @@ class RESTfulTestCase(TestCase):
         Tests creating a post and updating said post with PUT
         Deletes the new post when finished.
         """
+        
         # Authenicate and put a new post
         user = User.objects.get(username="utestuser1")
         author = Author.objects.get(user=user)
         self.client.login(username="utestuser1", password="testpassword")
 
+        query = urllib.urlencode({"id":author.guid})
         newPostId = str(uuid.uuid4())
-        testResponse = self.client.get('/api/post/%s/' % newPostId, 
-                                    HTTP_ACCEPT = 'application/json')
-
-        # Let's make sure the post doesn't already exist
-        if testResponse.status_code != 404:
-            newPostId = str(uuid.uuid4())
-            testResponse = self.client.get('/api/post/%s/' % newPostId, 
-                                        HTTP_ACCEPT = 'application/json')
 
         # Make a new post with minimum fields required
         newContent = "HI Imma new post!"
-        newPostRequestData = { "content":newContent}
-        response = self.client.put('/api/post/%s/' % newPostId, 
+        newPostRequestData = { "title":"title", "content":newContent}
+        response = self.client.put('/api/post/%s?%s' % (newPostId, query), 
                                     data=json.dumps(newPostRequestData),
                                     content_type = "application/json")
 
         self.assertEqual(response.status_code, 201)
       
         # Want to get the new post 
-        getRequestData = {  "id": author.guid,
-                            "author":{ "id": author.guid }
-                         }
-
-        getResponse = self.client.post('/api/post/%s/' % newPostId, 
-                                    data=json.dumps(getRequestData),
+        getResponse = self.client.get('/api/post/%s?%s' % (newPostId, query), 
                                     content_type = "application/json",
                                     HTTP_ACCEPT = 'application/json')
 
@@ -661,23 +658,17 @@ class RESTfulTestCase(TestCase):
         self.assertEqual(posts["posts"][0]["author"]["id"], author.guid)
 
         changedContent = "I have changed"
-        putResponse = self.client.put('/api/post/%s/' % newPostId, 
+        putResponse = self.client.put('/api/post/%s?%s' % (newPostId, query), 
                                     data=json.dumps({"content":changedContent}),
                                     content_type = "application/json",
                                     HTTP_ACCEPT = 'application/json')
 
-        getResponse = self.client.post('/api/post/%s/' % newPostId, 
-                                    data=json.dumps(getRequestData),
-                                    content_type = "application/json",
-                                    HTTP_ACCEPT = 'application/json')
-
         # The new post's content should not be the old one!
-        posts = json.loads(getResponse.content, object_hook=_decode_dict)
-        self.assertNotEqual(posts["posts"][0]["content"], newContent)
-        self.assertEqual(posts["posts"][0]["content"], changedContent)
-
-        # Get it and delete it
         newPost = Post.objects.get(guid=newPostId)
+
+        self.assertNotEqual(newPost.content, newContent)
+        self.assertEqual(newPost.content, changedContent)
+
         newPost.delete()
 
     def testRESTauthorProfile(self):

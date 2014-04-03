@@ -8,7 +8,7 @@ from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from author.models import Author, LocalRelationship, RemoteRelationship
+from author.models import Author, RemoteAuthor, LocalRelationship, RemoteRelationship
 from post.models import Post, PostVisibilityException, AuthorPost, PostCategory
 from post.views import createPost, updatePost, getJSONPost
 
@@ -341,8 +341,8 @@ def postSingle(request, post_id):
             return Response(status=status.HTTP_404_NOT_FOUND)
 
         # Extract the requesting author's information to check for visibility
-        host = request.META.HTTP_HOST
-        queryParams = urlparse.parse_qs(request.META.QUERY_STRING)
+        host = request.META["REMOTE_ADDR"] + request.META["SERVER_NAME"]
+        queryParams = urlparse.parse_qs(request.META["QUERY_STRING"])
         viewerId = queryParams["id"]
         viewable, post = getJSONPost(viewerId, post_id, host)
 
@@ -350,7 +350,9 @@ def postSingle(request, post_id):
             return Response(status=status.HTTP_403_FORBIDDEN) 
 
         post = buildFullPost(rawpost)
+        print post
         serializer = FullPostSerializer(post,many=True)
+        print serializer.data
         return Response({"posts":serializer.data})
 
     # Update the post
@@ -358,6 +360,12 @@ def postSingle(request, post_id):
         # for post in request.DATA:
         posts = Post.objects.filter(guid=post_id)
         newPost = None
+        queryParams = urlparse.parse_qs(request.META["QUERY_STRING"])
+        authorId = queryParams["id"][0]
+        try:
+            author = Author.objects.get(guid=authorId)
+        except Author.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
 
         # post exists, so it will update
         if len(posts) > 0:
@@ -367,7 +375,7 @@ def postSingle(request, post_id):
             else:
                 return Response(status=403) 
         else:    # post doesn't exist, a new one will be created
-            newPost = createPost(request, request.DATA)
+            newPost = createPost(request, post_id, request.DATA)
    
         # return new / updated post in body 
         serializer = FullPostSerializer(buildFullPost(newPost), many=True)
