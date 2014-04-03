@@ -167,7 +167,7 @@
                     +      '<div class="panel-footer">'
                     +        '<form role="form" method="POST"'
                     +         ' action="/comments/add_comment/">'
-                    //  +          '{% csrf_token %}'
+                    +          "{% csrf_token %}"
                     +          '<div class="form-group">'
                     +            '<input type="hidden" name="post_id" value="' + guid + '" />'
                     +            '<input type="text" class="form-control" name="newComment"'
