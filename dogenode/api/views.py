@@ -350,9 +350,7 @@ def postSingle(request, post_id):
             return Response(status=status.HTTP_403_FORBIDDEN) 
 
         post = buildFullPost(rawpost)
-        print post
         serializer = FullPostSerializer(post,many=True)
-        print serializer.data
         return Response({"posts":serializer.data})
 
     # Update the post

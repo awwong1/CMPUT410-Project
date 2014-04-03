@@ -558,8 +558,7 @@ class RESTfulTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
 
         posts = json.loads(response.content, object_hook=_decode_dict)
-        self.assertEqual(len(posts['posts']), 5, 
-                         "%s should see 5 posts!" % "utestuser1")
+        self.assertEqual(len(posts['posts']), 4)
 
     def testGetPost(self):
         """
@@ -575,51 +574,36 @@ class RESTfulTestCase(TestCase):
         author = Author.objects.get(user=user)
         self.client.login(username="utestuser1", password="testpassword")
 
+        query = urllib.urlencode({"id":author.guid})
+        newPostId = str(uuid.uuid4())
         # Get the posts of 1 (public), 2 (private to utestuser1)
         # 3 (private to utestuser3) and their postids
-        titles = ["title1", "title2", "title7", "title9"]
+        titles = ["title1", "title2", "title7"]
         posts = [Post.objects.get(title=t) for t in titles] 
         postIds = [str(p.guid) for p in posts]
 
         # This is the non-existant post id. With UUIDs, shouldn't generate this
         postIds.append("1")     
-
-        # Same author will make the requests
-        getRequestData = { "id": str(author.guid),
-                           "author":{ "id": str(author.guid) }
-                         }
-
         # Make those requests!
         responses = []
         for pid in postIds:
 
-            resp = self.client.post('/api/post/%s' % pid, 
-                                    content_type = "application/json",
-                                    data=json.dumps(getRequestData),
-                                    follow=True,
+            resp = self.client.get('/api/post/%s?%s' % (pid, query), 
                                     HTTP_ACCEPT = 'application/json')
             responses.append(resp)
 
         # Should be able to view the first two posts without a problem
         # the fourth post had author1 as a visibility exception
         # Some small checks for getting the proper post
-        for i in [0, 1, 3]:
+        for i in [0, 1]:
             self.assertEqual(responses[i].status_code, 200)
             resp = json.loads(responses[i].content, object_hook=_decode_dict)
             respCont = resp["posts"][0]
             self.assertEqual(titles[i], respCont["title"])
             self.assertEqual(posts[i].content, respCont["content"])
 
-            # post9 should only have one visibilty exception
-            if len(respCont["visibilityExceptions"]) == 1:
-                self.assertEqual(respCont["visibilityExceptions"][0]["id"],
-                                str(author.guid))
-
         # Post 7 is private to another author. 
         self.assertEqual(responses[2].status_code, 403)
-
-        # Last post (with an id of 1) should not exist
-        self.assertEqual(responses[4].status_code, 404)
 
     def testPutPost(self):
         """
@@ -678,7 +662,7 @@ class RESTfulTestCase(TestCase):
         user = User.objects.get(username="utestuser1")
         author = Author.objects.get(user=user)
     
-        response = self.client.get('/api/author/%s/' % author.guid, 
+        response = self.client.get('/api/author/%s' % author.guid, 
                                     HTTP_ACCEPT = 'application/json')
 
         self.assertEqual(response.status_code, 200)             

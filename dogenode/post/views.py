@@ -40,7 +40,7 @@ def getJSONPost(viewer_id, post_id, host):
     components = getPostComponents(post)
 
     if post.visibility == Post.PUBLIC:
-        return post
+        return (True, post)
 
     # dealing with local authors
     if len(Author.objects.filter(guid=viewer_id)) > 0:
