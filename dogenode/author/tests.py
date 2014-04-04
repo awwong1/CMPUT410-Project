@@ -10,6 +10,7 @@ from rest_framework.response import Response
 
 import json
 import yaml
+import uuid
 
 # Create your tests here.
 class AuthorRelationshipsTestCase(TestCase):
@@ -51,28 +52,36 @@ class AuthorRelationshipsTestCase(TestCase):
                                            relationship=True)
 
         # creating some posts for authors
-        post1 = Post.objects.create(content="content1",
+        post1 = Post.objects.create(guid=uuid.uuid4(), 
+                                    content="content1",
                                     title="title1",
                                     visibility=Post.PUBLIC)
-        post2 = Post.objects.create(content="content2",
+        post2 = Post.objects.create(guid=uuid.uuid4(), 
+                                    content="content2",
                                     title="title2",
                                     visibility=Post.PRIVATE)
-        post3 = Post.objects.create(content="content3",
+        post3 = Post.objects.create(guid=uuid.uuid4(), 
+                                    content="content3",
                                     title="title3",
                                     visibility=Post.PRIVATE)
-        post4 = Post.objects.create(content="content4",
+        post4 = Post.objects.create(guid=uuid.uuid4(), 
+                                    content="content4",
                                     title="title4",
                                     visibility=Post.FRIENDS)
-        post5 = Post.objects.create(content="content5",
+        post5 = Post.objects.create(guid=uuid.uuid4(), 
+                                    content="content5",
                                     title="title5",
                                     visibility=Post.FOAF)
-        post6 = Post.objects.create(content="content6",
+        post6 = Post.objects.create(guid=uuid.uuid4(), 
+                                    content="content6",
                                     title="title6",
                                     visibility=Post.PUBLIC)
-        post7 = Post.objects.create(content="content7",
+        post7 = Post.objects.create(guid=uuid.uuid4(), 
+                                    content="content7",
                                     title="title7",
                                     visibility=Post.PRIVATE)
-        post8 = Post.objects.create(content="content8",
+        post8 = Post.objects.create(guid=uuid.uuid4(),  
+                                    content="content8",
                                     title="title8",
                                     visibility=Post.SERVERONLY)
         

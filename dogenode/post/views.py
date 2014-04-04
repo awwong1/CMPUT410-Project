@@ -103,7 +103,8 @@ def getPost(request, post_id):
             if post.contentType == post.MARKDOWN:
                 post.content = markdown.markdown(post.content)
 
-            context['posts'] = [(post, postAuthor, components["comments"], 
+            context['posts'] = [(post, components["postAuthor"], 
+                                components["comments"], 
                                 components["categories"],
                                 components["visibilityExceptions"], 
                                 components["images"])]
@@ -128,8 +129,7 @@ def getPostComponents(post):
     imageIds = ImagePost.objects.filter(post=post).values_list(
                     'image', flat=True)
 
-    postAuthor = AuthorPost.objects.get(post=post).author
-
+    components["postAuthor"] = AuthorPost.objects.get(post=post).author
     components["comments"] = Comment.objects.filter(post_ref=post)
     components["visibilityExceptions"] = Author.objects.filter(
         guid__in=authorIds)

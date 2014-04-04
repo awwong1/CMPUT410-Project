@@ -31,18 +31,18 @@ class PostTestCase(TestCase):
         user2 = User.objects.get(username="utestuser2")
         author2, _ = Author.objects.get_or_create(user=user2)
 
-        post1 = Post.objects.create(title="title1",
-                                    description="desc1",
-                                    content="post1",
-                                    visibility=Post.PUBLIC) 
-        post2 = Post.objects.create(title="title2",
-                                    description="desc2",
-                                    content="post2", 
-                                    visibility=Post.PUBLIC) 
-        post3 = Post.objects.create(title="title3",
-                                    description="desc3",
-                                    content="post3",
-                                    visibility=Post.PRIVATE) 
+        post1 = Post.objects.create(guid=uuid.uuid4(), 
+                                    content="content1",
+                                    title="title1",
+                                    visibility=Post.PUBLIC)
+        post2 = Post.objects.create(guid=uuid.uuid4(), 
+                                    content="content2",
+                                    title="title2",
+                                    visibility=Post.PRIVATE)
+        post3 = Post.objects.create(guid=uuid.uuid4(), 
+                                    content="content3",
+                                    title="title3",
+                                    visibility=Post.PRIVATE)
 
         AuthorPost.objects.create(post=post1, author=author1)
         AuthorPost.objects.create(post=post2, author=author2)
@@ -57,10 +57,8 @@ class PostTestCase(TestCase):
         self.assertIsNotNone(post, "Post does not exist")
         self.assertEquals(post.title, "title1", 
                             "Title does not match")
-        self.assertEquals(post.content, "post1", 
+        self.assertEquals(post.content, "content1", 
                             "Content does not match")
-        self.assertEquals(post.description, "desc1", 
-                            "Description does not match")
         self.assertEquals(post.visibility, Post.PUBLIC, 
                             "Visibility does not match")
 
@@ -106,31 +104,6 @@ class PostTestCase(TestCase):
         post4.delete()
         post = Post.objects.filter(title="title4")
         self.assertEquals(len(post), 0, "Post should not exist")
-
-
-    def testViewsAddPost(self):
-        """
-        Test if you can create a post via add_post in views
-        """
-        self.client.login(username="utestuser1", password="testpassword")
-
-        url = "/posts/add_post/"
-
-        response = self.client.post(url, 
-                                    {'title':'title6',
-                                     'description':'desc6',
-                                     'content':'content6',
-                                     'visibility':Post.PUBLIC,
-                                     'visibilityExceptions':'',
-                                     'categories':'',
-                                     'contentType': Post.PLAIN},
-                                    HTTP_REFERER='/author/stream.html')
-        self.assertEqual(response.status_code, 302, 
-                        "Post creation was not successful, code:" + 
-                         str(response.status_code))
-        post = Post.objects.get(title="title6")
-        self.assertIsNotNone(post, "Post was not successfully created")
-        post.delete()
 
     def testViewsGetPost(self):
         """
@@ -208,7 +181,7 @@ class PostTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'post/public_posts.html')
         self.assertIsNotNone(response.context['posts'])
-        self.assertEqual(len(response.context['posts']), 2)
+        self.assertEqual(len(response.context['posts']), 1)
  
 
     def testRESTAddUpdatePost(self):
