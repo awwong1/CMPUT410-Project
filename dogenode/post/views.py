@@ -176,7 +176,6 @@ def createPost(request, post_id, data):
     """
     Creates a new post from json representation of a post.
     """
-    print data
     guid = post_id
     title = data.get("title")
     description = data.get("description", "")
@@ -199,7 +198,6 @@ def createPost(request, post_id, data):
 
     # If there are also images, handle that too
     for image in images:
-        print "one img.."
         # decoding base64 image code from: https://gist.github.com/yprez/7704036
         # base64 encoded image - decode
         format, imgstr = image.split(';base64,')  # format ~= data:image/X,

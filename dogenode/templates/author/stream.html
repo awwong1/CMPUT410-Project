@@ -81,10 +81,8 @@
                     var FR= new FileReader();
                     FR.onload = function(e) {
                          images.push(e.target.result);
-                         alert("images: " + images);
                     };       
                     for (var i=0; i < imgFiles.length; i++) {
-                        alert(i);
                         FR.readAsDataURL(imgFiles[i]);
                     }
                 } 
@@ -236,7 +234,6 @@
                     continue;
                 }
                 postData["images"] = images;
-                alert("before jsonifying: " + postData["images"]);
                 var JSONPostData = JSON.stringify(postData);
                 images = [];
  
