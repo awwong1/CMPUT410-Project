@@ -74,19 +74,25 @@
                 Returns base64 encoded image, or if no file was specified,
                 returns null.
             */
-            var imagesEncoded = null;
+            images = [];
             function readImage() {
-                var images = null;
-                if (($("#image"))[0].files.length > 0) {
+                var imgFiles = ($("#image"))[0].files;
+                if (imgFiles.length > 0) {
                     var FR= new FileReader();
                     FR.onload = function(e) {
-                         images = e.target.result;
+                         images.push(e.target.result);
+                         alert("images: " + images);
                     };       
-                    FR.readAsDataURL(($("#image"))[0].files[0] );
-                }
-                alert("outside if :" + images);
-                return images;
+                    for (var i=0; i < imgFiles.length; i++) {
+                        alert(i);
+                        FR.readAsDataURL(imgFiles[i]);
+                    }
+                } 
             }
+
+            $("#image").change(function() {
+                readImage();
+            });
 
             /* Creates html for a new post */
             function addPost(post) {
@@ -126,11 +132,11 @@
                     contentSize = '<div class="col-sm-8 col-lg-9">';
                     imagesHTML += '<div class="col-sm-4 col-lg-3 text-center">'
                 	    + '<div class="well">';
-    			    for (img in images) {   // TODO XXX: FIX THIS!!!
-    				    imagesHTML += '<a href="' + images[img]["url"] 
+    			    for (img in images) {   
+    				    imagesHTML += '<a href="' + images[img]["url"]+'/' 
                         + '?{% now "U" %}" target="_blank">' 
                         + '<img class="img-responsive-horizontal"' 
-                        + 'src="' + images[img]["url"] 
+                        + 'src="' + images[img]["url"]+'/' 
                         + '?{% now "U" %}"/></a>';
     			    }
                     imagesHTML += '</div></div>';
@@ -224,14 +230,16 @@
                     "visibility": $("#visibility").val(),
                     "visibilityExceptions": $("#visibilityExceptions").val(),
                     "content-type": $("#content-type").val(),
-                    "images": [], 
                 };  
-                var images = readImage();
-                if (images !== null) {
-                    postData["images"] = [images];
+                // waiting for images to be read and converted
+                while ( images.length < ($("#image"))[0].files.length) {
+                    continue;
                 }
+                postData["images"] = images;
+                alert("before jsonifying: " + postData["images"]);
                 var JSONPostData = JSON.stringify(postData);
-               
+                images = [];
+ 
                 clearFields();
                 query = "?id="+$("#author_guid").val();
                 // send ajax request
@@ -251,27 +259,6 @@
                 return false;
             });
 
-            /* Polling to get new viewable posts to stream. Code from:
-                http://techoctave.com/c7/posts/60-simple-long-polling-example-with-javascript-and-jquery
-             
-            (function poll() {    // TODO XXX: GET THIS WORKING!!!! 
-                // should loop through all servers on whitelist
-                $.ajax({ 
-                    url: "server1",
-                    dataType: "json",
-                    complete: poll,
-                    success: function(data) {
-                        posts = data["posts"]
-                        for (post in posts) {
-                            // checking if already have post or not
-                            if ($("#"+post["guid"]).length <= 0) {
-                                addPost(post);
-                            }
-                        }
-                    },
-                    timeout: 30000});
-                        
-            */
         });
         
     </script>
