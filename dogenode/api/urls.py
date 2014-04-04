@@ -11,5 +11,5 @@ urlpatterns = patterns('',
     url(r'^post/([-\w]+)$', views.postSingle),
     url(r'^author/posts$', views.getStream),
     url(r'^author/(?P<authorId>[-\w]+)$', views.authorProfile),
-    url(r'^author/(?P<requestedUserid>[-\w]+)/posts/$', views.getAuthorPosts),
+    url(r'^author/(?P<requestedAuthorId>[-\w]+)/posts$', views.getAuthorPosts),
 )

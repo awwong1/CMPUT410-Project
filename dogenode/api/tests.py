@@ -490,55 +490,29 @@ class RESTfulTestCase(TestCase):
     def testRESTGetAllAuthorPosts(self):
         """
         Tests getting all the posts of an author that are visible by user
-        making the request. Sends a GET request to /author/authorid/posts.
-        Author1 made post 1 and post 2, so those two posts should be 
-        retrieved when Author1 makes the request.
+        making the request. 
+        Sends a GET request to 
+            service/author/{AUTHOR_ID}/posts?id={VIEWING_AUTHOR_ID}
+        Author2 made multiple posts, but only one of them is public. Since 
+        Author2 and Author1 are not friends, only one post should be returned,
+        Author2's public post.
         """
-        # Authenicate and send a get request 
         user = User.objects.get(username="utestuser1")
         author = Author.objects.get(user=user)
-        self.client.login(username="utestuser1", password="testpassword")
 
-        response = self.client.get('/api/author/%s/posts/' % author.guid,
+        user2 = User.objects.get(username="utestuser2")
+        author2 = Author.objects.get(user=user2)
+
+        query = urllib.urlencode({"id":author.guid})
+        response = self.client.get('/api/author/%s/posts?%s' % 
+                                        (author2.guid, query), 
                                     HTTP_ACCEPT = 'application/json')
-        
-        # Response code check
+
         self.assertEqual(response.status_code, 200)
-       
-        # Author should have 2 posts
         posts = json.loads(response.content, object_hook=_decode_dict)
-        self.assertEqual(len(posts['posts']), 2, 
-                         "%s should have 2 posts!" % "utestuser1")
-
-        # Make sure they are the same!
-        for i in range(len(posts['posts'])):
-            post = posts["posts"][i]
-            self.assertEquals(post["author"]["displayname"], "utestuser1",
-                              "This is not the %s's post!" % "utestuser1") 
-            if post["title"] == "title2":
-                epost = Post.objects.get(title="title2")
-            elif post["title"] == "title1":
-                epost = Post.objects.get(title="title1")
-
-            postAuthor = AuthorPost.objects.get(post=epost).author
-            expectedPost = {
-                            'guid': epost.guid,
-                            'title': epost.title, 
-                            'description': epost.description, 
-                            'content': epost.content, 
-                            'visibility': epost.visibility, 
-                            'contentType': epost.contentType, 
-                            'origin': epost.origin, 
-                            'author': {'url': postAuthor.url, 
-                                       'host': postAuthor.host, 
-                                       'displayname': postAuthor.user.username, 
-                                       'id': postAuthor.guid}, 
-                            'comments': [],
-                            'categories': [], 
-                            }
-
-            for key in expectedPost.keys():
-                self.assertEquals(expectedPost[key], post[key])
+        self.assertEqual(len(posts['posts']), 1)
+        self.assertEqual(posts["posts"][0]["title"], "title6")
+        self.assertEqual(posts["posts"][0]["author"]["id"], author2.guid)
 
     def testRESTStream(self):
         """
@@ -546,7 +520,6 @@ class RESTfulTestCase(TestCase):
         Sends a GET request to /author/posts?id={viewingAuthorId}
         utestuser1 should be able to see post 1, 2, 6 and 9
         """
-        # Authenicate and send a get request 
         user = User.objects.get(username="utestuser1")
         author = Author.objects.get(user=user)
 
@@ -724,7 +697,7 @@ class RESTfulTestCase(TestCase):
 
     def testRemoteAuthorGetAllVisiblePosts(self):
         """
-        Remote author wants to get all the posts on our node that they can 
+        RemoteAuthor3 wants to get all the posts on our node that they can 
         view.
         """
         user2 = User.objects.get(username="utestuser2")
@@ -751,8 +724,42 @@ class RESTfulTestCase(TestCase):
         self.assertEqual(len(posts['posts']), 3)
 
 
-    def willtestRemoteAuthorGetAllLocalAuthorPosts(self):
+    def testRemoteAuthorGetAllLocalAuthorPosts(self):
         """
-        Remote author wants to view all of a local author's posts
+        Remote author wants to view all of a local author's posts at
+            http://service/author/{AUTHOR_ID}/posts
+
+        RemoteAuthor3 is friends with Author2. Author2 has a public and friends
+        post that RemoteAuthor3 can see. RemoteAuthor3 should not be able to
+        see Author2's Private post
+        TODO: Fix for remote FOAF!
         """
-        pass
+        user2 = User.objects.get(username="utestuser2")
+        author2, _ = Author.objects.get_or_create(user=user2)
+        remoteAuthor3, _ = RemoteAuthor.objects.get_or_create(
+                            displayName="remoteAuthor3",
+                            host="http://127.0.0.1:8001/",
+                            url="http://127.0.0.1:8001/author/remoteAuthor3")
+
+        # author2 is friends with remoteAuthor3
+        RemoteRelationship.objects.get_or_create(localAuthor=author2,
+                                           remoteAuthor=remoteAuthor3,
+                                           relationship=2)
+
+        query = urllib.urlencode({"id":remoteAuthor3.guid})
+        response = self.client.get('/api/author/%s/posts?%s' % 
+                                        (author2.guid, query), 
+                                    HTTP_ACCEPT = 'application/json')
+
+        # Response code check
+        self.assertEqual(response.status_code, 200)
+       
+        posts = json.loads(response.content, object_hook=_decode_dict)
+        self.assertEqual(len(posts['posts']), 2)
+
+        # Make sure they are the same!
+        for i in range(len(posts['posts'])):
+            post = posts["posts"][i]
+            actualPost = Post.objects.get(title=post["title"])
+            self.assertEqual(post["title"], actualPost.title)
+            self.assertEqual(post["author"]["id"], author2.guid)
