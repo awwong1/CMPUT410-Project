@@ -542,18 +542,18 @@ class RESTfulTestCase(TestCase):
 
     def testRESTStream(self):
         """
-        Tests retrieving all posts that are visible to the current user.
-        Sends a GET request to /author/posts/
-        utestuser1 should be able to see post 1, 2, 6, 8 and 9
+        Tests retrieving all posts that are visible to the local author.
+        Sends a GET request to /author/posts?id={viewingAuthorId}
+        utestuser1 should be able to see post 1, 2, 6 and 9
         """
         # Authenicate and send a get request 
         user = User.objects.get(username="utestuser1")
         author = Author.objects.get(user=user)
-        self.client.login(username="utestuser1", password="testpassword")
 
-        response = self.client.get('/api/author/posts/', 
+        query = urllib.urlencode({"id":author.guid})
+        response = self.client.get('/api/author/posts?%s' % query, 
                                     HTTP_ACCEPT = 'application/json')
-        
+
         # Response code check
         self.assertEqual(response.status_code, 200)
 
@@ -612,9 +612,6 @@ class RESTfulTestCase(TestCase):
 
         # And this post doesn't exist
         self.assertEqual(responses[0].status_code, 404)
-
-
-
 
     def testPutPost(self):
         """
@@ -689,12 +686,8 @@ class RESTfulTestCase(TestCase):
         Get a private post (post 7)
         Get a serveronly post (post 8)
         """
-        user1 = User.objects.get(username="utestuser1")
         user2 = User.objects.get(username="utestuser2")
-        user3 = User.objects.get(username="utestuser3")
-        author1, _ = Author.objects.get_or_create(user=user1)
         author2, _ = Author.objects.get_or_create(user=user2)
-        author3, _ = Author.objects.get_or_create(user=user3)
         remoteAuthor3, _ = RemoteAuthor.objects.get_or_create(
                             displayName="remoteAuthor3",
                             host="http://127.0.0.1:8001/",
@@ -729,8 +722,37 @@ class RESTfulTestCase(TestCase):
         for i in [2, 3]:
             self.assertEqual(responses[i].status_code, 403)
 
-    def willtestRemoteAuthorGetAllVisiblePosts(self):
+    def testRemoteAuthorGetAllVisiblePosts(self):
         """
-        Remote author wants to view all the posts on our node
+        Remote author wants to get all the posts on our node that they can 
+        view.
+        """
+        user2 = User.objects.get(username="utestuser2")
+        author2, _ = Author.objects.get_or_create(user=user2)
+        remoteAuthor3, _ = RemoteAuthor.objects.get_or_create(
+                            displayName="remoteAuthor3",
+                            host="http://127.0.0.1:8001/",
+                            url="http://127.0.0.1:8001/author/remoteAuthor3")
+
+        # author2 is friends with remoteAuthor3
+        RemoteRelationship.objects.get_or_create(localAuthor=author2,
+                                           remoteAuthor=remoteAuthor3,
+                                           relationship=2)
+
+        query = urllib.urlencode({"id":remoteAuthor3.guid})
+        response = self.client.get('/api/author/posts?%s' % query, 
+                                    HTTP_ACCEPT = 'application/json')
+
+        # Response code check
+        self.assertEqual(response.status_code, 200)
+        posts = json.loads(response.content, object_hook=_decode_dict)
+
+        # Two public and one friend post
+        self.assertEqual(len(posts['posts']), 3)
+
+
+    def willtestRemoteAuthorGetAllLocalAuthorPosts(self):
+        """
+        Remote author wants to view all of a local author's posts
         """
         pass

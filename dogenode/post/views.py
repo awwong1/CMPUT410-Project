@@ -53,7 +53,7 @@ def getJSONPost(viewer_id, post_id, host):
 
     # dealing with remote authors
     viewer = RemoteAuthor.objects.get_or_create(guid=viewer_id, host=host)[0]
-    viewerGuid = viewer.guid[0]
+    viewerGuid = viewer_id[0]
     viewable = False
 
     if post.visibility == Post.SERVERONLY:
@@ -65,13 +65,19 @@ def getJSONPost(viewer_id, post_id, host):
         allFriends = authorFriends["remote"] + authorFriends["local"]
         for friend in authorFriends["local"]:
             # TODO: fix for remote cases
-            response = urllib2.urlopen("%sapi/friends/%s/%s" % 
-                                        (OUR_HOST,   
-                                        str(viewerGuid),
-                                        str(postAuthor.guid)))
+            try:
+                response = urllib2.urlopen("%sapi/friends/%s/%s" % 
+                                            (OUR_HOST,   
+                                            str(viewerGuid),
+                                            str(postAuthor.guid)))
+            except:
+                viewable = False
+                break
+
             if json.loads(response)["friends"] != "NO":
                 viewable = True
                 break 
+
     elif post.visibility == Post.FRIENDS:
         for friend in postAuthor.getFriends()["remote"]:
             if friend.guid == viewerGuid: 

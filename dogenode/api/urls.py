@@ -9,7 +9,7 @@ urlpatterns = patterns('',
     url(r'^friends/([\w|-]+)+/([\w|-]+)+$', views.areFriends),
     url(r'^posts/$', views.getPublicPosts),
     url(r'^post/([-\w]+)$', views.postSingle),
-    url(r'^author/posts/$', views.getStream),
+    url(r'^author/posts$', views.getStream),
     url(r'^author/(?P<authorId>[-\w]+)$', views.authorProfile),
     url(r'^author/(?P<requestedUserid>[-\w]+)/posts/$', views.getAuthorPosts),
 )

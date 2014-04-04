@@ -300,7 +300,6 @@ def search(request):
     """
     context = RequestContext(request)
 
-    # TODO: This should be a GET
     if request.method == 'POST':
         username = request.POST['username']
 
