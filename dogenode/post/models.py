@@ -80,7 +80,6 @@ class Post(models.Model):
 
         friends = viewer.getFriends()
         followed = viewer.getPendingSentRequests()
-
         # Check if post was created by the specified viewer
         if AuthorPost.objects.filter(post=self, author=viewer).count() > 0:
             return True

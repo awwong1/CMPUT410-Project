@@ -568,49 +568,59 @@ class RESTfulTestCase(TestCase):
             Get a private post (not yours)          (post7)
             Get a post with a Visibility Exception  (post9)
             Get a post that does not exist
+
+        TODO: Friend testing with another user (user3 -> post4) 
         """
         # Authenicate and send a get request 
         user = User.objects.get(username="utestuser1")
         author = Author.objects.get(user=user)
-        self.client.login(username="utestuser1", password="testpassword")
 
         query = urllib.urlencode({"id":author.guid})
-        newPostId = str(uuid.uuid4())
-        # Get the posts of 1 (public), 2 (private to utestuser1)
-        # 3 (private to utestuser3) and their postids
-        titles = ["title1", "title2", "title7"]
+
+        # Not testing post6 (FOAF) at the moment nor serveronly 
+        titles = ["title1", "title2", "title3", "title4", "title5", 
+                  "title6", "title7", "title8", "title9"]
         posts = [Post.objects.get(title=t) for t in titles] 
         postIds = [str(p.guid) for p in posts]
 
         # This is the non-existant post id. With UUIDs, shouldn't generate this
-        postIds.append("1")     
+        titles.insert(0, "NoPost")
+        postIds.insert(0, "1")
+
         # Make those requests!
         responses = []
-        for pid in postIds:
-
-            resp = self.client.get('/api/post/%s?%s' % (pid, query), 
+        for i in range(10):
+            # skipping FOAF test for now 
+            if i == 5: 
+                responses.append("")
+                continue
+            resp = self.client.get('/api/post/%s?%s' % (postIds[i], query), 
                                     HTTP_ACCEPT = 'application/json')
             responses.append(resp)
 
-        # Should be able to view the first two posts without a problem
+        # Should be able to view public and author1's own private post
         # the fourth post had author1 as a visibility exception
-        # Some small checks for getting the proper post
-        for i in [0, 1]:
+        for i in [1, 2, 6, 9]:
             self.assertEqual(responses[i].status_code, 200)
             resp = json.loads(responses[i].content, object_hook=_decode_dict)
             respCont = resp["posts"][0]
             self.assertEqual(titles[i], respCont["title"])
-            self.assertEqual(posts[i].content, respCont["content"])
 
-        # Post 7 is private to another author. 
-        self.assertEqual(responses[2].status_code, 403)
+        # Shouldn't be able to view these
+        for i in [3, 4, 7]:
+            self.assertEqual(responses[i].status_code, 403)
+
+        # And this post doesn't exist
+        self.assertEqual(responses[0].status_code, 404)
+
+
+
 
     def testPutPost(self):
         """
         Tests creating a post and updating said post with PUT
         Deletes the new post when finished.
         """
-        
         # Authenicate and put a new post
         user = User.objects.get(username="utestuser1")
         author = Author.objects.get(user=user)
@@ -671,3 +681,56 @@ class RESTfulTestCase(TestCase):
         self.assertEqual(authorContent["host"], author.host)
         self.assertEqual(authorContent["displayname"], user.username)
         self.assertEqual(authorContent["url"], author.url)
+
+    def testRESTRemoteAuthGetPost(self):
+        """
+        Get a public post (post 1)
+        Get a friends post (post 4)
+        Get a private post (post 7)
+        Get a serveronly post (post 8)
+        """
+        user1 = User.objects.get(username="utestuser1")
+        user2 = User.objects.get(username="utestuser2")
+        user3 = User.objects.get(username="utestuser3")
+        author1, _ = Author.objects.get_or_create(user=user1)
+        author2, _ = Author.objects.get_or_create(user=user2)
+        author3, _ = Author.objects.get_or_create(user=user3)
+        remoteAuthor3, _ = RemoteAuthor.objects.get_or_create(
+                            displayName="remoteAuthor3",
+                            host="http://127.0.0.1:8001/",
+                            url="http://127.0.0.1:8001/author/remoteAuthor3")
+
+        # author2 is friends with remoteAuthor3
+        RemoteRelationship.objects.get_or_create(localAuthor=author2,
+                                           remoteAuthor=remoteAuthor3,
+                                           relationship=2)
+
+        query = urllib.urlencode({"id":remoteAuthor3.guid})
+        titles = ["title1", "title4", "title7", "title8"]
+        posts = [Post.objects.get(title=t) for t in titles]
+        postIds = [str(p.guid) for p in posts]
+
+        responses = []
+        # Make those requests!
+        for pid in postIds:
+            resp = self.client.get('/api/post/%s?%s' % (pid, query), 
+                                    HTTP_ACCEPT = 'application/json')
+            responses.append(resp)
+
+        # Should be able to view a public and a post where they are frrends
+        for i in [0, 1]:
+            self.assertEqual(responses[i].status_code, 200)
+            resp = json.loads(responses[i].content, object_hook=_decode_dict)
+            respCont = resp["posts"][0]
+            self.assertEqual(titles[i], respCont["title"])
+            self.assertEqual(posts[i].content, respCont["content"])
+
+        # Post 7 is private to another author. Post 8 is server only
+        for i in [2, 3]:
+            self.assertEqual(responses[i].status_code, 403)
+
+    def willtestRemoteAuthorGetAllVisiblePosts(self):
+        """
+        Remote author wants to view all the posts on our node
+        """
+        pass
