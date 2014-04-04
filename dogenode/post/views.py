@@ -1,4 +1,5 @@
 from django.core.exceptions import ObjectDoesNotExist
+from django.core.files.base import ContentFile
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.shortcuts import render, render_to_response, redirect
 from django.http import HttpResponse
@@ -175,6 +176,7 @@ def createPost(request, post_id, data):
     """
     Creates a new post from json representation of a post.
     """
+    print data
     guid = post_id
     title = data.get("title")
     description = data.get("description", "")
@@ -197,14 +199,15 @@ def createPost(request, post_id, data):
 
     # If there are also images, handle that too
     for image in images:
+        print "one img.."
         # decoding base64 image code from: https://gist.github.com/yprez/7704036
         # base64 encoded image - decode
-        format, imgstr = data.split(';base64,')  # format ~= data:image/X,
+        format, imgstr = image.split(';base64,')  # format ~= data:image/X,
         ext = format.split('/')[-1]  # guess file extension
         decoded = ContentFile(base64.b64decode(imgstr), name="img." + ext)
         newImage = Image.objects.create(author=author, file=decoded,
                                         visibility=visibility,
-                                        contentType=image.content_type)
+                                        contentType=format)
         ImagePost.objects.create(image=newImage, post=newPost)
 
     AuthorPost.objects.create(post=newPost, author=author)
@@ -220,9 +223,9 @@ def createPost(request, post_id, data):
             authorObject = Author.objects.get(user=userObject)
             PostVisibilityException.objects.get_or_create(post=newPost,
                 author=authorObject)
-            #for image in images:
-            #    ImageVisibilityException.objects.get_or_create(
-            #            image=newImage, author=authorObject)
+            for image in images:
+                ImageVisibilityException.objects.get_or_create(
+                        image=newImage, author=authorObject)
         except ObjectDoesNotExist:
             pass
 

@@ -74,16 +74,18 @@
                 Returns base64 encoded image, or if no file was specified,
                 returns null.
             */
-            function readImage() { 
+            var imagesEncoded = null;
+            function readImage() {
+                var images = null;
                 if (($("#image"))[0].files.length > 0) {
                     var FR= new FileReader();
                     FR.onload = function(e) {
-                         return e.target.result;
+                         images = e.target.result;
                     };       
                     FR.readAsDataURL(($("#image"))[0].files[0] );
                 }
-
-                return null;
+                alert("outside if :" + images);
+                return images;
             }
 
             /* Creates html for a new post */
@@ -224,12 +226,10 @@
                     "content-type": $("#content-type").val(),
                     "images": [], 
                 };  
-
                 var images = readImage();
                 if (images !== null) {
                     postData["images"] = [images];
                 }
-                
                 var JSONPostData = JSON.stringify(postData);
                
                 clearFields();
