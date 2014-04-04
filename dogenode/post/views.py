@@ -18,6 +18,8 @@ import json
 import urllib2
 import datetime
 
+OUR_HOST = "http://127.0.0.1:8000/"
+
 def getJSONPost(viewer_id, post_id, host): 
     """
     Returns a post. The currently authenticated
@@ -43,33 +45,37 @@ def getJSONPost(viewer_id, post_id, host):
         return (True, post)
 
     # dealing with local authors
-    if len(Author.objects.filter(guid=viewer_id)) > 0:
-        return (post.isAllowedToViewPost(Author.objects.get(guid=viewer_id)),
+    if len(Author.objects.filter(guid=viewer_id[0])) > 0:
+        return (post.isAllowedToViewPost(Author.objects.get(guid=viewer_id[0])),
                 post)
 
     # dealing with remote authors
-    viewerObj = RemoteAuthor.objects.get_or_create(guid=viewer_id, host=host)
-    viewer = viewerObj[0]
+    viewer = RemoteAuthor.objects.get_or_create(guid=viewer_id, host=host)[0]
     viewerGuid = viewer.guid[0]
     viewable = False
 
     if post.visibility == Post.SERVERONLY:
+        # TODO: fix up
         if host == OUR_HOST:    
             viewable = True
     elif post.visibility == Post.FOAF:
         authorFriends = postAuthor.getFriends()
         allFriends = authorFriends["remote"] + authorFriends["local"]
         for friend in authorFriends["local"]:
-            response = urllib2.urlopen("%s/api/friends/%s/%s" % 
-                                        (friend.host,   
+            # TODO: fix for remote cases
+            response = urllib2.urlopen("%sapi/friends/%s/%s" % 
+                                        (OUR_HOST,   
                                         str(viewerGuid),
                                         str(postAuthor.guid)))
             if json.loads(response)["friends"] != "NO":
                 viewable = True
                 break 
     elif post.visibility == Post.FRIENDS:
-        if viewer in postAuthor.getFriends()["remote"]:
-            viewable = True
+        for friend in postAuthor.getFriends()["remote"]:
+            if friend.guid == viewerGuid: 
+                viewable = True
+                break
+
     elif post.visibility == Post.PRIVATE:
         if viewerGuid == postAuthor.guid:
             viewable = True
