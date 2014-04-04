@@ -402,25 +402,37 @@ def getAuthorPosts(request, requestedUserid):
             posts = buildFullPost(rawposts)
             return Response(serializeFullPost(posts))
 
-@api_view(['GET'])
+@api_view(['GET', 'POST'])
 def getStream(request):
     """
     Get's the currently authenicated author's stream. 
 
     Fulfills
-        http://service/author/posts 
+        http://service/author/posts?id={viewingAuthorId} 
         (posts that are visible to the currently authenticated user)
     """
-    if request.user.is_authenticated():
-        user = User.objects.get(username=request.user)
-        author = Author.objects.get(user=user)
-        rawposts = Post.getAllowedPosts(author)
+    if request.method == 'GET' or request.method == 'POST':
+        # Extract the requesting author's information to check for visibility
+        host = request.META["REMOTE_ADDR"] + request.META["SERVER_NAME"]
+        queryParams = urlparse.parse_qs(request.META["QUERY_STRING"])
+        viewerId = queryParams["id"]
+        
+        # Modify getAllowedPosts to work for remote authors?
+        allPosts = Post.objects.all().order_by('-pubDate')
+        rawPosts = []
+        for post in allPosts:
 
-        if request.method == 'GET':
-            posts = buildFullPost(rawposts)
-            return Response(serializeFullPost(posts))
+            viewable, rawPost = getJSONPost(viewerId, post.guid, host)
+
+            if viewable:
+                rawPosts.append(rawPost)
+
+        finalPosts = buildFullPost(rawPosts)
+        serializer = FullPostSerializer(finalPosts,many=True)
+        return Response({"posts":serializer.data})
+
     else:
-        return Response(status=403)
+        Response(status=405)
 
 @api_view(['GET'])
 def authorProfile(request, authorId):
