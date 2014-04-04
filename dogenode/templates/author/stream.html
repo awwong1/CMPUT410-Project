@@ -58,10 +58,32 @@
                     $("#description").val('');
                     $("#content").val('');
                     $("#categories").val('');
-                    $("#visibility").val('{{ visibilities.0.option.0 }}');
+                    $("#visibility").val('PRIVATE');
                     $("#visibilityExceptions").val('');
-                    $("#content-type").val('{{ contentTypes.0.type.0 }}'); 
+                    $("#content-type").val('text/plain'); 
                     $("#image").replaceWith('<input type="file" id="image" name="image" accept="image/*" multiple="multiple"/>'); 
+            }
+
+            /* 
+                Converts image file to base64. Code from:
+                http://jsbin.com/ayazin/2/edit
+              
+                Modified to work with jquery using code from:
+                http://stackoverflow.com/questions/14772753/input-type-file-files-selector-not-works-in-jquery
+
+                Returns base64 encoded image, or if no file was specified,
+                returns null.
+            */
+            function readImage() { 
+                if (($("#image"))[0].files.length > 0) {
+                    var FR= new FileReader();
+                    FR.onload = function(e) {
+                         return e.target.result;
+                    };       
+                    FR.readAsDataURL(($("#image"))[0].files[0] );
+                }
+
+                return null;
             }
 
             /* Creates html for a new post */
@@ -78,6 +100,7 @@
                 var pubDate = post["pubDate"];
                 var guid = post["guid"];
                 var visibility = post["visibility"];
+                var images = post["images"];
                 
                 // deal with categories
                 var catHTML = "";
@@ -96,19 +119,23 @@
                 
                 // deal with images
                 var imagesHTML = "";
-                //if (len(images) > 0) {
-                //    contentSize = '<div class="col-sm-8 col-lg-9">';
-                //    imagesHTML += '<div class="col-sm-4 col-lg-3 text-center">'
-                //	+ '<div class="well">';
-    //			    for (img in images) {   TODO XXX: FIX THIS!!!
-    //				 imagesHTML += '<a href='{{ image.file.url }}?{% now "U" %}' target="_blank"><img class="img-responsive-horizontal" src="{{ image.file.url }}?{% now 'U' %}"/></a>
-    //			    }
-                //    imagesHTML += '</div></div>';
+                var contentSize = "";
+                if (images.length > 0) {
+                    contentSize = '<div class="col-sm-8 col-lg-9">';
+                    imagesHTML += '<div class="col-sm-4 col-lg-3 text-center">'
+                	    + '<div class="well">';
+    			    for (img in images) {   // TODO XXX: FIX THIS!!!
+    				    imagesHTML += '<a href="' + images[img]["url"] 
+                        + '?{% now "U" %}" target="_blank">' 
+                        + '<img class="img-responsive-horizontal"' 
+                        + 'src="' + images[img]["url"] 
+                        + '?{% now "U" %}"/></a>';
+    			    }
+                    imagesHTML += '</div></div>';
                     
-                //} else {
-                //    contentSize = '<div class="col-sm-12">';
-                //}
-                var contentSize = '<div class="col-sm-12">';
+                } else {
+                    contentSize = '<div class="col-sm-12">';
+                }
 
                 var commentsHTML = "";
                 // deal with comments
@@ -121,7 +148,6 @@
                         +  '</a> on ' + comments[comment]["pubDate"] + '</small>'
                         + '</td></tr>';
                 }
-
 
                // add new post to stream
                $(".stream-title").after('<div id="' + guid + '" class="row">'
@@ -183,11 +209,11 @@
                     + '</div>');
             }
 
+
             // On click of make new post button, send an AJAX PUT request to create post
             $("#makePost").on("click", function() {
                 var guid = generateGUID();
-                // var images = TODO XXX: DEAL WITH IMAGES
-                var postData = JSON.stringify({
+                var postData = {
                     "guid": guid,
                     "title": $("#title").val(),
                     "text": $("#description").val(),
@@ -195,8 +221,16 @@
                     "categories": $("#categories").val(),
                     "visibility": $("#visibility").val(),
                     "visibilityExceptions": $("#visibilityExceptions").val(),
-                    "content-type": $("#content-type").val(), 
-                });  
+                    "content-type": $("#content-type").val(),
+                    "images": [], 
+                };  
+
+                var images = readImage();
+                if (images !== null) {
+                    postData["images"] = [images];
+                }
+                
+                var JSONPostData = JSON.stringify(postData);
                
                 clearFields();
                 query = "?id="+$("#author_guid").val();
@@ -204,7 +238,7 @@
                 $.ajax({
                     type: "PUT",
                     url: "http://127.0.0.1:8000/api/post/"+guid+query,
-                    data: postData,
+                    data: JSONPostData, 
                     dataType: "json",
                     contentType: "application/json",
                     success: function(response) {

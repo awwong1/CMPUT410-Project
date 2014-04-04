@@ -19,6 +19,15 @@ class CommentSerializer(serializers.Serializer):
 
     author = AuthorSerializer()
 
+
+class ImageSerializer(serializers.Serializer):
+    """
+    Custom Images Serializer
+    """
+    id = serializers.IntegerField()
+    visibility = serializers.CharField()
+    url = serializers.URLField()
+
 class FullPostSerializer(serializers.Serializer):
     """
     A special way of Serializing the posts that are required in the 
@@ -43,3 +52,5 @@ class FullPostSerializer(serializers.Serializer):
     categories = serializers.CharField(max_length=80, required=False)
     # Other Authors who can view the post outside of normal visibility options
     visibilityExceptions = AuthorSerializer(required=False) 
+    images = ImageSerializer(required=False)
+

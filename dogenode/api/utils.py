@@ -14,6 +14,7 @@ from post.models import Post, PostVisibilityException, AuthorPost, PostCategory
 from comments.models import Comment
 from categories.models import Category
 from api.serializers import AuthorSerializer, FullPostSerializer
+from images.models import Image, ImagePost
 
 import sys
 import datetime
@@ -64,6 +65,12 @@ def buildFullPostContent(post):
     othAuthors = Author.objects.filter(guid__in=otherAuthorIds)
     otherAuthors = [auth.as_dict() for auth in othAuthors]
     postContent["visibilityExceptions"] = otherAuthors
+
+    # Getting images
+    imageIds = ImagePost.objects.filter(post=post).values_list(
+                    'image', flat=True)
+    images = Image.objects.filter(id__in=imageIds)
+    postContent["images"] = [i.as_dict() for i in images]
 
     return postContent
 

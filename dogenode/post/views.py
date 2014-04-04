@@ -17,6 +17,7 @@ import markdown
 import json
 import urllib2
 import datetime
+import base64
 
 def getJSONPost(viewer_id, post_id, host): 
     """
@@ -134,7 +135,7 @@ def getPostComponents(post):
 
 def getAllPublicPosts(request):
     """
-    Retreives all public posts.
+    Retreives all public posts and displays it on the web browser
     """
     context = RequestContext(request)
     author = Author.objects.get(user=request.user)
@@ -165,6 +166,9 @@ def handlePost(request, post_id):
         return getPost(request, post_id)
 
 def createPost(request, post_id, data):
+    """
+    Creates a new post from json representation of a post.
+    """
     guid = post_id
     title = data.get("title")
     description = data.get("description", "")
@@ -173,6 +177,7 @@ def createPost(request, post_id, data):
     visibilityExceptionsString = data.get("visibilityExceptions", "")
     categoriesString = data.get("categories", "")
     contentType = data.get("content-type", Post.PLAIN)
+    images = data.get("images")
 
     categoryNames = categoriesString.split()
     exceptionUsernames = visibilityExceptionsString.split()
@@ -185,11 +190,16 @@ def createPost(request, post_id, data):
     newPost.save()
 
     # If there are also images, handle that too
-    #for image in images:
-    #    newImage = Image.objects.create(author=author, file=image,
-    #                                    visibility=visibility,
-    #                                    contentType=image.content_type)
-    #ImagePost.objects.create(image=newImage, post=newPost)
+    for image in images:
+        # decoding base64 image code from: https://gist.github.com/yprez/7704036
+        # base64 encoded image - decode
+        format, imgstr = data.split(';base64,')  # format ~= data:image/X,
+        ext = format.split('/')[-1]  # guess file extension
+        decoded = ContentFile(base64.b64decode(imgstr), name="img." + ext)
+        newImage = Image.objects.create(author=author, file=decoded,
+                                        visibility=visibility,
+                                        contentType=image.content_type)
+        ImagePost.objects.create(image=newImage, post=newPost)
 
     AuthorPost.objects.create(post=newPost, author=author)
 
@@ -213,6 +223,10 @@ def createPost(request, post_id, data):
     return newPost
 
 def updatePost(post, data):
+    """ 
+    Completely updates or partially updates a post given post data in
+    json format.
+    """
     for key, value in data.items():
         setattr(post, key, value)
     post.modifiedDate = datetime.datetime.now()
