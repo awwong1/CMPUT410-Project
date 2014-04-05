@@ -184,6 +184,10 @@ def createPost(request, post_id, data):
     categoriesString = data.get("categories", "")
     contentType = data.get("content-type", Post.PLAIN)
     images = data.get("images")
+    
+    # Dealing with no images defined
+    if images is None:
+        images = []
 
     categoryNames = categoriesString.split()
     exceptionUsernames = visibilityExceptionsString.split()

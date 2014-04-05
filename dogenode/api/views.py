@@ -363,7 +363,7 @@ def postSingle(request, post_id):
         try:
             author = Author.objects.get(guid=authorId)
         except Author.DoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND)
+            return Response(status=status.HTTP_403_FORBIDDEN)
 
         # post exists, so it will update
         if len(posts) > 0:
@@ -371,7 +371,7 @@ def postSingle(request, post_id):
             if AuthorPost.objects.get(post=posts[0]).author.guid == author.guid:
                 newPost = updatePost(posts[0], request.DATA)
             else:
-                return Response(status=403) 
+                return Response(status=status.HTTP_403_FORBIDDEN) 
         else:    # post doesn't exist, a new one will be created
             newPost = createPost(request, post_id, request.DATA)
    
@@ -443,7 +443,7 @@ def getStream(request):
         return Response({"posts":serializer.data})
 
     else:
-        Response(status=405)
+        Response(status=status.status.HTTP_METHOD_NOT_ALLOWED)
 
 @api_view(['GET'])
 def authorProfile(request, authorId):
@@ -456,7 +456,7 @@ def authorProfile(request, authorId):
     try:
         author = Author.objects.get(guid=authorId)
     except Author.DoesNotExist:
-        return Response(status=404)
+        return Response(status=status.HTTP_404_NOT_FOUND)
 
     # Get the author's information
     if request.method == 'GET':
