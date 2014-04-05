@@ -203,9 +203,9 @@ def createPost(request, post_id, data):
     for image in images:
         # decoding base64 image code from: https://gist.github.com/yprez/7704036
         # base64 encoded image - decode
-        format, imgstr = image.split(';base64,')  # format ~= data:image/X,
+        format, imgstr = image[1].split(';base64,')  # format ~= data:image/X,
         ext = format.split('/')[-1]  # guess file extension
-        decoded = ContentFile(base64.b64decode(imgstr), name="img." + ext)
+        decoded = ContentFile(base64.b64decode(imgstr), name=image[0])
         newImage = Image.objects.create(author=author, file=decoded,
                                         visibility=visibility,
                                         contentType=format)

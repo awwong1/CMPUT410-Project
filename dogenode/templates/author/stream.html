@@ -79,9 +79,11 @@
             function readImage() {
                 var imgFiles = ($("#image"))[0].files;
                 if (imgFiles.length > 0) {
+                    var filename = $("#image").val()
                     var FR= new FileReader();
                     FR.onload = function(e) {
-                         images.push(e.target.result);
+                         images.push([filename, e.target.result]);
+                         
                     };       
                     for (var i=0; i < imgFiles.length; i++) {
                         FR.readAsDataURL(imgFiles[i]);

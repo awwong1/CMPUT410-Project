@@ -37,7 +37,7 @@ class Image(models.Model):
     def as_dict(self):
         return {
             "id": self.id,
-           # "name": self.file.name,
+            "name": self.file.name,
             "url": self.get_absolute_url(),
             "visibility": self.visibility
         }
