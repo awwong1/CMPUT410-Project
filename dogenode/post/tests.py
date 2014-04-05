@@ -1,5 +1,5 @@
 from django.test import TestCase
-from author.models import Author
+
 from comments.models import Comment
 from post.models import Post, AuthorPost
 from author.models import Author
@@ -13,7 +13,6 @@ from rest_framework.response import Response
 import collections
 
 import json
-import yaml
 import uuid
 
 class PostTestCase(TestCase):
@@ -183,99 +182,3 @@ class PostTestCase(TestCase):
         self.assertIsNotNone(response.context['posts'])
         self.assertEqual(len(response.context['posts']), 1)
  
-
-    def testRESTAddUpdatePost(self):
-        """
-        Test if you can add and update a post via PUT request with /post/postid
-        
-        self.client.login(username="utestuser1", password="testpassword")
-
-        url = "/posts/999/"
-
-        response = self.client.put(url, json.dumps( 
-                                    {'title':'title7',
-                                     'description':'desc7',
-                                     'content':'content7',
-                                     'visibility':Post.PUBLIC,
-                                     'categories': ["dogs","cats"],
-                                     'content-type': Post.PLAIN}),
-                                   HTTP_ACCEPT="application/json",
-                                   content_type="application/json")
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        post = Post.objects.get(id=999)
-        self.assertIsNotNone(post, "Post was not successfully created")
-
-        # now testing updating via put
-       
-        response = self.client.put(url, json.dumps( 
-                                    {'title':'title7again',
-                                     'description':'desc7again',
-                                     'content':'content<br/>7again',
-                                     'visibility':Post.PRIVATE,
-                                     'content-type':Post.HTML,
-                                     'categories': ["ant","bear"]
-                                    }),
-                                   HTTP_ACCEPT="application/json",
-                                   content_type="application/json")
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        post = Post.objects.get(id=999)
-        self.assertIsNotNone(post, "Post was not successfully created")
-        self.assertEquals(post.title, "title7again")
-        self.assertEquals(post.content, "content<br/>7again")
-        self.assertEquals(post.description, "desc7again")
-        self.assertEquals(post.visibility, Post.PRIVATE)
-        self.assertEquals(post.contentType.encode('utf8'), Post.HTML)
-        # TODO: check categories ?
-        post.delete()
-    """
-    def testRESTGetPost(self):
-        """
-        Gets a single post via a GET and a POST request for /post/postid
-        Tests:
-        1. GET an existing post
-        2. POST an exisiting post
-        3. GET a non existing post
-        4. POST a non existing post
-        post = Post.objects.filter(title="title1")[0]
-        post_id = post.id
-        
-        self.client.login(username="utestuser1", password="testpassword")
-        response = self.client.get('/posts/' + str(post_id) + "/", 
-                                    HTTP_ACCEPT='application/json')
-
-        posts = yaml.load(response.content)
-
-        self.assertEqual(len(posts["posts"]), 1, 
-                            "Only one post should have been returned")
-
-        post = posts["posts"][0]
-
-        self.assertEqual(post["title"],"title1")
-        self.assertEqual(post["description"],"desc1")
-        self.assertEqual(post["content"],"post1")
-        self.assertEqual(post["visibility"],Post.PUBLIC)
-"""
-
-    def testRESTGetAllPublicPosts(self):
-        """
-        Tests retreiving all public posts on the server. Sends a GET / POST
-        request to /posts/
-
-        self.client.login(username="utestuser1", password="testpassword")
-        response = self.client.get('/posts/', HTTP_ACCEPT='application/json')
-
-        posts = yaml.load(response.content)
-
-        # Two posts should be public: post1, and post2
-        self.assertEqual(len(posts["posts"]), 2, 
-                            "There was only two Public Posts")
-
-        post1 = posts["posts"][0]
-        post2 = posts["posts"][1]
-
-        self.assertEqual(post1["title"],"title1")
-        self.assertEqual(post1["visibility"],Post.PUBLIC)
-
-        self.assertEqual(post2["title"],"title2")
-        self.assertEqual(post2["visibility"],Post.PUBLIC)
-    """

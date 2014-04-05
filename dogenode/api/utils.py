@@ -60,8 +60,8 @@ def buildFullPostContent(post):
     postContent["categories"] = Category.objects.filter(id__in=categoryIds)
 
     # Visibility exceptions: a list of author dictionaries
-    otherAuthorIds = PostVisibilityException.objects.filter(
-                        post=post).values_list('author', flat=True)
+    postExceptions = PostVisibilityException.objects.filter(post=post)
+    otherAuthorIds = [exception.author.guid for exception in postExceptions]
     othAuthors = Author.objects.filter(guid__in=otherAuthorIds)
     otherAuthors = [auth.as_dict() for auth in othAuthors]
     postContent["visibilityExceptions"] = otherAuthors

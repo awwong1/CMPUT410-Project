@@ -129,8 +129,8 @@ def getPostComponents(post):
     components = {}
     categoryIds = PostCategory.objects.filter(
                     post=post).values_list('category', flat=True)
-    authorIds = PostVisibilityException.objects.filter(
-                    post=post).values_list('author', flat=True)
+    postExceptions = PostVisibilityException.objects.filter(post=post)
+    authorIds = [exception.author.guid for exception in postExceptions]
     imageIds = ImagePost.objects.filter(post=post).values_list(
                     'image', flat=True)
 
@@ -171,10 +171,6 @@ def getAllPublicPosts(request):
     context['author_id'] = author.guid
     return render_to_response('post/public_posts.html', context)
 
-def handlePost(request, post_id):
-    if request.method == "GET" or request.method == "POST":
-        return getPost(request, post_id)
-
 def createPost(request, post_id, data):
     """
     Creates a new post from json representation of a post.
@@ -188,6 +184,10 @@ def createPost(request, post_id, data):
     categoriesString = data.get("categories", "")
     contentType = data.get("content-type", Post.PLAIN)
     images = data.get("images")
+    
+    # Dealing with no images defined
+    if images is None:
+        images = []
 
     categoryNames = categoriesString.split()
     exceptionUsernames = visibilityExceptionsString.split()
@@ -203,9 +203,9 @@ def createPost(request, post_id, data):
     for image in images:
         # decoding base64 image code from: https://gist.github.com/yprez/7704036
         # base64 encoded image - decode
-        format, imgstr = image.split(';base64,')  # format ~= data:image/X,
+        format, imgstr = image[1].split(';base64,')  # format ~= data:image/X,
         ext = format.split('/')[-1]  # guess file extension
-        decoded = ContentFile(base64.b64decode(imgstr), name="img." + ext)
+        decoded = ContentFile(base64.b64decode(imgstr), name=image[0])
         newImage = Image.objects.create(author=author, file=decoded,
                                         visibility=visibility,
                                         contentType=format)

@@ -191,8 +191,9 @@ def getAuthorPosts(request, author_id):
     for post in posts:
         categoryIds = PostCategory.objects.filter(post = post).values_list(
                         'category', flat=True)
-        authorIds = PostVisibilityException.objects.filter(
-                        post=post).values_list('author', flat=True)
+        visExceptions = PostVisibilityException.objects.filter(
+                        post=post)
+        authorIds = [e.author.guid for e in visExceptions]
         imageIds = ImagePost.objects.filter(post=post).values_list(
                         'image', flat=True)
 

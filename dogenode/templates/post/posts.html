@@ -13,7 +13,7 @@
             <th>Content</th>
             <th>Categories</th>
             <th>Visibility</th>
-            <th>Visibility Exceptions</th>
+            <th>Visibility <br/>Exceptions</th>
             <th>Date</th>
             <th>Delete?</th>
           </tr>
@@ -22,17 +22,17 @@
         {% for post, comments, categories, visibilityExceptions in posts %}
           <tr>
             <td>
-              <a href="{% url 'post.views.handlePost' post.guid %}">
+              <a href="{% url 'post.views.getPost' post.guid %}">
                 {{ post.title }}
               </a>
             </td>
             <td>
-              <a href="{% url 'post.views.handlePost' post.guid %}">
+              <a href="{% url 'post.views.getPost' post.guid %}">
                 {{ post.description }}
               </a>
             </td>
             <td>
-              <a href="{% url 'post.views.handlePost' post.guid %}">
+              <a href="{% url 'post.views.getPost' post.guid %}">
                 {% if post.contentType == post.HTML or post.contentType == post.MARKDOWN %} 
                   {% autoescape off %}
                     {{ post.content }}
