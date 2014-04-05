@@ -7,13 +7,11 @@ from django.contrib.auth.models import User
 
 import uuid
 
-BASE_URL="http://testserver"
 
 # Create your tests here.
 class CommentTestCase(TestCase):
     
-    def setUp(self, base_url=BASE_URL):
-        self.base_url = base_url
+    def setUp(self):
         User.objects.create_user(username="mockuser1", password="mockpassword")
         user1 = User.objects.get(username="mockuser1")
         author1, _ = Author.objects.get_or_create(user=user1)
@@ -121,7 +119,7 @@ class CommentTestCase(TestCase):
         self.client.login(username="mockuser1", password="mockpassword")
         post1_id = Post.objects.filter(title="title1")[0].guid
         
-        url = self.base_url + "/comments/" + str(post1_id) + "/"
+        url = "/comments/" + str(post1_id) + "/"
         
         response = self.client.get(url)
 
@@ -137,14 +135,13 @@ class CommentTestCase(TestCase):
         Tests if you can add a comment via add_comment in comments/views.py
         """    
         self.client.login(username="mockuser1", password="mockpassword")
-        url = self.base_url + "/comments/add_comment/"
+        url = "/comments/add_comment/"
         post1_id = Post.objects.filter(title="title1")[0].guid
         
         response = self.client.post(url,
                         {'post_id':post1_id,
                          'newComment':'comment5'},
-                         HTTP_REFERER=self.base_url +
-                         '/author/stream.html')
+                         HTTP_REFERER='/author/stream.html')
         self.assertEqual(response.status_code, 302,
                  "Comment creation was not succesful, code: " +
                  str(response.status_code))
@@ -171,10 +168,9 @@ class CommentTestCase(TestCase):
 
         comment_id = Comment.objects.get(comment="comment6").id
         
-        url = self.base_url + "/comments/remove_comment/" + str(comment_id) + "/"
+        url = "/comments/remove_comment/" + str(comment_id) + "/"
         response = self.client.delete(url, 
-                          HTTP_REFERER=self.base_url +
-                         '/author/stream.html')
+                          HTTP_REFERER='/author/stream.html')
         self.assertEqual(response.status_code, 302,
                  "Comment deletion was not succesful, code: " +
                  str(response.status_code))
