@@ -2,6 +2,8 @@ from django.test import TestCase
 
 from django.contrib.auth.models import User
 
+from rest_framework import status
+
 from author.models import (Author, RemoteAuthor,
                            LocalRelationship, RemoteRelationship)
 from post.models import Post, PostVisibilityException, AuthorPost
@@ -493,10 +495,8 @@ class RESTfulTestCase(TestCase):
         making the request. 
         Sends a GET request to 
             service/author/{AUTHOR_ID}/posts?id={VIEWING_AUTHOR_ID}
-        Author2 made multiple posts, but only one of them is public. Since 
-        Author2 and Author1 are not friends, only one post should be returned,
-        Author2's public post.
         """
+        # Requesting & Requested author exists, Requested author has posts
         user = User.objects.get(username="utestuser1")
         author = Author.objects.get(user=user)
 
@@ -508,11 +508,50 @@ class RESTfulTestCase(TestCase):
                                         (author2.guid, query), 
                                     HTTP_ACCEPT = 'application/json')
 
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
         posts = json.loads(response.content, object_hook=_decode_dict)
         self.assertEqual(len(posts['posts']), 1)
         self.assertEqual(posts["posts"][0]["title"], "title6")
         self.assertEqual(posts["posts"][0]["author"]["id"], author2.guid)
+
+        # Requesting & Requested author exists but Requested author has no posts
+        # Also tests using POST instead of 
+        user6 = User.objects.get(username="utestuser6")
+        author6 = Author.objects.get(user=user6)
+        response2 = self.client.post('/api/author/%s/posts?%s' % 
+                                        (author6.guid, query), 
+                                    HTTP_ACCEPT = 'application/json')
+        self.assertEqual(response2.status_code, status.HTTP_200_OK)
+        posts2 = json.loads(response2.content, object_hook=_decode_dict)
+        self.assertEqual(len(posts2['posts']), 0)
+
+        # Getting posts from an author that does not exist
+        randomAuthorId = uuid.uuid4()
+        response3 = self.client.get('/api/author/%s/posts?%s' % 
+                                        (randomAuthorId, query), 
+                                    HTTP_ACCEPT = 'application/json')
+        self.assertEqual(response3.status_code, status.HTTP_404_NOT_FOUND)
+
+        # Requesting Author provides an author id that does not exist
+        # to get an Exisiting Author's posts. Gives them the Public Posts
+        # of the exisiting author
+        randomAuthorId = uuid.uuid4()
+        query4 = urllib.urlencode({"id":randomAuthorId})
+        response4 = self.client.get('/api/author/%s/posts?%s' % 
+                                        (author2.guid, query4), 
+                                    HTTP_ACCEPT = 'application/json')
+
+        self.assertEqual(response4.status_code, status.HTTP_200_OK)
+        posts4 = json.loads(response4.content, object_hook=_decode_dict)
+        self.assertEqual(len(posts4['posts']), 1)
+        self.assertEqual(posts4["posts"][0]["visibility"], Post.PUBLIC)
+
+        # Use wrong method
+        response5 = self.client.put('/api/author/%s/posts?%s' % 
+                                        (author2.guid, query4), 
+                                    HTTP_ACCEPT = 'application/json')
+        self.assertEqual(response5.status_code, 
+                        status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def testGetPublicPosts(self):
         """
