@@ -76,24 +76,25 @@
                 returns null.
             */
             images = [];
-            function readImage() {
-                var imgFiles = ($("#image"))[0].files;
-                if (imgFiles.length > 0) {
-                    var filename = $("#image").val()
-                    var FR= new FileReader();
-                    FR.onload = function(e) {
-                         images.push([filename, e.target.result]);
-                         
-                    };       
-                    for (var i=0; i < imgFiles.length; i++) {
-                        FR.readAsDataURL(imgFiles[i]);
-                    }
-                } 
+            function readImage(img, filename) {
+                var FR= new FileReader();
+                FR.onload = function(e) {
+                     images.push([filename, e.target.result]);
+                     
+                };       
+                FR.readAsDataURL(img);
             }
+
+            // Getting multiple file names code from: 
+            /// http://stackoverflow.com/questions/10703102/jquery-get-all-filenames-inside-input-file
 
             $("#image").change(function() {
                 images = [];
-                readImage();
+                var files = $("#image").prop("files");
+                var filenames = $.map(files, function(val) { return val.name; });
+                for (var i=0; i < files.length; i++) {
+                    readImage(files[i], filenames[i]);
+                }
             });
 
             /* Creates html for a new post */
@@ -247,7 +248,7 @@
                     "visibilityExceptions": $("#visibilityExceptions").val(),
                     "content-type": $("#content-type").val(),
                 }; 
- 
+
                 // waiting for images to be read and converted
                 while ( images.length < ($("#image"))[0].files.length) {
                     continue;
