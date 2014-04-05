@@ -651,8 +651,6 @@ def __generateGithubEventContent(event):
         ret = format_html("<p><strong>{0}</strong> pushed to {1}:</p>",
                           username, repoName)
 
-        print commits
-
         ret = format_html("{0}<ul>", mark_safe(ret))
         for c in commits:
             ret = format_html("{0}\n<li>{1}</li>", mark_safe(ret),
