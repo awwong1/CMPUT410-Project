@@ -514,10 +514,27 @@ class RESTfulTestCase(TestCase):
         self.assertEqual(posts["posts"][0]["title"], "title6")
         self.assertEqual(posts["posts"][0]["author"]["id"], author2.guid)
 
+    def testGetPublicPosts(self):
+        """
+        Tests getting all public posts at:
+            api/posts/
+        No authentication required.
+        """
+        response = self.client.get('/api/posts/', 
+                                    HTTP_ACCEPT = 'application/json')
+
+        self.assertEqual(response.status_code, 200)
+
+        posts = json.loads(response.content, object_hook=_decode_dict)["posts"]
+        self.assertEqual(len(posts), 2, "There should be 2 public posts!")
+        for post in posts:
+            self.assertEqual(post["visibility"], Post.PUBLIC)
+
     def testRESTStream(self):
         """
         Tests retrieving all posts that are visible to the local author.
-        Sends a GET request to /author/posts?id={viewingAuthorId}
+        Sends a GET request to 
+            api/author/posts?id={viewingAuthorId}
         utestuser1 should be able to see post 1, 2, 6 and 9
         """
         user = User.objects.get(username="utestuser1")

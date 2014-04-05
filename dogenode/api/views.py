@@ -308,7 +308,6 @@ def sendFriendRequest(request):
     return HttpResponse(json.dumps(response),
                         content_type="application/json")
 
-
 @api_view(['GET'])
 def getPublicPosts(request):
     """

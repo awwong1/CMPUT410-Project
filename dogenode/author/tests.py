@@ -12,7 +12,7 @@ import json
 import uuid
 
 # Create your tests here.
-class AuthorRelationshipsTestCase(TestCase):
+class AuthorTestCase(TestCase):
     def setUp(self):
 
         user1 = User.objects.create_user(username="utestuser1",
@@ -26,11 +26,22 @@ class AuthorRelationshipsTestCase(TestCase):
         user5 = User.objects.create_user(username="utestuser5",
                                          password="testpassword")
 
+        noGithubUser = User.objects.create_user(username="nogithubuser",
+                                         password="testpassword")
+        githubUser = User.objects.create_user(username="githubuser",
+                                         password="testpassword")
+
         author1 = Author.objects.get(user=user1)
         author2 = Author.objects.get(user=user2)
         author3 = Author.objects.get(user=user3)
         author4 = Author.objects.get(user=user4)
         author5 = Author.objects.get(user=user5)
+
+        noGithubAuthor = Author.objects.get(user=noGithubUser)
+        githubAuthor = Author.objects.get(user=githubUser)
+
+        githubAuthor.githubUsername = "ajyong"
+        githubAuthor.save()
 
         # author1 follows author2
         LocalRelationship.objects.get_or_create(author1=author1,
@@ -93,7 +104,7 @@ class AuthorRelationshipsTestCase(TestCase):
         AuthorPost.objects.create(post=post6, author=author2)
         AuthorPost.objects.create(post=post7, author=author3)
         AuthorPost.objects.create(post=post8, author=author3)
-        
+
     # Test that Author is connected to User properly
     def testGetAcceptedStatus(self):
         user = User.objects.get(username="utestuser1")
@@ -170,7 +181,8 @@ class AuthorRelationshipsTestCase(TestCase):
         body = {'firstName':'bob1',
                 'lastName':'bob2',
                 'oldPassword':'testpassword',
-                'newPassword':'bob3'}
+                'newPassword':'bob3',
+                'githubUsername':''}
         response = self.client.post(url, body)
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -245,3 +257,52 @@ class AuthorRelationshipsTestCase(TestCase):
         self.assertTemplateUsed(response, 'post/posts.html',
                                 "Wrong template(s) returned")
         self.assertEquals(len(response.context['posts']), 2)
+
+    def testNoGithubEvents(self):
+        """
+        Given a new user that has no posts and no GitHub username associated
+        with it, we should not be expecting the stream to have any posts.
+        """
+
+        self.client.login(username="nogithubuser", password="testpassword")
+        user = User.objects.get(username="nogithubuser")
+        author = Author.objects.get(user=user)
+
+        response = self.client.get("/author/stream/", HTTP_ACCEPT='text/html')
+
+        postIds = AuthorPost.objects.filter(author=author)
+
+        self.assertEqual(len(postIds), 0, "Posts were found")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTemplateUsed(response, "author/stream.html")
+        self.assertEqual(len(response.context["posts"]), 0,
+                         "Post count not zero")
+
+    def testOnlyGithubEvents(self):
+        """
+        Given a new user that has no posts but has a GitHub username associated
+        with it, we should only be expecting GitHub posts in the stream.
+        """
+
+        self.client.login(username="githubuser", password="testpassword")
+        user = User.objects.get(username="githubuser")
+        author = Author.objects.get(user=user)
+
+        self.assertEqual(author.githubUsername, "ajyong",
+                         "GitHub username not equal to setup")
+
+        response = self.client.get("/author/stream/", HTTP_ACCEPT="text/html")
+
+        postIds = AuthorPost.objects.filter(author=author)
+
+        self.assertGreater(len(postIds), 0, "No GitHub posts were found")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTemplateUsed(response, "author/stream.html")
+        self.assertGreater(len(response.context["posts"]), 0,
+                           "No GitHub posts were sent to the client")
+
+        for t in response.context["posts"]:
+            self.assertTrue(t[0].title.startswith("GitHub"),
+                            "Post title does not start with GitHub")
