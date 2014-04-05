@@ -27,7 +27,10 @@
         {% if lastName %}
             Last Name: {{ lastName }} <br/>
         {% endif %}
-    
+        {% if githubUsername %}
+            GitHub Username: {{ githubUsername }} <br/>
+        {% endif %}
+
         Host: {{ host}} <br/>
         URL: <a href={{ url }}> {{ url }} </a>
       </p>

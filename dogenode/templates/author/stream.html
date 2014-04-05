@@ -263,7 +263,7 @@
                 // send ajax request
                 $.ajax({
                     type: "PUT",
-                    url: "http://127.0.0.1:8000/api/post/"+guid+query,
+                    url: location.origin+"/api/post/"+guid+query,
                     data: JSONPostData, 
                     dataType: "json",
                     contentType: "application/json",

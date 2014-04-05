@@ -14,38 +14,59 @@
     {% csrf_token %}
   
     <h1 class="section-header">{{ username }} 
-        <span>
+      <span>
         <input type="submit" value="Save Changes" class="button-links"/>
-        </span>
+      </span>
     </h1>
 
-            <h2> Account Information </h2>
-            <p>Leave fields blank and/or unmodified if you do not want to change them.</p>
+    <h2> Account Information </h2>
+    <p>Leave fields blank and/or unmodified if you do not want to change them.</p>
             
-     <div class="row">
-	   <div class="col-md-3 col-sm-4">	
-	     <div class="form-group"> 
-           <label for="firstName">First Name</label>
-           <input id="firstName" type="text" class="form-control" 
-                 name="firstName" value="{{ firstName }}"/>
-         </div>
-         <div class="form-group"> 
-           <label for="lastName">Last Name</label>
-           <input id="lastName" type="text" class="form-control"
-                  name="lastName" value="{{ lastName }}"/>
-         </div>
-	   </div>
-	   <div class="col-md-3 col-sm-4">
-            <div class="form-group"> 
-                <label for="oldPassword">Current Password</label>
-                <input id="oldPassword" type="password" class="form-control" name="oldPassword"/>
-            </div>
-            <div class="form-group">
-                <label for="newPassword">New Password</label>
-                <input id="newPassword" type="password" class="form-control" name="newPassword"/>
-            </div>
+    <div class="row">
+      <div class="col-md-3 col-sm-4">	
+        <div class="form-group"> 
+          <label for="firstName">First Name</label>
+          <input id="firstName" type="text" class="form-control" 
+            name="firstName" value="{{ firstName }}"/>
         </div>
+      </div>
+      <div class="col-md-3 col-sm-4">
+        <div class="form-group"> 
+          <label for="lastName">Last Name</label>
+          <input id="lastName" type="text" class="form-control"
+            name="lastName" value="{{ lastName }}"/>
+        </div>
+      </div>
     </div>
-    </form>
+    <div class="row">
+      <div class="col-md-3 col-sm-4">
+        <div class="form-group"> 
+            <label for="oldPassword">Current Password</label>
+            <input id="oldPassword" type="password" class="form-control" name="oldPassword"/>
+        </div>
+      </div>
+      <div class="col-md-3 col-sm-4">
+        <div class="form-group">
+            <label for="newPassword">New Password</label>
+            <input id="newPassword" type="password" class="form-control" name="newPassword"/>
+        </div>
+      </div>
+    </div>
+
+    <br/>
+
+    <h2>GitHub Information</h2>
+    <p>If this is set to blank, all GitHub posts in your stream will be deleted.</p>
+
+    <div class="row">
+      <div class="col-md-3 col-sm-4">
+        <div class="form-group">
+          <label for="githubUsername">GitHub Username</label>
+          <input id="githubUsername" type="text" class="form-control"
+            name="githubUsername" value="{{ githubUsername }}"/>
+        </div>
+      </div>
+    </div>
+  </form>
 </div>
 {% endblock %}
