@@ -20,7 +20,8 @@ from api.utils import *
 import sys
 import datetime
 import json
-import urllib, urllib2, urlparse
+import requests
+import urlparse
 
 # List of other servers we are communicating with
 SERVER_URLS = ['http://127.0.0.1:8001/' #BenHoboCo
@@ -32,6 +33,7 @@ OURHOST = "http://127.0.0.1:8000/"
 #TODO: not sure where best to put this POST request (authors/views uses it too)
 def postFriendRequest(localAuthor, remoteAuthor):
 
+    headers = {"Content-type": "application/json"}
     postData = {
                     "query":"friendrequest",
                     "author":{
@@ -52,12 +54,15 @@ def postFriendRequest(localAuthor, remoteAuthor):
     #TODO: this needs to be customized for each remote server
     if remoteAuthor.host == SERVER_URLS[0]:
         try:
-            result = urllib2.urlopen(
+            response = requests.post(
                         '%s/api/authors/%s/friends/' %
                                  (SERVER_URLS[0],
                                   remoteAuthor.displayName),
-                         urllib.urlencode(postData))
-        except urllib2.URLError:
+                         headers=headers,
+                         data=json.dumps(postData))
+            response.raise_for_status() # Exception on 4XX/5XX response
+
+        except requests.exceptions.RequestException:
             #TODO: we should really let the user know the remote server
             # is down
             pass

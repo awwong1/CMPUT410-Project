@@ -23,11 +23,10 @@ from api.models import AllowedServer
 from rest_framework import status
 
 import dateutil.parser
-import markdown, json
+import markdown
 import re
 import requests
 import uuid
-import urllib2
 
 def isUserAccepted(user):
     author = Author.objects.filter(user=user)
@@ -338,16 +337,17 @@ def searchOtherServers(searchString):
     # BenHoboCo
     for server in SERVER_URLS:
 
-        # TODO: Use the requests library instead
         try:
-            authorsFO = urllib2.urlopen("%s/api/authors" % server)
-            allAuthors = authorsFO.read()
-            jsonAllAuthors = json.loads(allAuthors)
+            response = requests.get("%s/api/authors" % server)
+            response.raise_for_status() # Exception on 4XX/5XX response
+
+            jsonAllAuthors = response.json()
 
             for author in jsonAllAuthors:
                 if searchString in author["displayname"]:
                     authorsFound.append(author)
-        except urllib2.URLError: # fail silently on connection failure
+        # fail silently
+        except requests.exceptions.RequestException:
             pass
 
     return authorsFound
