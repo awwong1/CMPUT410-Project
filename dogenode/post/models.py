@@ -51,7 +51,7 @@ class Post(models.Model):
 
     def get_absolute_url(self):
         from django.core.urlresolvers import reverse
-        return reverse('post.views.handlePost', args=[self.guid])
+        return reverse('post.views.getPost', args=[self.guid])
 
     def as_dict(self):
         return {

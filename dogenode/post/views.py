@@ -174,10 +174,6 @@ def getAllPublicPosts(request):
     context['author_id'] = author.guid
     return render_to_response('post/public_posts.html', context)
 
-def handlePost(request, post_id):
-    if request.method == "GET" or request.method == "POST":
-        return getPost(request, post_id)
-
 def createPost(request, post_id, data):
     """
     Creates a new post from json representation of a post.
