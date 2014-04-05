@@ -3,17 +3,24 @@
 */
 
 body {
-    padding-top: 50px;
+    padding-top: 50px; 
+    background-color: rgb(228,199,143);
+}
+
+div.main {
+    background-color: white;
+    min-height: 600px;
+}
+
+.login-container {
+    background-color: white;
+    min-height: 600px;
 }
 
 /* General classes styling */
 
 .placeholder {
     margin-bottom: 15px;
-}
-
-.form-group {
-    margin-right: 2%;
 }
 
 .input-group {
@@ -25,31 +32,58 @@ input:focus {
 }
 
 h1, h2, h3, h4, h5, h6 {
-    margin-top: 0%;
+    margin-top: 0;
 }
 
 .form-box input:not([type='submit']){
-    margin-bottom: 2%;
+    margin-bottom: 10px;
     border-radius: 15px;
 } 
 
 /* side nav styling */
 .sidebar {
     background-color: rgb(228,199,143); /* nav background color, light cream */
+    text-align: center;
+    padding-top: 15px;
+}
+
+.nav-title {
+    color: rgb(130, 75, 20);    /* Medium brown colour  */
+    margin-left: auto;
+    margin-right: auto;
+    font-weight:bold;
+}
+
+/* Search box styling */
+input[type='search'] {
+    margin-left: auto;
+    margin-right: auto;
+    border-radius: 15px;
+    width: 200px;
 }
 
 @media (min-width: 768px) {
     div.sidebar {
+        text-align: left;
+        padding-top: 0;
         position: absolute;
         top: 51px;
         left: 0;
         z-index: 1000;
-        height: 100%;
         display: block;
         padding: 20px;
         overflow-x: hidden;
         overflow-y: auto;
         background-color: rgb(228,199,143); /* nav background color, light cream */
+    }
+
+    input[type="search"] {
+        margin-left: 2%;
+        width: 96%;
+    }
+
+    .nav-title {
+        padding-left: 5pt;
     }
 }
 
@@ -62,7 +96,7 @@ h1, h2, h3, h4, h5, h6 {
 
 div.sidebar li a{
     color: rgb(130, 75, 20);    /* Medium brown colour  */
-    padding-left: 7%;
+    padding-left: 10px;
 }
 
 li.active > a:focus {
@@ -75,15 +109,9 @@ li.active > a:focus {
     color: white;
 }
 
-.nav-title {
-    color: rgb(130, 75, 20);    /* Medium brown colour  */
-    margin-left: 5%;
-    font-weight:bold;
-}
-
 /* Login styling */
 .form-signin {
-    padding: 5% 0 0 0;
+    padding: 5px 0 0 0;
     text-align: center;
 }
 
@@ -166,14 +194,7 @@ li.active > a:focus {
 
 div.content {
     font-color: black;
-    width: 78%;
-    float: left;
 }
-
-div.content section {
-    padding: 1% 2% 2% 2%;
-}
- 
 
 div.content header h1 {
     float: left;
@@ -238,13 +259,6 @@ div.post .date {
 	display: inline-block;
 	max-width: 100%;
 	max-height: 6em;
-}
-
-/* Search box styling */
-input[type='search'] {
-    margin: 5% 2% 1% 2%;
-    width: 96%;
-    border-radius: 15px;
 }
 
 /* *** Tables *** */
