@@ -2,6 +2,9 @@ from django.db import models
 from author.models import Author
 from categories.models import Category
 
+from datetime import *
+from dateutil.tz import *
+
 import uuid
 
 # Create your models here.
@@ -62,12 +65,17 @@ class Post(models.Model):
             'visibility': self.visibility,
             'contentType' : self.contentType,
             'origin' : self.origin,
-            'pubDate' : self.pubDate,
-            'modifiedDate' : self.modifiedDate,
+            'pubDate' : self.__datetimeToJSONString(self.pubDate),
+            'modifiedDate' : self.__datetimeToJSONString(self.modifiedDate),
             'HTML' : self.HTML,
             'PLAIN' : self.PLAIN,
             'MARKDOWN' : self.MARKDOWN
         }
+
+    def __datetimeToJSONString(self, dt):
+        mstDatetime = dt.astimezone(gettz("MST"))
+        ctime = mstDatetime.ctime()
+        return ctime[:-4] + "MST " + ctime[-4:] # So dirty
 
     # Pass in an Author object, and this function will check if the Post
     # instance is viewable by the author.
