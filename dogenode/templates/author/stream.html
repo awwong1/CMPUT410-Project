@@ -150,7 +150,7 @@
                 for (comment in comments) {
                     commentsHTML += '<tr>'
                         + '<td><small>'
-                        +  '<a href="' + comments[comment]["author"]["url"] + '">'
+                        +  '<a href="/author/' +comments[comment]["author"]["id"] + '/">'
                         +    '<strong>' + comments[comment]["author"]["displayname"] 
                         +    '</strong>'
                         +  '</a> on ' + comments[comment]["pubDate"] + '</small>'
@@ -180,7 +180,7 @@
                     +      '<div class="panel-footer">'
                     +        '<div class="row">'
                     +          '<div class="col-sm-4">'
-                    +            'by <a href="' + author["url"] + '">'
+                    +            'by <a href="/author/' + author["id"] + '/">'
                     +               '<strong>' + author["displayname"] + '</strong>'
                     +               '</a>'
                     +            ' on ' + pubDate 
