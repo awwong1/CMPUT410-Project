@@ -1,18 +1,20 @@
 from django.test import TestCase
 
 from categories.models import Category
-from author.models import Author
+from author.models import Author, LocalRelationship
 from post.models import Post, PostCategory, AuthorPost
 from django.contrib.auth.models import User
 
 import json
+import uuid
 
 class CategoryTestCase(TestCase):
     def setUp(self):
-        Category.objects.create(name="one")
-        Category.objects.create(name="two")
-        Category.objects.create(name="three")
+        cat1 = Category.objects.create(name="one")
+        cat2 = Category.objects.create(name="two")
+        cat3 = Category.objects.create(name="three")
 
+        # Shamelessly copying these from author/tests.py
         user1 = User.objects.create_user(username="user1",
                                          password="password")
         user2 = User.objects.create_user(username="user2",
@@ -22,10 +24,97 @@ class CategoryTestCase(TestCase):
         user4 = User.objects.create_user(username="user4",
                                          password="password")
 
-        author1, _ = Author.objects.get_or_create(user=user1)
-        author2, _ = Author.objects.get_or_create(user=user2)
-        author3, _ = Author.objects.get_or_create(user=user3)
-        author4, _ = Author.objects.get_or_create(user=user4)
+        author1 = Author.objects.get(user=user1)
+        author2 = Author.objects.get(user=user2)
+        author3 = Author.objects.get(user=user3)
+        author4 = Author.objects.get(user=user4)
+
+        # author1 follows author2
+        LocalRelationship.objects.get_or_create(author1=author1,
+                                           author2=author2,
+                                           relationship=False)
+        # author1 follows author3
+        LocalRelationship.objects.get_or_create(author1=author1,
+                                           author2=author3,
+                                           relationship=False)
+        # author2 is friends with author3
+        LocalRelationship.objects.get_or_create(author1=author2,
+                                           author2=author3,
+                                           relationship=True)
+
+        # author3 is friends with author4
+        LocalRelationship.objects.get_or_create(author1=author3,
+                                           author2=author4,
+                                           relationship=True)
+
+        # creating some posts for authors
+        post1 = Post.objects.create(guid=uuid.uuid4(),
+                                    content="content1",
+                                    title="title1",
+                                    visibility=Post.PUBLIC)
+        post2 = Post.objects.create(guid=uuid.uuid4(),
+                                    content="content2",
+                                    title="title2",
+                                    visibility=Post.PRIVATE)
+        post3 = Post.objects.create(guid=uuid.uuid4(),
+                                    content="content3",
+                                    title="title3",
+                                    visibility=Post.PRIVATE)
+        post4 = Post.objects.create(guid=uuid.uuid4(),
+                                    content="content4",
+                                    title="title4",
+                                    visibility=Post.FRIENDS)
+        post5 = Post.objects.create(guid=uuid.uuid4(),
+                                    content="content5",
+                                    title="title5",
+                                    visibility=Post.FOAF)
+        post6 = Post.objects.create(guid=uuid.uuid4(),
+                                    content="content6",
+                                    title="title6",
+                                    visibility=Post.PUBLIC)
+        post7 = Post.objects.create(guid=uuid.uuid4(),
+                                    content="content7",
+                                    title="title7",
+                                    visibility=Post.PRIVATE)
+        post8 = Post.objects.create(guid=uuid.uuid4(),
+                                    content="content8",
+                                    title="title8",
+                                    visibility=Post.SERVERONLY)
+
+        # Author1 should see post 1, post 2, post 6, post 8
+        AuthorPost.objects.create(post=post1, author=author1)
+        AuthorPost.objects.create(post=post2, author=author1)
+
+        # Author2 should see posts 1, 3, 4, 5, 6, 8
+        AuthorPost.objects.create(post=post3, author=author2)
+        AuthorPost.objects.create(post=post4, author=author2)
+        AuthorPost.objects.create(post=post5, author=author2)
+        AuthorPost.objects.create(post=post6, author=author2)
+
+        # Author3 should see posts 1, 4, 5, 6, 7, 8
+        AuthorPost.objects.create(post=post7, author=author3)
+        AuthorPost.objects.create(post=post8, author=author3)
+
+        # Author4 should see posts 1, 5, 6, 8
+
+        # post 1 has all 3 categories
+        PostCategory.objects.create(post=post1, category=cat1)
+        PostCategory.objects.create(post=post1, category=cat2)
+        PostCategory.objects.create(post=post1, category=cat3)
+
+        PostCategory.objects.create(post=post2, category=cat1)
+
+        PostCategory.objects.create(post=post3, category=cat2)
+
+        PostCategory.objects.create(post=post4, category=cat3)
+
+        PostCategory.objects.create(post=post5, category=cat2)
+
+        PostCategory.objects.create(post=post6, category=cat3)
+
+        PostCategory.objects.create(post=post7, category=cat1)
+        PostCategory.objects.create(post=post7, category=cat3)
+
 
     # Test the RESTful API by POSTing a category, and accept JSON back.
     def testAddCategoryJson(self):
@@ -127,9 +216,45 @@ class CategoryTestCase(TestCase):
             "Category name is not empty: %s" % responseContent[2])
 
     def testGetCategories(self):
-        # TODO
-        pass
+        response = self.client.get('/categories/',
+                                   HTTP_ACCEPT='application/json')
+        responseContent = json.loads(response.content)
 
-    def testGetPostsWithCategory(self):
-        # TODO
-        pass
+        self.assertEquals(len(responseContent), 3)
+
+    def testGetPostsWithCategoryOne(self):
+        """
+        For all authors, test what they should be getting back when they
+        request all viewable posts with category "one".
+        """
+        cat1 = Category.objects.get(name="one")
+
+        user1 = User.objects.get(username="user1")
+        user2 = User.objects.get(username="user2")
+        user3 = User.objects.get(username="user3")
+        user4 = User.objects.get(username="user4")
+
+        author1 = Author.objects.get(user=user1)
+        author2 = Author.objects.get(user=user2)
+        author3 = Author.objects.get(user=user3)
+        author4 = Author.objects.get(user=user4)
+
+        for (u, a) in zip((user1, user2, user3, user4),
+                          (author1, author2, author3, author4)):
+            self.client.login(username=u, password="password")
+            response = self.client.get("/categories/%d/" % cat1.id,
+                                       HTTP_ACCEPT="application/json")
+
+            responseContent = json.loads(response.content)
+            allAllowedPosts = Post.getAllowedPosts(a)
+            postIds = PostCategory.objects.filter(post__in=allAllowedPosts,
+                                                  category=cat1).values_list(
+                                                    'post', flat=True)
+            postsWithCategory = Post.objects.filter(id__in=postIds)
+
+            for post in postsWithCategory:
+                self.assertTrue(post.as_dict() in responseContent,
+                                "A category one post that was supposed to be " \
+                                "viewable was not found")
+
+            self.client.logout()

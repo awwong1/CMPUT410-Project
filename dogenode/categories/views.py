@@ -55,7 +55,8 @@ def add(request):
                                     content_type='application/json',
                                     status=status_code)
         else:
-            message = "%s\nid: %i\nname: %s\n" % (context['message'], objId, objName)
+            message = "%s\nid: %i\nname: %s\n" % (context['message'],
+                                                  objId, objName)
             response = HttpResponse(message,
                                     content_type='text/plain',
                                     status=status_code)
@@ -71,13 +72,15 @@ def categories(request):
     if 'text/html' in request.META['HTTP_ACCEPT']:
         response = HttpResponse(content_type='text/html')
         response.write('<!DOCTYPE html><html><body><ul>')
-        [response.write("<li>%i: %s</li>" % (obj.id, obj.name)) for obj in Category.objects.all()]
+        [response.write("<li>%i: %s</li>" % (obj.id, obj.name))
+            for obj in Category.objects.all()]
         response.write('</ul></body></html>')
 
         return response
 
     elif 'application/json' in request.META['HTTP_ACCEPT']:
-        return HttpResponse(json.dumps([obj.as_dict() for obj in Category.objects.all()]),
+        return HttpResponse(json.dumps([obj.as_dict() 
+                                for obj in Category.objects.all()]),
                             content_type='application/json')
 
     else:
@@ -97,10 +100,17 @@ def category(request, category_id):
 
     try:
         category = Category.objects.get(id=int(category_id))
-        postIds = PostCategory.objects.filter(post__in=allAllowedPosts, category=category).values_list('post', flat=True)
+        postIds = PostCategory.objects.filter(post__in=allAllowedPosts,
+                        category=category).values_list('post', flat=True)
         postsWithCategory = Post.objects.filter(id__in=postIds)
     except DoesNotExist:
         redirect('author.views.stream')
 
-    return HttpResponse(["%s\n" % obj.content for obj in postsWithCategory],
-                        content_type='text/plain')
+    if 'application/json' in request.META['HTTP_ACCEPT']:
+        return HttpResponse(json.dumps([post.as_dict()
+                                        for post in postsWithCategory]),
+                            content_type='application/json')
+    else:
+        return HttpResponse(["%s\n" % obj.content
+                                for obj in postsWithCategory],
+                            content_type='text/plain')
