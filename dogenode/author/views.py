@@ -559,9 +559,12 @@ def __queryGithubForEvents(author):
         headers["If-None-Match"] = author.githubEventsETag
 
     params = { }
-    if settings.GITHUB_CLIENT_ID and settings.GITHUB_CLIENT_SECRET:
+    try:
         params["client_id"] = settings.GITHUB_CLIENT_ID
         params["client_secret"] = settings.GITHUB_CLIENT_SECRET
+    except AttributeError:
+        # If there are no GitHub API keys, you only get 60 requests an hour
+        pass
 
     response = None
     for i in range(0,3):
