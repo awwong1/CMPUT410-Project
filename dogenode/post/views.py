@@ -129,8 +129,8 @@ def getPostComponents(post):
     components = {}
     categoryIds = PostCategory.objects.filter(
                     post=post).values_list('category', flat=True)
-    authorIds = PostVisibilityException.objects.filter(
-                    post=post).values_list('author', flat=True)
+    postExceptions = PostVisibilityException.objects.filter(post=post)
+    authorIds = [exception.author.guid for exception in postExceptions]
     imageIds = ImagePost.objects.filter(post=post).values_list(
                     'image', flat=True)
 
