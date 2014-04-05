@@ -535,22 +535,12 @@ class RESTfulTestCase(TestCase):
 
     def testGetPost(self):
         """
-        Tests the following with utestuser1:
-            Get a public post                       (post1)
-            Get a private post (your own)           (post2)
-            Get a private post (not yours)          (post7)
-            Get a post with a Visibility Exception  (post9)
-            Get a post that does not exist
-
-        TODO: Friend testing with another user (user3 -> post4) 
+        Gets all the posts with Author1. 
         """
-        # Authenicate and send a get request 
         user = User.objects.get(username="utestuser1")
         author = Author.objects.get(user=user)
-
         query = urllib.urlencode({"id":author.guid})
 
-        # Not testing post6 (FOAF) at the moment nor serveronly 
         titles = ["title1", "title2", "title3", "title4", "title5", 
                   "title6", "title7", "title8", "title9"]
         posts = [Post.objects.get(title=t) for t in titles] 
@@ -563,10 +553,6 @@ class RESTfulTestCase(TestCase):
         # Make those requests!
         responses = []
         for i in range(10):
-            # skipping FOAF test for now 
-            if i == 5: 
-                responses.append("")
-                continue
             resp = self.client.get('/api/post/%s?%s' % (postIds[i], query), 
                                     HTTP_ACCEPT = 'application/json')
             responses.append(resp)
@@ -580,7 +566,8 @@ class RESTfulTestCase(TestCase):
             self.assertEqual(titles[i], respCont["title"])
 
         # Shouldn't be able to view these
-        for i in [3, 4, 7]:
+        # SERVERONLY - Author1 is on the server but not friends with Author2
+        for i in [3, 4, 7, 8]:
             self.assertEqual(responses[i].status_code, 403)
 
         # And this post doesn't exist
@@ -720,14 +707,14 @@ class RESTfulTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         posts = json.loads(response.content, object_hook=_decode_dict)
 
-        # Two public and one friend post
-        self.assertEqual(len(posts['posts']), 3)
+        # Two public posts, one friend and one friend of a friend
+        self.assertEqual(len(posts['posts']), 4)
 
 
     def testRemoteAuthorGetAllLocalAuthorPosts(self):
         """
         Remote author wants to view all of a local author's posts at
-            http://service/author/{AUTHOR_ID}/posts
+            http://service/author/{AUTHOR_ID}/posts?id={VIEWING_AUTHOR_ID}
 
         RemoteAuthor3 is friends with Author2. Author2 has a public and friends
         post that RemoteAuthor3 can see. RemoteAuthor3 should not be able to
@@ -751,11 +738,10 @@ class RESTfulTestCase(TestCase):
                                         (author2.guid, query), 
                                     HTTP_ACCEPT = 'application/json')
 
-        # Response code check
         self.assertEqual(response.status_code, 200)
-       
         posts = json.loads(response.content, object_hook=_decode_dict)
-        self.assertEqual(len(posts['posts']), 2)
+        # Friend, Public, FOAF of Author2
+        self.assertEqual(len(posts['posts']), 3)
 
         # Make sure they are the same!
         for i in range(len(posts['posts'])):
