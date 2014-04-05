@@ -63,7 +63,10 @@ class Post(models.Model):
             'contentType' : self.contentType,
             'origin' : self.origin,
             'pubDate' : self.pubDate,
-            'modifiedDate' : self.modifiedDate
+            'modifiedDate' : self.modifiedDate,
+            'HTML' : self.HTML,
+            'PLAIN' : self.PLAIN,
+            'MARKDOWN' : self.MARKDOWN
         }
 
     # Pass in an Author object, and this function will check if the Post

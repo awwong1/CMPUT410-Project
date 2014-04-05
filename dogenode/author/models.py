@@ -14,6 +14,8 @@ class Author(models.Model):
     accepted = models.BooleanField(default=False)   
     host = models.CharField(max_length=100, default="http://dogenode/")
     url = models.URLField(blank=True)
+    githubUsername = models.CharField(max_length=128, blank=True)
+    githubEventsETag = models.CharField(max_length=32, blank=True)
 
     def __unicode__(self):
         return self.user.username

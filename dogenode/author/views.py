@@ -1,8 +1,11 @@
+from django.conf import settings
 from django.shortcuts import (get_object_or_404, render, redirect,
                               render_to_response)
 from django.http import HttpResponse
 from django.template import RequestContext
 from django.db.models import Q
+from django.utils.html import format_html, format_html_join
+from django.utils.safestring import mark_safe
 from django.views.decorators.csrf import ensure_csrf_cookie
 
 from django.contrib.auth import authenticate, login, logout
@@ -16,7 +19,10 @@ from comments.models import Comment
 from images.models import Image, ImagePost, ImageVisibilityException
 from api.views import postFriendRequest, SERVER_URLS
 
+import dateutil.parser
 import markdown, json
+import re
+import requests
 import uuid
 import urllib2
 
@@ -97,6 +103,7 @@ def profile(request, author_id):
         payload['firstName'] = user.first_name or ""
         payload['lastName'] = user.last_name or ""
         payload['username'] = user.username
+        payload['githubUsername'] = author.githubUsername or ""
         payload['host'] = author.host or ""
         payload['url'] = author.url or request.build_absolute_uri(author.get_absolute_url())
         payload['userIsAuthor'] = (user.username == request.user.username)
@@ -125,10 +132,14 @@ def editProfile(request):
             newLastName = request.POST['lastName']
             oldPassword = request.POST['oldPassword']
             newPassword = request.POST['newPassword']
+            newGithubUsername = request.POST['githubUsername']
 
             user.first_name = newFirstName or user.first_name
             user.last_name = newLastName or user.last_name
             user.save()
+
+            author.githubUsername = newGithubUsername
+            author.save()
 
             payload['successMessage'] = "Profile updated."
 
@@ -139,10 +150,15 @@ def editProfile(request):
                 else:
                     payload['failureMessage'] = "Old password incorrect."
 
+            if len(author.githubUsername.strip()) == 0:
+                Post.objects.filter(origin="https://github.com").delete()
+                payload['successMessage'] += " GitHub posts deleted."
+
         payload['firstName'] = user.first_name or ""
         payload['lastName'] = user.last_name or ""
         payload['username'] = user.username
         payload['author_id'] = author.guid
+        payload['githubUsername'] = author.githubUsername or ""
 
         context = RequestContext(request, payload)
         return render_to_response('author/edit_profile.html', context)
@@ -186,7 +202,7 @@ def getAuthorPosts(request, author_id):
                                         guid__in=authorIds))
         images.append(Image.objects.filter(id__in=imageIds))
 
-        # Convert Markdown into HTML for web browser 
+        # Convert Markdown into HTML for web browser
         # django.contrib.markup is deprecated in 1.6, so, workaround
         if post.contentType == post.MARKDOWN:
             post.content = markdown.markdown(post.content)
@@ -197,11 +213,10 @@ def getAuthorPosts(request, author_id):
 
     return render_to_response('post/posts.html', context)
 
-
 def stream(request):
     """
     Returns the stream of an author (all posts author can view)
-    If calling the function restfully, call by sending a GET request to /author/posts 
+    If calling the function restfully, call by sending a GET request to /author/posts
     """
     if request.user.is_authenticated():
         context = RequestContext(request)
@@ -212,6 +227,8 @@ def stream(request):
         categories = []
         visibilityExceptions = []
         images = []
+
+        __queryGithubForEvents(author)
 
         for post in rawposts:
             categoryIds = PostCategory.objects.filter(post=post).values_list(
@@ -228,13 +245,13 @@ def stream(request):
                 guid__in=authorIds))
             images.append(Image.objects.filter(id__in=imageIds))
 
-            # Convert Markdown into HTML for web browser 
+            # Convert Markdown into HTML for web browser
             # django.contrib.markup is deprecated in 1.6, so, workaround
             if post.contentType == post.MARKDOWN:
                 post.content = markdown.markdown(post.content)
 
         # Stream payload
-        context['posts'] = zip(rawposts, authors, comments, categories, 
+        context['posts'] = zip(rawposts, authors, comments, categories,
                                visibilityExceptions, images)
         # Make a Post payload
         context['visibilities'] = Post.VISIBILITY_CHOICES
@@ -281,6 +298,7 @@ def searchOtherServers(searchString):
     # BenHoboCo
     for server in SERVER_URLS:
 
+        # TODO: Use the requests library instead
         try:
             authorsFO = urllib2.urlopen("%s/api/authors" % server)
             allAuthors = authorsFO.read()
@@ -486,3 +504,192 @@ def updateRelationship(request, guid):
 
     return HttpResponse("success!")
 
+
+def __queryGithubForEvents(author):
+    """
+    Queries GitHub events for an author, if the author has a GitHub
+    username.  The events are then inserted into the DB if they do not already
+    exist.
+    """
+    if not author.githubUsername:
+        return
+
+    headers = {"Connection": "close"}
+    if author.githubEventsETag:
+        headers["If-None-Match"] = author.githubEventsETag
+
+    params = { }
+    if settings.GITHUB_CLIENT_ID and settings.GITHUB_CLIENT_SECRET:
+        params["client_id"] = settings.GITHUB_CLIENT_ID
+        params["client_secret"] = settings.GITHUB_CLIENT_SECRET
+
+    response = None
+    for i in range(0,3):
+        try:
+            response = requests.get("https://api.github.com/users/%s/events" % \
+                                    author.githubUsername, headers=headers,
+                                    params=params)
+            break
+        except requests.exceptions.RequestException:
+            continue
+
+    # Return on no response or reached RateLimit
+    if not response or int(response.headers["X-RateLimit-Remaining"]) == 0:
+        return
+
+    if response.status_code == 200:
+        # The ETag helps prevent spamming GitHub servers, and it lets us know
+        # if anything new has come in.
+        author.githubEventsETag = response.headers["ETag"]
+        author.save()
+
+        try:
+            events = response.json()
+
+            for event in events:
+                postObj, _ = Post.objects.get_or_create(guid=event["id"])
+                # http://stackoverflow.com/a/199120
+                postObj.title = "GitHub %s" % \
+                                re.sub(r"(?<=\w)([A-Z])", r" \1",
+                                       event["type"])
+                postObj.content = __generateGithubEventContent(event)
+                postObj.visibility = Post.PRIVATE
+                postObj.contentType = Post.HTML
+                postObj.origin = "https://github.com"
+                # http://stackoverflow.com/a/3908349
+                postObj.pubDate = dateutil.parser.parse(event["created_at"])
+
+                AuthorPost.objects.get_or_create(post=postObj, author=author)
+
+                postObj.save()
+        except ValueError:
+            return
+    else:
+        # Nothing has changed since the last query
+        return
+
+
+def __generateGithubEventContent(event):
+    type = event["type"]
+    payload = event["payload"]
+    username = event["actor"]["login"]
+    repoName = event["repo"]["name"]
+    if type == "CommitCommentEvent":
+        comment = payload["comment"]
+        return format_html("<p><strong>{0}</strong> " \
+                           "<a href='{1}' target='_blank'>commented</a> " \
+                           "on a commit:</p><p>{2}</p>",
+                            username, comment["html_url"],
+                            __prettyTrim(comment["body"]))
+    elif type == "CreateEvent":
+        return format_html("<p><strong>{0}</strong> created a {1}.</p>" \
+                           "<p>{2}</p>",
+                            username, payload["ref_type"],
+                            payload["description"])
+    elif type == "DeleteEvent":
+        return format_html("<p><strong>{0}</strong> deleted a {1} " \
+                           "from {2}.</p>",
+                            username, payload["ref_type"], repoName)
+    elif type == "ForkEvent":
+        return format_html("<p><strong>{0}</strong> forked a " \
+                           "<a href='{1}' target='_blank'>repository.</a></p>",
+                           username, payload["forkee"]["html_url"])
+    elif type == "GollumEvent":
+        ret = format_html("<p><strong>{0}</strong> made some changes to the" \
+                          " Wiki:</p>", username)
+        pages = payload["pages"]
+
+        ret = format_html("{0}<ul>", mark_safe(ret))
+        ret = format_html("{0}{1}", mark_safe(ret),
+                          format_html_join("\n",
+                                "<li><strong><a href='{0}' target='_blank'>" \
+                                "{1}</a></strong> was {2}.</li>",
+                                ((p["html_url"], p["title"], p["action"])
+                                    for p in pages)))
+        ret = format_html("{0}</ul>", mark_safe(ret))
+
+        return ret
+    elif type == "IssueCommentEvent":
+        return format_html("<p><strong>{0}</strong> {1} a " \
+                           "<a href='{2}'>comment</a> on Issue #" \
+                           "<a href='{3}' target='_blank'>{4}</a>:</p>" \
+                           "<p>{5}</p>",
+                            username, payload["action"],
+                            payload["comment"]["html_url"],
+                            payload["issue"]["html_url"],
+                            payload["issue"]["number"],
+                            __prettyTrim(payload["comment"]["body"]))
+    elif type == "IssuesEvent":
+        return format_html("<p><strong>{0}</strong> {1} Issue #" \
+                           "<a href='{2}' target='_blank'>{3}</a>: {4}.</p>" \
+                           "<p>{5}</p>",
+                            username, payload["action"],
+                            payload["issue"]["html_url"],
+                            payload["issue"]["number"],
+                            __prettyTrim(payload["issue"]["title"]),
+                            __prettyTrim(payload["issue"]["body"]))
+    elif type == "MemberEvent":
+        member = payload["member"]
+        return format_html("<p><strong><a href='{0}' target='_blank'>{1}</a>" \
+                           "</strong> was {2} as a collaborator to {3}.</p>",
+                            member["html_url"], member["name"],
+                            payload["action"], repoName)
+    elif type == "PullRequestEvent":
+        return format_html("<p>Pull request #<a href='{0}' target='_blank'>" \
+                           "{1}</a> was {2}.</p>",
+                            payload["pull_request"]["html_url"],
+                            payload["number"], payload["action"])
+    elif type == "PullRequestReviewCommentEvent":
+        return format_html("<p>A <a href='{0}' target='_blank'>comment</a> " \
+                           "was created on a pull request:</p>" \
+                           "<p>{1}</p>",
+                            payload["comment"]["html_url"],
+                            __prettyTrim(payload["comment"]["body"]))
+    elif type == "PushEvent":
+        commits = payload["commits"]
+        ret = format_html("<p><strong>{0}</strong> pushed to {1}:</p>",
+                          username, repoName)
+
+        print commits
+
+        ret = format_html("{0}<ul>", mark_safe(ret))
+        for c in commits:
+            ret = format_html("{0}\n<li>{1}</li>", mark_safe(ret),
+                                __prettyTrim(c["message"]))
+        ret = format_html("{0}</ul>", mark_safe(ret))
+
+        return ret
+    elif type == "ReleaseEvent":
+        release = payload["release"]
+        return format_html("<p>{0} of {1} was <a href='{2}' target='_blank'>" \
+                           "released</a>. ",
+                            release["tag_name"], repoName, release["html_url"])
+    elif type == "TeamAddEvent":
+        what = ""
+        where = ""
+        if payload["user"]:
+            what = payload["user"]["name"]
+            where = payload["user"]["html_url"]
+
+        else:
+            what = payload["repository"]["full_name"]
+            where = payload["repository"]["html_url"]
+
+        return format_html("<p><strong>{0}</strong> was " \
+                           "<a href='{1}' target='_blank'>added</a> to the " \
+                           "team {2}.</p>",
+                            what, where, payload["team"]["name"])
+    elif type == "WatchEvent":
+        return format_html("<p><strong>{0}</strong> starred {1}.</p>",
+                            username, repoName)
+    else:
+        return format_html("<p><a href='{0}' target='_blank'>{1}</a></p>",
+                            event["repo"]["url"],
+                            event["repo"]["url"])
+
+
+def __prettyTrim(text):
+    if len(text) > 140:
+        return "%s..." % text[0:140]
+    else:
+        return text
