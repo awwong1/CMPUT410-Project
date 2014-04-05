@@ -9,7 +9,6 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
 import json
-import yaml
 import uuid
 
 # Create your tests here.
@@ -164,9 +163,6 @@ class AuthorRelationshipsTestCase(TestCase):
     def testViewsEditProfile(self):
         """
         Tests editing the profile of an author
-
-        TODO XXX: update test once author model has been refactored,
-        and this should be done with a PUT not a POST
         """
         self.client.login(username="utestuser5", password="testpassword")
         
@@ -179,14 +175,11 @@ class AuthorRelationshipsTestCase(TestCase):
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTemplateUsed(response, "author/edit_profile.html")
-        # TODO: This test has to be a loooottt better. But for now....
-        # also, not sure how to test to make sure password has changed
+        
+        # TODO XXX: check password correctly changed?
         user5 = User.objects.get(username="utestuser5")
-        author5 = Author.objects.get(user=user5)
         self.assertEquals(user5.first_name, "bob1")
         self.assertEquals(user5.last_name, "bob2")
-        author5.delete()
-        user5.delete()
 
 
     def testStream(self):
