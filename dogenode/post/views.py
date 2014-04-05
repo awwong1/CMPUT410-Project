@@ -55,13 +55,16 @@ def getJSONPost(viewer_id, post_id, host):
     viewer = RemoteAuthor.objects.get_or_create(guid=viewer_id, host=host)[0]
     viewerGuid = viewer_id[0]
     viewable = False
+    authorFriends = postAuthor.getFriends()
 
     if post.visibility == Post.SERVERONLY:
-        # TODO: fix up
-        if host == OUR_HOST:    
-            viewable = True
+        viewable = False
+    elif post.visibility == Post.FRIENDS or post.visibility == Post.FOAF:
+        for friend in postAuthor.getFriends()["remote"]:
+            if friend.guid == viewerGuid: 
+                viewable = True
+                break
     elif post.visibility == Post.FOAF:
-        authorFriends = postAuthor.getFriends()
         allFriends = authorFriends["remote"] + authorFriends["local"]
         for friend in authorFriends["local"]:
             # TODO: fix for remote cases
@@ -77,12 +80,6 @@ def getJSONPost(viewer_id, post_id, host):
             if json.loads(response)["friends"] != "NO":
                 viewable = True
                 break 
-
-    elif post.visibility == Post.FRIENDS:
-        for friend in postAuthor.getFriends()["remote"]:
-            if friend.guid == viewerGuid: 
-                viewable = True
-                break
 
     elif post.visibility == Post.PRIVATE:
         if viewerGuid == postAuthor.guid:
@@ -132,8 +129,8 @@ def getPostComponents(post):
     components = {}
     categoryIds = PostCategory.objects.filter(
                     post=post).values_list('category', flat=True)
-    authorIds = PostVisibilityException.objects.filter(
-                    post=post).values_list('author', flat=True)
+    postExceptions = PostVisibilityException.objects.filter(post=post)
+    authorIds = [exception.author.guid for exception in postExceptions]
     imageIds = ImagePost.objects.filter(post=post).values_list(
                     'image', flat=True)
 
