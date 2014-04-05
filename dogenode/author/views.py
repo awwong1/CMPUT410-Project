@@ -222,7 +222,6 @@ def stream(request):
     if request.user.is_authenticated():
         context = RequestContext(request)
         author = Author.objects.get(user=request.user)
-        rawposts = Post.getAllowedPosts(author, checkFollow=True)
         comments = []
         authors = []
         categories = []
@@ -230,6 +229,7 @@ def stream(request):
         images = []
 
         __queryGithubForEvents(author)
+        rawposts = Post.getAllowedPosts(author, checkFollow=True)
 
         for post in rawposts:
             categoryIds = PostCategory.objects.filter(post=post).values_list(
