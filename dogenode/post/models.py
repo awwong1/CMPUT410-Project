@@ -104,7 +104,7 @@ class Post(models.Model):
                     self.visibility == Post.FOAF):
                 return True
             elif self.visibility == Post.SERVERONLY:
-                if author in friends['local']:
+                if postAuthor in friends['local']:
                     return True
                 # SERVERONLY disallows remote viewers from viewing this post
                 else:
