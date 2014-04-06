@@ -301,8 +301,18 @@ def stream(request):
         for server in servers:
             try:
                 author = Author.objects.get(user=request.user)
-                response = requests.get("{0}api/author/posts?id={1}".format(
-                        server.host, author.guid))
+                # another hack because what the heck is going on with /api/
+                if server.host == 'http://127.0.0.1:80':
+                    response = requests.get(
+                        "{0}api/author/posts?id={1}".format(
+                            server.host, author.guid)
+                        )
+                else:
+                    response = requests.get(
+                        "{0}author/posts?id={1}".format(
+                            server.host, author.guid
+                            )
+                        )
                 response.raise_for_status()
                 jsonAllPosts = response.json()['posts']
                 # turn into a dummy post
