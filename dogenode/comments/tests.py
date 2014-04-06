@@ -6,7 +6,7 @@ from post.models import Post
 from django.contrib.auth.models import User
 
 import uuid
-
+import json
 
 # Create your tests here.
 class CommentTestCase(TestCase):
@@ -137,13 +137,19 @@ class CommentTestCase(TestCase):
         url = "/comments/add_comment/"
         post1_id = Post.objects.filter(title="title1")[0].guid
         
-        response = self.client.post(url,
-                        {'post_id':post1_id,
-                         'newComment':'comment5'},
+        response = self.client.put(url,
+                        json.dumps({'post_id':post1_id,
+                         'comment':'comment5'}),
+                         content_type="application/json",
                          HTTP_REFERER='/author/stream.html')
-        self.assertEqual(response.status_code, 302,
-                 "Comment creation was not succesful, code: " +
-                 str(response.status_code))
+        self.assertEqual(response.status_code, 201)
+
+        comment = json.loads(response.content)
+        self.assertEqual(comment["comment"], "comment5")
+        self.assertEqual(comment["postGuid"], str(post1_id))
+        self.assertEqual(comment["author"]["displayname"], "mockuser1")
+
+        # Check it's in the database
         comment = Comment.objects.filter(comment="comment5")[0]
         self.assertIsNotNone(comment, "Comment was not succesfully created")    
 

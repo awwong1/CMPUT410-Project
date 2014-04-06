@@ -35,7 +35,11 @@
                 var mainHeight = $(".container-fluid").height();
                 var sideHeight = $(".sidebar").height();
                 if (sideHeight < mainHeight) {
-                    $(".sidebar").css("height", mainHeight);
+                    if ($(document).width() > 760) {
+                        $(".sidebar").css("height", mainHeight);
+                    } else {
+                        $(".sidebar").css("height", 334);
+                    } 
                 }
             }
             resizeDivs();
