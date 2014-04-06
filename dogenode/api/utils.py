@@ -13,7 +13,6 @@ from post.models import Post, PostVisibilityException, AuthorPost, PostCategory
 
 from comments.models import Comment
 from categories.models import Category
-from api.serializers import AuthorSerializer, FullPostSerializer
 from images.models import Image, ImagePost
 
 import sys
@@ -29,13 +28,6 @@ def buildFullPost(rawposts):
         return [buildFullPostContent(rawposts)]
     else:
         return [buildFullPostContent(post) for post in rawposts]
-
-def serializeFullPost(posts):
-    """
-    Minor final Full Post cleanup to match example-article.json 
-    """
-    serializer = FullPostSerializer(posts, many=True)
-    return {"posts":serializer.data}
 
 def buildFullPostContent(post):
     """
@@ -57,7 +49,7 @@ def buildFullPostContent(post):
     # Categories
     categoryIds = PostCategory.objects.filter(post=post).values_list(
         'category', flat=True)
-    postContent["categories"] = Category.objects.filter(id__in=categoryIds)
+    postContent["categories"] = list(Category.objects.filter(id__in=categoryIds))
 
     # Visibility exceptions: a list of author dictionaries
     postExceptions = PostVisibilityException.objects.filter(post=post)

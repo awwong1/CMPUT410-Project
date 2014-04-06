@@ -18,13 +18,15 @@ from categories.models import Category
 from comments.models import Comment
 from images.models import Image, ImagePost, ImageVisibilityException
 from api.views import postFriendRequest, SERVER_URLS
+from api.models import AllowedServer
+
+from rest_framework import status
 
 import dateutil.parser
-import markdown, json
+import markdown
 import re
 import requests
 import uuid
-import urllib2
 
 def isUserAccepted(user):
     author = Author.objects.filter(user=user)
@@ -93,12 +95,19 @@ def profile(request, author_id):
     GET: Returns the profile page / information of an author.
     """
     if request.user.is_authenticated():
-        #user = User.objects.get(id=user_id)
-        author = Author.objects.get(guid=author_id)
         viewer = Author.objects.get(user=request.user)
+        try:
+            author = Author.objects.get(guid=author_id)
+        except Author.DoesNotExist:
+            context = RequestContext(request)
+            context['author_id'] = viewer.guid
+            if not getRemoteAuthorProfile(context, author_id):
+                 # Error conncecting with remote server
+                render_to_response('error/doge_error.html', context)
+            render_to_response('author/profile.html', context)
+
         user = author.user
         payload = { } # This is what we send in the RequestContext
-
         payload['author_id'] = viewer.guid
         payload['firstName'] = user.first_name or ""
         payload['lastName'] = user.last_name or ""
@@ -111,9 +120,38 @@ def profile(request, author_id):
         viewer = Author.objects.get(user=User.objects.get(
                 username=request.user))
         context['authPosts'] = Post.getViewablePosts(viewer, author)
+
         return render_to_response('author/profile.html', context)
     else:
         return redirect('/login/')
+
+def getRemoteAuthorProfile(context, author_id):
+    """
+    Gets remote author info from another host to display on our site.
+    If there was a connection problem or author doesn't exist, error 
+    message will be displayded (doge_error.html).
+    
+    TODO XXX: Going to an author's profile should be an ajax request,
+              then we can send host with request instead of searching
+              through all allowed servers for the author. Also, need
+              to find a way to test this.
+    """
+    servers = AllowedServer.objects.filter()
+    for server in servers:
+        if server.host[-1] != '/':
+            server.host = server.host + '/'
+        response = urllib2.urlopen(server.host+"api/"+author_id)
+        if response.status_code == status.HTTP_200_OK and response.context is not None:
+            data = json.loads(response.context)
+            context['firstName'] = ""
+            context['lastName'] = ""
+            context['username'] = data["displayname"]
+            context['githubUsername'] = ""
+            context['host'] = data["host"]
+            context['url'] = data["url"]
+            context['userIsAuthor'] = False
+            return True
+    return False 
 
 def editProfile(request):
     """
@@ -222,7 +260,6 @@ def stream(request):
     if request.user.is_authenticated():
         context = RequestContext(request)
         author = Author.objects.get(user=request.user)
-        rawposts = Post.getAllowedPosts(author, checkFollow=True)
         comments = []
         authors = []
         categories = []
@@ -230,6 +267,7 @@ def stream(request):
         images = []
 
         __queryGithubForEvents(author)
+        rawposts = Post.getAllowedPosts(author, checkFollow=True)
 
         for post in rawposts:
             categoryIds = PostCategory.objects.filter(post=post).values_list(
@@ -299,16 +337,17 @@ def searchOtherServers(searchString):
     # BenHoboCo
     for server in SERVER_URLS:
 
-        # TODO: Use the requests library instead
         try:
-            authorsFO = urllib2.urlopen("%s/api/authors" % server)
-            allAuthors = authorsFO.read()
-            jsonAllAuthors = json.loads(allAuthors)
+            response = requests.get("%s/api/authors" % server)
+            response.raise_for_status() # Exception on 4XX/5XX response
+
+            jsonAllAuthors = response.json()
 
             for author in jsonAllAuthors:
                 if searchString in author["displayname"]:
                     authorsFound.append(author)
-        except urllib2.URLError: # fail silently on connection failure
+        # fail silently
+        except requests.exceptions.RequestException:
             pass
 
     return authorsFound
@@ -520,9 +559,12 @@ def __queryGithubForEvents(author):
         headers["If-None-Match"] = author.githubEventsETag
 
     params = { }
-    if settings.GITHUB_CLIENT_ID and settings.GITHUB_CLIENT_SECRET:
+    try:
         params["client_id"] = settings.GITHUB_CLIENT_ID
         params["client_secret"] = settings.GITHUB_CLIENT_SECRET
+    except AttributeError:
+        # If there are no GitHub API keys, you only get 60 requests an hour
+        pass
 
     response = None
     for i in range(0,3):
@@ -612,7 +654,7 @@ def __generateGithubEventContent(event):
         return ret
     elif type == "IssueCommentEvent":
         return format_html("<p><strong>{0}</strong> {1} a " \
-                           "<a href='{2}'>comment</a> on Issue #" \
+                           "<a href='{2}' target='_blank'>comment</a> on Issue #" \
                            "<a href='{3}' target='_blank'>{4}</a>:</p>" \
                            "<p>{5}</p>",
                             username, payload["action"],

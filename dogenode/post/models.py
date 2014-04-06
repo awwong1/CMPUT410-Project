@@ -2,6 +2,9 @@ from django.db import models
 from author.models import Author
 from categories.models import Category
 
+from datetime import *
+from dateutil.tz import *
+
 import uuid
 
 # Create your models here.
@@ -60,14 +63,19 @@ class Post(models.Model):
             'description' : self.description,
             'content' : self.content,
             'visibility': self.visibility,
-            'contentType' : self.contentType,
+            'content-type' : self.contentType,
             'origin' : self.origin,
-            'pubDate' : self.pubDate,
-            'modifiedDate' : self.modifiedDate,
+            'pubDate' : self.__datetimeToJSONString(self.pubDate),
+            'modifiedDate' : self.__datetimeToJSONString(self.modifiedDate),
             'HTML' : self.HTML,
             'PLAIN' : self.PLAIN,
             'MARKDOWN' : self.MARKDOWN
         }
+
+    def __datetimeToJSONString(self, dt):
+        mstDatetime = dt.astimezone(gettz("MST"))
+        ctime = mstDatetime.ctime()
+        return ctime[:-4] + "MST " + ctime[-4:] # So dirty
 
     # Pass in an Author object, and this function will check if the Post
     # instance is viewable by the author.
@@ -96,7 +104,7 @@ class Post(models.Model):
                     self.visibility == Post.FOAF):
                 return True
             elif self.visibility == Post.SERVERONLY:
-                if author in friends['local']:
+                if postAuthor in friends['local']:
                     return True
                 # SERVERONLY disallows remote viewers from viewing this post
                 else:

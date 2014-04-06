@@ -37,55 +37,7 @@
                 }
             });
 
-            /**
-             * Generates a GUID string
-             * @returns {String} The generated GUID.
-             * @example af8a8416-6e18-a307-bd9c-f2c947bbb3aa
-             * @author Slavik Melster (slavik@meltser.info),
-             *link http://slavik.meltser.info/?p=142
-             */
-            function generateGUID() {
-                function _p8(s) {
-                    var p = (Math.random().toString(16)+"000000000").substr(2,8);
-                    return s ? "-"  + p.substr(0,4) + "-" + p.substr(4,4): p;
-                }
-                return _p8() + _p8(true) + _p8(true) + _p8();
-            }
-
-            /* Clears fields to make a new post in */
-            function clearFields() {
-                    $("#title").val('');
-                    $("#description").val('');
-                    $("#content").val('');
-                    $("#categories").val('');
-                    $("#visibility").val('PRIVATE');
-                    $("#visibilityExceptions").val('');
-                    $("#content-type").val('text/plain'); 
-                    // $("#image").replaceWith('<input type="file" id="image" name="image" accept="image/*" multiple="multiple"/>');
-                    $("#image").val(''); 
-            }
-
-            /* 
-                Converts image file to base64. Code from:
-                http://jsbin.com/ayazin/2/edit
-              
-                Modified to work with jquery using code from:
-                http://stackoverflow.com/questions/14772753/input-type-file-files-selector-not-works-in-jquery
-
-                Returns base64 encoded image, or if no file was specified,
-                returns null.
-            */
-            images = [];
-            function readImage(img, filename) {
-                var FR= new FileReader();
-                FR.onload = function(e) {
-                     images.push([filename, e.target.result]);
-                     
-                };       
-                FR.readAsDataURL(img);
-            }
-
-            // Getting multiple file names code from: 
+            // Getting multiple file names code from:
             /// http://stackoverflow.com/questions/10703102/jquery-get-all-filenames-inside-input-file
 
             $("#image").change(function() {
@@ -96,192 +48,237 @@
                     readImage(files[i], filenames[i]);
                 }
             });
-
-            /* Creates html for a new post */
-            function addPost(post) {
-                var content = post["content"];
-                var contentType = post["contentType"];
-                var title = post["title"];
-                // var source = post["source"]; TODO XXX:add source field
-                var origin = post["origin"];
-                var description = post["description"];
-                var author = post["author"];
-                var categories = post["categories"];
-                var comments = post["comments"];
-                var pubDate = post["pubDate"];
-                var guid = post["guid"];
-                var visibility = post["visibility"];
-                var images = post["images"];
-                
-                // deal with categories
-                var catHTML = "";
-                if (categories.length > 0) {
-                    var postWidth = '<div class="col-sm-8 col-md-10">';
-                    catHTML += '<div class="col-sm-4 col-md-2 text-right">';
-                    // building html for categories
-                    for (cat in categories) {
-                    catHTML += '<span class="label label-default">' 
-                        +   categories[cat] + '</span>';
-                    }    
-                    catHTML += '</div>';
-                } else {
-                    var postWidth = '<div class="col-sm-12">';
-                }   
-                
-                // deal with images
-                var imagesHTML = "";
-                var contentSize = "";
-                if (images.length > 0) {
-                    contentSize = '<div class="col-sm-8 col-lg-9" id="'+guid+'">';
-                    imagesHTML += '<div class="col-sm-4 col-lg-3 text-center">'
-                	    + '<div class="well">';
-    			    for (img in images) {   
-    				    imagesHTML += '<a href="' + images[img]["url"]+'/' 
-                        + '?{% now "U" %}" target="_blank">' 
-                        + '<img class="img-responsive-horizontal"' 
-                        + 'src="' + images[img]["url"]+'/' 
-                        + '?{% now "U" %}"/></a>';
-    			    }
-                    imagesHTML += '</div></div>';
-                    
-                } else {
-                    contentSize = '<div class="col-sm-12" id="'+guid+'">';
-                }
-
-                var commentsHTML = "";
-                // deal with comments
-                for (comment in comments) {
-                    commentsHTML += '<tr>'
-                        + '<td><small>'
-                        +  '<a href="/author/' +comments[comment]["author"]["id"] + '/">'
-                        +    '<strong>' + comments[comment]["author"]["displayname"] 
-                        +    '</strong>'
-                        +  '</a> on ' + comments[comment]["pubDate"] + '</small>'
-                        + '</td></tr>';
-                }
-
-               // add new post to stream
-               $(".stream-title").after('<div class="row">'
-                    +  '<div class="col-md-12">'
-                    +   '<div class="panel panel-default">'
-                    +      '<div class="panel-heading">'
-                    +        '<div class="row">'
-                    +         postWidth
-                    +         '<h4><strong>' + title + '</strong></h4>'
-                    +         '<h5>' + description + '</h5>'
-                    +         '</div>'
-                    +         catHTML
-                    +       '</div>'
-                    +      '</div>'
-                    +      '<div class="panel-body">'
-                    +        '<div class="row">'
-                    +          contentSize
-                    +          '</div>'
-                    +           imagesHTML
-                    +        '</div>'
-                    +      '</div>'
-                    +      '<div class="panel-footer">'
-                    +        '<div class="row">'
-                    +          '<div class="col-sm-4">'
-                    +            'by <a href="/author/' + author["id"] + '/">'
-                    +               '<strong>' + author["displayname"] + '</strong>'
-                    +               '</a>'
-                    +            ' on ' + pubDate 
-                    +          '</div>'
-                    +          '<div class="col-sm-8 text-right">'
-                    +            '<a href="' + origin + '" class="text-muted">'
-                    +              origin
-                    +            '</a>'
-                    +          '</div>'
-                    +        '</div>'
-                    +      '</div>'
-                    +      '<table class="table">'
-                    +        '<tbody>'
-                    +         commentsHTML
-                    +        '</tbody>'
-                    +      '</table>'
-                    +      '<div class="panel-footer">'
-                    +        '<form role="form" method="POST"'
-                    +         ' action="/comments/add_comment/">'
-                    +          "{% csrf_token %}"
-                    +          '<div class="form-group">'
-                    +            '<input type="hidden" name="post_id" value="' + guid + '" />'
-                    +            '<input type="text" class="form-control" name="newComment"'
-                    +             ' placeholder="Make a new comment..." required/>'
-                    +          '</div>'
-                    +          '<div class="form-group">'
-                    +            '<input type="submit" value="Comment"/>'
-                    +          '</div>'
-                    +        '</form>'
-                    +      '</div>'
-                    +    '</div>'
-                    +  '</div>'
-                    + '</div>');
-            }
-
-            // adds the post content depending on content-type
-            function addContent(content, contentType, guid) {
-               // Convert content to from markdown to html if needed
-                if (contentType === "text/x-markdown") {
-                    convert = new Markdown.getSanitizingConverter().makeHtml;
-                    content = convert(content);
-                } 
-               
-                if (contentType === "text/plain") {
-                    $("#"+guid).text(content);
-                } else {
-                    $("#"+guid).html(content);
-                }
-                
-            }
-
-            // On click of make new post button, send an AJAX PUT request to create post
-            $("#makePost").on("click", function() {
-                var guid = generateGUID();
-                var postData = {
-                    "guid": guid,
-                    "title": $("#title").val(),
-                    "text": $("#description").val(),
-                    "content": $("#content").val(),
-                    "categories": $("#categories").val(),
-                    "visibility": $("#visibility").val(),
-                    "visibilityExceptions": $("#visibilityExceptions").val(),
-                    "content-type": $("#content-type").val(),
-                }; 
-
-                // waiting for images to be read and converted
-                while ( images.length < ($("#image"))[0].files.length) {
-                    continue;
-                }
-
-                postData["images"] = images;
-                var JSONPostData = JSON.stringify(postData);
-                images = [];
- 
-                clearFields();
-                query = "?id="+$("#author_guid").val();
-                // send ajax request
-                $.ajax({
-                    type: "PUT",
-                    url: location.origin+"/api/post/"+guid+query,
-                    data: JSONPostData, 
-                    dataType: "json",
-                    contentType: "application/json",
-                    success: function(response) {
-                        addPost(response[0]);
-                        addContent(response[0]["content"], 
-                                   response[0]["contentType"],
-                                   response[0]["guid"]);                        
-                    },
-                    error: function(xhr, status, error) {
-                        console.log(xhr.responseText);
-                    }
-                });
-                return false;
-            });
-
         });
-        
+
+        /* Clears fields to make a new post in */
+        function clearFields() {
+                $("#title").val('');
+                $("#description").val('');
+                $("#content").val('');
+                $("#categories").val('');
+                $("#visibility").val('PRIVATE');
+                $("#visibilityExceptions").val('');
+                $("#content-type").val('text/plain');
+                // $("#image").replaceWith('<input type="file" id="image" name="image" accept="image/*" multiple="multiple"/>');
+                $("#image").val('');
+        }
+
+        /*
+            Converts image file to base64. Code from:
+            http://jsbin.com/ayazin/2/edit
+
+            Modified to work with jquery using code from:
+            http://stackoverflow.com/questions/14772753/input-type-file-files-selector-not-works-in-jquery
+
+            Returns base64 encoded image, or if no file was specified,
+            returns null.
+        */
+        var images = [];
+        function readImage(img, filename) {
+            var FR= new FileReader();
+            FR.onload = function(e) {
+                 images.push([filename, e.target.result]);
+
+            };
+            FR.readAsDataURL(img);
+        }
+
+        /* Creates html for a new post */
+        function addPost(post) {
+            var content = post["content"];
+            var contentType = post["contentType"];
+            var title = post["title"];
+            // var source = post["source"]; TODO XXX:add source field
+            var origin = post["origin"];
+            var description = post["description"];
+            var author = post["author"];
+            var categories = post["categories"];
+            var comments = post["comments"];
+            var pubDate = post["pubDate"];
+            var guid = post["guid"];
+            var visibility = post["visibility"];
+            var images = post["images"];
+
+            // deal with categories
+            var catHTML = "";
+            if (categories.length > 0) {
+                var postWidth = '<div class="col-sm-8 col-md-10">';
+                catHTML += '<div class="col-sm-4 col-md-2 text-right">';
+                // building html for categories
+                for (cat in categories) {
+                catHTML += '<span class="label label-default">'
+                    +   categories[cat] + '</span>';
+                }
+                catHTML += '</div>';
+            } else {
+                var postWidth = '<div class="col-sm-12">';
+            }
+
+            // deal with images
+            var imagesHTML = "";
+            var contentSize = "";
+            if (images.length > 0) {
+                contentSize = '<div class="col-sm-8 col-lg-9" id="'+guid+'">';
+                imagesHTML += '<div class="col-sm-4 col-lg-3 text-center">'
+                  + '<div class="well">';
+                for (img in images) {
+                  imagesHTML += '<a href="' + images[img]["url"]+'/'
+                          + '?{% now "U" %}" target="_blank">'
+                          + '<img class="img-responsive-horizontal"'
+                          + 'src="' + images[img]["url"]+'/'
+                          + '?{% now "U" %}"/></a>';
+                }
+                imagesHTML += '</div></div>';
+
+            } else {
+                contentSize = '<div class="col-sm-12" id="'+guid+'">';
+            }
+
+            var commentsHTML = "";
+            // deal with comments
+            for (comment in comments) {
+                commentsHTML += '<tr>'
+                    + '<td><small>'
+                    +  '<a href="/author/' +comments[comment]["author"]["id"] + '/">'
+                    +    '<strong>' + comments[comment]["author"]["displayname"]
+                    +    '</strong>'
+                    +  '</a> on ' + comments[comment]["pubDate"] + '</small>'
+                    + '</td></tr>';
+            }
+
+           // add new post to stream
+           $(".stream-title").after('<div class="row">'
+                +  '<div class="col-md-12">'
+                +   '<div class="panel panel-default">'
+                +      '<div class="panel-heading">'
+                +        '<div class="row">'
+                +         postWidth
+                +         '<h4><strong>' + title + '</strong></h4>'
+                +         '<h5>' + description + '</h5>'
+                +         '</div>'
+                +         catHTML
+                +       '</div>'
+                +      '</div>'
+                +      '<div class="panel-body">'
+                +        '<div class="row">'
+                +          contentSize
+                +          '</div>'
+                +           imagesHTML
+                +        '</div>'
+                +      '</div>'
+                +      '<div class="panel-footer">'
+                +        '<div class="row">'
+                +          '<div class="col-sm-4">'
+                +            'by <a href="/author/' + author["id"] + '/">'
+                +               '<strong>' + author["displayname"] + '</strong>'
+                +               '</a>'
+                +            ' on ' + pubDate
+                +          '</div>'
+                +          '<div class="col-sm-8 text-right">'
+                +            '<a href="' + origin + '" class="text-muted">'
+                +              origin
+                +            '</a>'
+                +          '</div>'
+                +        '</div>'
+                +      '</div>'
+                +      '<table class="table">'
+                +        '<tbody>'
+                +         commentsHTML
+                +        '</tbody>'
+                +      '</table>'
+                +      '<div class="panel-footer">'
+                +        '<form role="form" method="POST"'
+                +         ' action="/comments/add_comment/">'
+                +          "{% csrf_token %}"
+                +          '<div class="form-group">'
+                +            '<input type="hidden" name="post_id" value="' + guid + '" />'
+                +            '<input type="text" class="form-control" name="newComment"'
+                +             ' placeholder="Make a new comment..." required/>'
+                +          '</div>'
+                +          '<div class="form-group">'
+                +            '<input type="submit" value="Comment"/>'
+                +          '</div>'
+                +        '</form>'
+                +      '</div>'
+                +    '</div>'
+                +  '</div>'
+                + '</div>');
+        }
+
+        // adds the post content depending on content-type
+        function addContent(content, contentType, guid) {
+           // Convert content to from markdown to html if needed
+            if (contentType === "text/x-markdown") {
+                convert = new Markdown.getSanitizingConverter().makeHtml;
+                content = convert(content);
+            }
+
+            if (contentType === "text/plain") {
+                $("#"+guid).text(content);
+            } else {
+                $("#"+guid).html(content);
+            }
+
+        }
+
+        /**
+         * Generates a GUID string
+         * @returns {String} The generated GUID.
+         * @example af8a8416-6e18-a307-bd9c-f2c947bbb3aa
+         * @author Slavik Melster (slavik@meltser.info),
+         *link http://slavik.meltser.info/?p=142
+         */
+        function generateGUID() {
+            function _p8(s) {
+                var p = (Math.random().toString(16)+"000000000").substr(2,8);
+                return s ? "-"  + p.substr(0,4) + "-" + p.substr(4,4): p;
+            }
+            return _p8() + _p8(true) + _p8(true) + _p8();
+        }
+
+        var handleMakePost = function() {
+            var guid = generateGUID();
+            var postData = {
+                "guid": guid,
+                "title": $("#title").val(),
+                "text": $("#description").val(),
+                "content": $("#content").val(),
+                "categories": $("#categories").val(),
+                "visibility": $("#visibility").val(),
+                "visibilityExceptions": $("#visibilityExceptions").val(),
+                "content-type": $("#content-type").val(),
+            };
+
+            // waiting for images to be read and converted
+            while ( images.length < ($("#image"))[0].files.length) {
+                continue;
+            }
+
+            postData["images"] = images;
+            var JSONPostData = JSON.stringify(postData);
+            images = [];
+
+            clearFields();
+            query = "?id="+$("#author_guid").val();
+            // send ajax request
+            $.ajax({
+                type: "PUT",
+                url: location.origin+"/api/post/"+guid+query,
+                data: JSONPostData,
+                dataType: "json",
+                contentType: "application/json",
+                success: function(response) {
+                    addPost(response[0]);
+                    addContent(response[0]["content"],
+                               response[0]["contentType"],
+                               response[0]["guid"]);
+                },
+                error: function(xhr, status, error) {
+                    console.log(xhr.responseText);
+                }
+            });
+            return false;
+        };
     </script>
 
 <input type="hidden" id="author_guid" value="{{ author_id }}"/>
@@ -291,7 +288,7 @@
     </div>
     <div class="row">
         <div class="col-md-12">
-            <form class="form-horizontal" role="form">
+            <form class="form-horizontal" role="form" onSubmit="return handleMakePost()">
                 <div class="panel panel-default">
                   {% csrf_token %}
                   <div class="panel-heading">
@@ -343,8 +340,8 @@
                           </div>
                           <label for="visibilityExceptions" class="control-label col-sm-1 col-lg-1" style="text-align: center">and</label>
                           <div class="col-sm-3 col-md-4">
-                              <input type="text" class="form-control" 
-                               id="visibilityExceptions" 
+                              <input type="text" class="form-control"
+                               id="visibilityExceptions"
                                name="visibilityExceptions"
                                placeholder="Enter names(s) separated by spaces"/>
                           </div>
@@ -362,7 +359,7 @@
                               </select>
                           </div>
                           <div class="col-sm-offset-5 col-sm-1 col-md-offset-6 col-lg-offset-8">
-                              <input type="button" id="makePost" value="Post"/>
+                              <input type="submit" id="makePost" value="Post"/>
                           </div>
                       </div>
                   </div>

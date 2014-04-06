@@ -24,6 +24,24 @@
     </script>
     <script src="http://pagedown.googlecode.com/hg/Markdown.Sanitizer.js">
     </script>
+
+    <script>
+        $(document).ready(function() {
+            function resizeDivs() {
+                var winHeight = $(window).height();
+                if ($(".container-fluid").height() < winHeight) {
+                    $(".container-fluid").css("height", winHeight);
+                }
+                var mainHeight = $(".container-fluid").height();
+                var sideHeight = $(".sidebar").height();
+                if (sideHeight < mainHeight) {
+                    $(".sidebar").css("height", mainHeight);
+                }
+            }
+            resizeDivs();
+            setInterval(resizeDivs, 100);
+        });
+    </script>
   </head>
   <body>
     <div class="navbar navbar-inverse navbar-fixed-top dogenode-header">

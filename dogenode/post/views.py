@@ -15,10 +15,9 @@ from author.models import Author, RemoteAuthor
 from comments.models import Comment
 
 import markdown
-import json
-import urllib2
 import datetime
 import base64
+import requests
 
 OUR_HOST = "http://127.0.0.1:8000/"
 
@@ -81,7 +80,7 @@ def getJSONPost(viewer_id, post_id, host, check_follow=False):
         for friend in authorFriends["local"]:
             # TODO: fix for remote cases
             try:
-                response = urllib2.urlopen("%sapi/friends/%s/%s" % 
+                response = requests.get("%sapi/friends/%s/%s" % 
                                             (OUR_HOST,   
                                             str(viewerGuid),
                                             str(postAuthor.guid)))
@@ -89,7 +88,7 @@ def getJSONPost(viewer_id, post_id, host, check_follow=False):
                 viewable = False
                 break
 
-            if json.loads(response)["friends"] != "NO":
+            if response.json()["friends"] != "NO":
                 viewable = True
                 break 
 
