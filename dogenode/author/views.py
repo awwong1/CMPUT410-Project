@@ -654,7 +654,7 @@ def __generateGithubEventContent(event):
         return ret
     elif type == "IssueCommentEvent":
         return format_html("<p><strong>{0}</strong> {1} a " \
-                           "<a href='{2}'>comment</a> on Issue #" \
+                           "<a href='{2}' target='_blank'>comment</a> on Issue #" \
                            "<a href='{3}' target='_blank'>{4}</a>:</p>" \
                            "<p>{5}</p>",
                             username, payload["action"],
