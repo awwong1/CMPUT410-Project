@@ -355,7 +355,7 @@ class RESTfulTestCase(TestCase):
         remoteAuthor1 = RemoteAuthor.objects.filter(
                                 guid=remoteUser1["id"],
                                 host=remoteUser1["host"],
-                                url=remoteUser1["url"],
+                                # url=remoteUser1["url"],
                                 displayName=remoteUser1["displayname"])
 
         self.assertEqual(len(remoteAuthor1), 1)

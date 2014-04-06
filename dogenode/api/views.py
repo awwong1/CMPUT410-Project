@@ -54,13 +54,12 @@ def postFriendRequest(localAuthor, remoteAuthor, befriend=True):
     #TODO: this needs to be customized for each remote server
     servers = AllowedServer.objects.all()
 
-    for s in servers:
-        if remoteAuthor.host == s.host:
+    for server in servers:
+
+        if remoteAuthor.host == server.host:
             try:
                 response = requests.post(
-                            '%sapi/authors/%s/friends/' %
-                                     (s.host,
-                                      remoteAuthor.displayName),
+                            '%sapi/friendrequest' % server.host,
                              headers=headers,
                              data=json.dumps(postData))
                 response.raise_for_status() # Exception on 4XX/5XX response
@@ -276,8 +275,7 @@ def sendFriendRequest(request):
 
             remoteAuthor, _ = RemoteAuthor.objects.get_or_create(guid=guid1)
             remoteAuthor.update(jsonData["author"]["displayname"],
-                                jsonData["author"]["host"],
-                                jsonData["author"]["url"])
+                                jsonData["author"]["host"])
 
             relationship = RemoteRelationship.objects.filter(
                                 localAuthor=author2, remoteAuthor=remoteAuthor)

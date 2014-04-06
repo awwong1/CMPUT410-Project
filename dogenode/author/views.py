@@ -571,6 +571,7 @@ def updateRelationship(request, guid):
     if request.method == 'POST' and request.is_ajax:
 
         currentRelationship = request.POST["relationship"]
+        host = request.POST["host"]
         requestAuthor = Author.objects.get(user=request.user)
 
         # check if the guid is a local or remote user
