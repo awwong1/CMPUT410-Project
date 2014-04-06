@@ -91,12 +91,12 @@
 		{% if post.external %}
 		<a href="{{ comment.author.url }}">
 		  External User: <strong>{{comment.author.displayname}}</strong>
-		</a> on {{comment.pub_date}}:
+		</a> on {{comment.pubDate}}:
 		{% else %}
 		<a href="{% url 'author.views.profile' comment.author.guid %}">
                   <strong>{{comment.author.user.username}}</strong>
 		</a>{% endif %}
-		on {{comment.pub_date}}:</small> {{comment.comment}}
+		on {{comment.pubDate}}:</small> {{comment.comment}}
             </td>
           </tr>
           {% endfor %}
