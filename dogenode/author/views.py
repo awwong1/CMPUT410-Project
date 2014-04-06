@@ -17,7 +17,7 @@ from post.models import Post, PostVisibilityException, AuthorPost, PostCategory
 from categories.models import Category
 from comments.models import Comment
 from images.models import Image, ImagePost, ImageVisibilityException
-from api.views import postFriendRequest, SERVER_URLS
+from api.views import postFriendRequest
 from api.models import AllowedServer
 
 from rest_framework import status
@@ -129,9 +129,9 @@ def profile(request, author_id):
 def getRemoteAuthorProfile(context, author_id):
     """
     Gets remote author info from another host to display on our site.
-    If there was a connection problem or author doesn't exist, error 
+    If there was a connection problem or author doesn't exist, error
     message will be displayded (doge_error.html).
-    
+
     TODO XXX: Going to an author's profile should be an ajax request,
               then we can send host with request instead of searching
               through all allowed servers for the author. Also, need
@@ -152,7 +152,7 @@ def getRemoteAuthorProfile(context, author_id):
             context['url'] = data["url"]
             context['userIsAuthor'] = False
             return True
-    return False 
+    return False
 
 def editProfile(request):
     """
@@ -296,11 +296,13 @@ def stream(request):
 
         externalPosts = []
         # Get the other server posts:
-        for server in SERVER_URLS:
+        servers = AllowedServer.objects.all()
+
+        for server in servers:
             try:
                 author = Author.objects.get(user=request.user)
                 response = requests.get("{0}api/author/posts?id={1}".format(
-                        server, author.guid))
+                        server.host, author.guid))
                 response.raise_for_status()
                 jsonAllPosts = response.json()['posts']
                 # turn into a dummy post
@@ -308,7 +310,7 @@ def stream(request):
                     externalPosts.append(jsonPost)
             except Exception as e:
                 print ("failed to get posts from there,\n{0}".format(e))
-        
+
         for externalPost in externalPosts:
             serverPosts.append(__rawPostViewConverter(externalPost))
 
@@ -329,7 +331,7 @@ def __rawPostViewConverter(rawpost):
     """
     Attempt to kludge a raw post into a django template post viewable
     I'm so very sorry
-   
+
     the worst method of checking 'states', let's just go back to first year
     programming and use an integer
     0 = dogenode
@@ -343,10 +345,10 @@ def __rawPostViewConverter(rawpost):
     categoriesData = {}
     visibilityExceptionsData = {}
     imagesData = {}
-    
+
     # parse out external posts stuff
     postState = 0
-    
+
     if postState == 0:
         try:
             #dogenode test external posts settings
@@ -360,6 +362,7 @@ def __rawPostViewConverter(rawpost):
             postData['visibility']=rawpost['visibility']
             postData['contentType']=rawpost['content-type']
             postData['origin']=rawpost['origin']
+            postData['source']=rawpost['source']
             postData['pubDate']=rawpost['pubDate']
             postData['modifiedDate']=rawpost['modifiedDate']
 
@@ -368,7 +371,7 @@ def __rawPostViewConverter(rawpost):
             authData['url']=rawpost['author']['url']
             authData['host']=rawpost['author']['host']
             authData['id']=rawpost['author']['id']
-            
+
             # dogenode test external comments settings
             for rawComment in rawpost['comments']:
                 # get nested author
@@ -384,13 +387,13 @@ def __rawPostViewConverter(rawpost):
                 adaptcomment['guid']=rawComment['guid']
                 adaptcomment['pub_date']=rawComment['pub_date']
                 commentsData.append(adaptcomment)
-            
+
             #print ("doge: succeded parsing post")
         except Exception as e:
             print ("doge: failed to parse post,\n{0}".format(e))
             # postState = 1 # when rest is implemented
             postState = -1
-        
+
     if (postState == 1):
         #benhobo test external posts settings
         try:
@@ -408,9 +411,9 @@ def __rawPostViewConverter(rawpost):
         except Exception as e:
             print( "plkr: failed to parse post,\n{0}".format(e))
             postState == -1
-    
+
     if postState >= 0:
-        unifiedpost = (postData, authData, commentsData, categoriesData, 
+        unifiedpost = (postData, authData, commentsData, categoriesData,
                    visibilityExceptionsData, imagesData)
     else:
         print("Something didn't parse properly at all!\n\n")
@@ -447,10 +450,13 @@ def searchOtherServers(searchString):
     authorsFound = []
 
     # BenHoboCo
-    for server in SERVER_URLS:
+    servers = AllowedServer.objects.all()
+
+    for server in servers:
 
         try:
-            response = requests.get("%s/api/authors" % server)
+            #response = requests.get("%s/api/authors" % server.host)
+            response = requests.get("%sapi/search" % server.host)
             response.raise_for_status() # Exception on 4XX/5XX response
 
             jsonAllAuthors = response.json()
@@ -516,25 +522,28 @@ def search(request):
             r = RemoteRelationship.objects.filter(localAuthor=author,
                                                   remoteAuthor=remoteAuthor)
 
+            authorDisplayName = "%s@%s" % (a["displayname"], a["host"])
+
             # These 2 authors have a relationship
             if len(r) > 0:
 
                 if r[0].relationship == 0: # user follow the author
-                    usersAndStatus.append([a["displayname"],
+                    usersAndStatus.append([authorDisplayName,
                                            "Following",
                                            a["id"]])
 
                 elif r[0].relationship == 1: # the author follows the user
                     if r[0].localAuthor == author:
-                        usersAndStatus.append([a["displayname"],
+                        usersAndStatus.append([authorDisplayName,
                                                "Follower",
                                                a["id"]])
                 else: # relationship value should be 2: they are friends
-                    usersAndStatus.append([a["displayname"],
+                    usersAndStatus.append([authorDisplayName,
                                            "Friend",
                                            a["id"]])
+            # These 2 authors have no relationship
             else:
-                usersAndStatus.append([a["displayname"],
+                usersAndStatus.append([authorDisplayName,
                                       "No Relationship",
                                       a["id"]])
 
@@ -617,6 +626,7 @@ def updateRelationship(request, guid):
 
             if currentRelationship == "Friend":
                 # Unfriend
+                postFriendRequest(requestAuthor, remoteAuthor, False)
                 relationship, _ = RemoteRelationship.objects.get_or_create(
                                         localAuthor=requestAuthor,
                                         remoteAuthor=remoteAuthor)
@@ -626,6 +636,7 @@ def updateRelationship(request, guid):
 
             elif currentRelationship == "Following":
                 # Unfollow
+                postFriendRequest(requestAuthor, remoteAuthor, False)
                 relationship, _ = RemoteRelationship.objects.get_or_create(
                                         localAuthor=requestAuthor,
                                         remoteAuthor=remoteAuthor)

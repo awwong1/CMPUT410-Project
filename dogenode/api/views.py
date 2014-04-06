@@ -16,6 +16,7 @@ from post.views import createPost, updatePost, getJSONPost
 from comments.models import Comment
 from categories.models import Category
 from api.utils import *
+from api.models import AllowedServer
 
 import sys
 import datetime
@@ -23,18 +24,19 @@ import json
 import requests
 import urlparse
 
+#TODO: remove this when we don't need it anymore
 # List of other servers we are communicating with
-SERVER_URLS = ['http://127.0.0.1:8001/', #BenHoboCo
+#SERVER_URLS = ['http://127.0.0.1:8001/', #BenHoboCo
                #'http://cs410.cs.ualberta.ca:41041/', #Team4, BenHoboCo
                #'http://cs410.cs.ualberta.ca:41051/', #Team5, PLKR
-               ]
+#               ]
 
 #TODO: not sure where best to put this POST request (authors/views uses it too)
-def postFriendRequest(localAuthor, remoteAuthor):
+def postFriendRequest(localAuthor, remoteAuthor, befriend=True):
 
     headers = {"Content-type": "application/json"}
     postData = {
-                    "query":"friendrequest",
+                    "query": "friendrequest" if befriend else "unfriend",
                     "author":{
                         "id":localAuthor.guid,
                         "host":settings.OUR_HOST,
@@ -51,11 +53,13 @@ def postFriendRequest(localAuthor, remoteAuthor):
                 }
 
     #TODO: this needs to be customized for each remote server
-    if remoteAuthor.host == SERVER_URLS[0]:
+    servers = AllowedServer.objects.all()
+
+    if remoteAuthor.host == servers[0].host:
         try:
             response = requests.post(
-                        '%s/api/authors/%s/friends/' %
-                                 (SERVER_URLS[0],
+                        '%sapi/authors/%s/friends/' %
+                                 (servers[0].host,
                                   remoteAuthor.displayName),
                          headers=headers,
                          data=json.dumps(postData))
