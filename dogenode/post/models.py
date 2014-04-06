@@ -63,7 +63,7 @@ class Post(models.Model):
             'description' : self.description,
             'content' : self.content,
             'visibility': self.visibility,
-            'contentType' : self.contentType,
+            'content-type' : self.contentType,
             'origin' : self.origin,
             'pubDate' : self.__datetimeToJSONString(self.pubDate),
             'modifiedDate' : self.__datetimeToJSONString(self.modifiedDate),

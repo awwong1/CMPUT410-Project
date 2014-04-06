@@ -14,7 +14,6 @@ from post.views import createPost, updatePost, getJSONPost
 
 from comments.models import Comment
 from categories.models import Category
-from api.serializers import AuthorSerializer, FullPostSerializer
 from api.utils import *
 
 import sys
@@ -324,7 +323,7 @@ def getPublicPosts(request):
     if request.method == 'GET':
         rawposts = Post.objects.filter(visibility=Post.PUBLIC)
         posts = buildFullPost(rawposts)
-        return Response(serializeFullPost(posts))
+        return HttpResponse(json.dumps({"posts": posts}), content_type="application/json")
 
 @api_view(['GET','POST','PUT'])
 def postSingle(request, post_id):
@@ -342,7 +341,7 @@ def postSingle(request, post_id):
         try:
             rawpost = Post.objects.get(guid=post_id)
         except Post.DoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND)
+            return HttpResponse(status=status.HTTP_404_NOT_FOUND)
 
         # Extract the requesting author's information to check for visibility
         host = request.META["REMOTE_ADDR"] + request.META["SERVER_NAME"]
@@ -351,11 +350,10 @@ def postSingle(request, post_id):
         viewable, post = getJSONPost(viewerId, post_id, host)
 
         if not viewable:
-            return Response(status=status.HTTP_403_FORBIDDEN) 
+            return HttpResponse(status=status.HTTP_403_FORBIDDEN) 
 
         post = buildFullPost(rawpost)
-        serializer = FullPostSerializer(post,many=True)
-        return Response({"posts":serializer.data})
+        return HttpResponse(json.dumps({"posts":post}), content_type="application/json")
 
     # Update the post
     elif request.method == 'PUT':
@@ -367,7 +365,7 @@ def postSingle(request, post_id):
         try:
             author = Author.objects.get(guid=authorId)
         except Author.DoesNotExist:
-            return Response(status=status.HTTP_403_FORBIDDEN)
+            return HttpResponse(status=status.HTTP_403_FORBIDDEN)
 
         # post exists, so it will update
         if len(posts) > 0:
@@ -375,13 +373,14 @@ def postSingle(request, post_id):
             if AuthorPost.objects.get(post=posts[0]).author.guid == author.guid:
                 newPost = updatePost(posts[0], request.DATA)
             else:
-                return Response(status=status.HTTP_403_FORBIDDEN) 
+                return HttpResponse(status=status.HTTP_403_FORBIDDEN) 
         else:    # post doesn't exist, a new one will be created
             newPost = createPost(request, post_id, request.DATA)
    
         # return new / updated post in body 
-        serializer = FullPostSerializer(buildFullPost(newPost), many=True)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        jsonPost = json.dumps(buildFullPost(newPost))
+        return HttpResponse(jsonPost, status=status.HTTP_201_CREATED,
+                            content_type="application/json")
 
 @api_view(['GET'])
 def getAuthorPosts(request, requestedAuthorId):
@@ -401,7 +400,7 @@ def getAuthorPosts(request, requestedAuthorId):
         try: 
             requestedAuthor = Author.objects.get(guid=requestedAuthorId)
         except Author.DoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND)
+            return HttpResponse(status=status.HTTP_404_NOT_FOUND)
 
         postIds = AuthorPost.objects.filter(author=requestedAuthor).values_list(
                             'post', flat=True)
@@ -415,8 +414,8 @@ def getAuthorPosts(request, requestedAuthorId):
                 rawPosts.append(rawPost)
 
         finalPosts = buildFullPost(rawPosts)
-        serializer = FullPostSerializer(finalPosts,many=True)
-        return Response({"posts":serializer.data})
+        return HttpResponse(json.dumps({"posts":finalPosts}), 
+                            content_type="application/json")
 
 @api_view(['GET', 'POST'])
 def getStream(request):
@@ -443,11 +442,11 @@ def getStream(request):
                 rawPosts.append(rawPost)
 
         finalPosts = buildFullPost(rawPosts)
-        serializer = FullPostSerializer(finalPosts,many=True)
-        return Response({"posts":serializer.data})
+        return HttpResponse(json.dumps({"posts":finalPosts}), 
+                            content_type="application/json")
 
     else:
-        Response(status=status.status.HTTP_METHOD_NOT_ALLOWED)
+        HttpResponse(status=status.status.HTTP_METHOD_NOT_ALLOWED)
 
 @api_view(['GET'])
 def authorProfile(request, authorId):
@@ -460,9 +459,8 @@ def authorProfile(request, authorId):
     try:
         author = Author.objects.get(guid=authorId)
     except Author.DoesNotExist:
-        return Response(status=status.HTTP_404_NOT_FOUND)
+        return HttpResponse(status=status.HTTP_404_NOT_FOUND)
 
     # Get the author's information
     if request.method == 'GET':
-        serializer = AuthorSerializer(author.as_dict())
-        return Response(serializer.data)
+        return HttpResponse(json.dumps(author.as_dict()))

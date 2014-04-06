@@ -2,19 +2,15 @@
     http://colorschemedesigner.com/#0P51TmapJw0w04A1-j
 */
 
-body {
-    padding-top: 50px; 
-    background-color: rgb(228,199,143);
-}
+html { height: 100%; }
 
-div.main {
-    background-color: white;
-    min-height: 600px;
+body {
+    height: 100%;
+    padding-top: 50px; 
 }
 
 .login-container {
     background-color: white;
-    min-height: 600px;
 }
 
 /* General classes styling */
@@ -45,6 +41,7 @@ h1, h2, h3, h4, h5, h6 {
     background-color: rgb(228,199,143); /* nav background color, light cream */
     text-align: center;
     padding-top: 15px;
+    background-color: rgb(228,199,143);
 }
 
 .nav-title {
@@ -189,7 +186,8 @@ li.active > a:focus {
 
 /* Main section, "content", styling */
 .main {
-    padding: 20px;
+    background-color: white;
+    padding-top: 15px;
 }
 
 div.content {
