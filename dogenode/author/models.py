@@ -12,7 +12,7 @@ class Author(models.Model):
                                  default=uuid.uuid4)
     user = models.OneToOneField(User, primary_key=True)
     accepted = models.BooleanField(default=False)   
-    host = models.CharField(max_length=100, default="http://dogenode/")
+    host = models.CharField(max_length=100, default="http://cs410.cs.ualberta:41011/")
     url = models.URLField(blank=True)
     githubUsername = models.CharField(max_length=128, blank=True)
     githubEventsETag = models.CharField(max_length=32, blank=True)
@@ -92,8 +92,7 @@ class Author(models.Model):
 def createAuthor(sender, instance, created, **kwargs):
     if created:
         author, _ = Author.objects.get_or_create(user=instance)
-        # author.url = author.host + author.get_absolute_url() TODO XXX: switch to this
-        author.url = "http://127.0.0.1:8000/author/" + str(author.guid)
+        author.url = author.host + "api" + author.get_absolute_url() 
         author.save()
 
 post_save.connect(createAuthor, sender=User, dispatch_uid="auto_create_author")

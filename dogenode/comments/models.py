@@ -23,10 +23,10 @@ class Comment(models.Model):
 
     def as_dict(self):
         return {
-            "guid": self.guid,
+            "guid": str(self.guid),
             "author": self.author.as_dict(),
             "comment": self.comment,
-            "pub_date": self.__datetimeToJSONString(self.pub_date)
+            "pubDate": self.__datetimeToJSONString(self.pub_date)
         }
 
     def __datetimeToJSONString(self, dt):

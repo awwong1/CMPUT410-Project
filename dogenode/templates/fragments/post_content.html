@@ -82,7 +82,7 @@
           </div>
         </div>
       </div>
-      <table class="table">
+      <table class="table {{ post.guid }}">
         <tbody>
           {% for comment in comments %}
           <tr>
@@ -106,16 +106,14 @@
         {% if post.external %}
 	<p class="text-muted">Comment posting is disabled for external stream data!</p>
 	{% else %}
-	<form role="form" method="POST"
-              action="{% url 'comments.views.add_comment' %}">
-          {% csrf_token %}
+        <form id="{{ post.guid }}" role="form"> 
           <div class="form-group">
-            <input type="hidden" name="post_id" value="{{post.guid}}" />
-            <input type="text" class="form-control" name="newComment"
-             placeholder="Make a new comment..." required/>
+            <input type="text" class="form-control {{post.guid }}" 
+                placeholder="Make a new comment..." required/>
           </div>
           <div class="form-group">
-            <input type="submit" value="Comment"/>
+            <input id="{{ post.guid }}" type="button" 
+                class="makeComment" value="Comment"/>
           </div>
         </form>
 	{% endif %}
