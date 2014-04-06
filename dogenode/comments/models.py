@@ -1,6 +1,8 @@
 from django.db import models
 from author.models import Author
 from post.models import Post
+from datetime import *
+from dateutil.tz import *
 
 import uuid
 
@@ -24,7 +26,10 @@ class Comment(models.Model):
             "guid": self.guid,
             "author": self.author.as_dict(),
             "comment": self.comment,
-            "pub_date": self.pub_date
+            "pub_date": self.__datetimeToJSONString(self.pub_date)
         }
 
-        
+    def __datetimeToJSONString(self, dt):
+        mstDatetime = dt.astimezone(gettz("MST"))
+        ctime = mstDatetime.ctime()
+        return ctime[:-4] + "MST " + ctime[-4:] # So dirty

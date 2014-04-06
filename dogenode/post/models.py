@@ -1,7 +1,6 @@
 from django.db import models
 from author.models import Author
 from categories.models import Category
-
 from datetime import *
 from dateutil.tz import *
 
