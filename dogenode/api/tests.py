@@ -2,6 +2,8 @@ from django.test import TestCase
 
 from django.contrib.auth.models import User
 
+from rest_framework import status
+
 from author.models import (Author, RemoteAuthor,
                            LocalRelationship, RemoteRelationship)
 from post.models import Post, PostVisibilityException, AuthorPost
@@ -75,6 +77,11 @@ class RESTfulTestCase(TestCase):
                             host="http://127.0.0.1:8001/",
                             url="http://127.0.0.1:8001/author/remoteAuthor2")
 
+        remoteAuthor3, _ = RemoteAuthor.objects.get_or_create(
+                            displayName="remoteAuthor3",
+                            host="http://127.0.0.1:8001/",
+                            url="http://127.0.0.1:8001/author/remoteAuthor3")
+
         # author1 follows author2
         LocalRelationship.objects.get_or_create(author1=author1,
                                            author2=author2,
@@ -108,6 +115,10 @@ class RESTfulTestCase(TestCase):
                                            remoteAuthor=remoteAuthor2,
                                            relationship=1)
 
+        # author2 is friends with remoteAuthor3
+        RemoteRelationship.objects.get_or_create(localAuthor=author2,
+                                           remoteAuthor=remoteAuthor3,
+                                           relationship=2)
         # creating some posts for authors
         post1 = Post.objects.create(guid=uuid.uuid4(),
                                     content="content1",
@@ -493,10 +504,8 @@ class RESTfulTestCase(TestCase):
         making the request. 
         Sends a GET request to 
             service/author/{AUTHOR_ID}/posts?id={VIEWING_AUTHOR_ID}
-        Author2 made multiple posts, but only one of them is public. Since 
-        Author2 and Author1 are not friends, only one post should be returned,
-        Author2's public post.
         """
+        # Requesting & Requested author exists, Requested author has posts
         user = User.objects.get(username="utestuser1")
         author = Author.objects.get(user=user)
 
@@ -508,11 +517,50 @@ class RESTfulTestCase(TestCase):
                                         (author2.guid, query), 
                                     HTTP_ACCEPT = 'application/json')
 
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
         posts = json.loads(response.content, object_hook=_decode_dict)
         self.assertEqual(len(posts['posts']), 1)
         self.assertEqual(posts["posts"][0]["title"], "title6")
         self.assertEqual(posts["posts"][0]["author"]["id"], author2.guid)
+
+        # Requesting & Requested author exists but Requested author has no posts
+        # Tests using POST instead of GET
+        user6 = User.objects.get(username="utestuser6")
+        author6 = Author.objects.get(user=user6)
+        response2 = self.client.post('/api/author/%s/posts?%s' % 
+                                        (author6.guid, query), 
+                                    HTTP_ACCEPT = 'application/json')
+        self.assertEqual(response2.status_code, status.HTTP_200_OK)
+        posts2 = json.loads(response2.content, object_hook=_decode_dict)
+        self.assertEqual(len(posts2['posts']), 0)
+
+        # Getting posts from an author that does not exist
+        randomAuthorId = uuid.uuid4()
+        response3 = self.client.get('/api/author/%s/posts?%s' % 
+                                        (randomAuthorId, query), 
+                                    HTTP_ACCEPT = 'application/json')
+        self.assertEqual(response3.status_code, status.HTTP_404_NOT_FOUND)
+
+        # Requesting Author provides an author id that does not exist
+        # to get an Exisiting Author's posts. Gives them the Public Posts
+        # of the exisiting author
+        randomAuthorId = uuid.uuid4()
+        query4 = urllib.urlencode({"id":randomAuthorId})
+        response4 = self.client.get('/api/author/%s/posts?%s' % 
+                                        (author2.guid, query4), 
+                                    HTTP_ACCEPT = 'application/json')
+
+        self.assertEqual(response4.status_code, status.HTTP_200_OK)
+        posts4 = json.loads(response4.content, object_hook=_decode_dict)
+        self.assertEqual(len(posts4['posts']), 1)
+        self.assertEqual(posts4["posts"][0]["visibility"], Post.PUBLIC)
+
+        # Use wrong method
+        response5 = self.client.put('/api/author/%s/posts?%s' % 
+                                        (author2.guid, query4), 
+                                    HTTP_ACCEPT = 'application/json')
+        self.assertEqual(response5.status_code, 
+                        status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def testGetPublicPosts(self):
         """
@@ -540,6 +588,17 @@ class RESTfulTestCase(TestCase):
         user = User.objects.get(username="utestuser1")
         author = Author.objects.get(user=user)
 
+        # Make a PUBLIC post for author5 that Author1 shouldn't be able to see
+        # because Author1 is not following Author5
+        user5 = User.objects.get(username="utestuser5")
+        author5 = Author.objects.get(user=user5)
+
+        post10 = Post.objects.create(guid=uuid.uuid4(),
+                                    content="content10",
+                                    title="title10",
+                                    visibility=Post.PUBLIC)
+        AuthorPost.objects.create(post=post10, author=author5)
+
         query = urllib.urlencode({"id":author.guid})
         response = self.client.get('/api/author/posts?%s' % query, 
                                     HTTP_ACCEPT = 'application/json')
@@ -549,6 +608,8 @@ class RESTfulTestCase(TestCase):
 
         posts = json.loads(response.content, object_hook=_decode_dict)
         self.assertEqual(len(posts['posts']), 4)
+
+        post10.delete()
 
     def testGetPost(self):
         """
@@ -664,16 +725,9 @@ class RESTfulTestCase(TestCase):
         Get a serveronly post (post 8)
         """
         user2 = User.objects.get(username="utestuser2")
-        author2, _ = Author.objects.get_or_create(user=user2)
-        remoteAuthor3, _ = RemoteAuthor.objects.get_or_create(
-                            displayName="remoteAuthor3",
-                            host="http://127.0.0.1:8001/",
-                            url="http://127.0.0.1:8001/author/remoteAuthor3")
-
-        # author2 is friends with remoteAuthor3
-        RemoteRelationship.objects.get_or_create(localAuthor=author2,
-                                           remoteAuthor=remoteAuthor3,
-                                           relationship=2)
+        author2 = Author.objects.get(user=user2)
+        remoteAuthor3 = RemoteAuthor.objects.get(
+                            displayName="remoteAuthor3")
 
         query = urllib.urlencode({"id":remoteAuthor3.guid})
         titles = ["title1", "title4", "title7", "title8"]
@@ -699,10 +753,22 @@ class RESTfulTestCase(TestCase):
         for i in [2, 3]:
             self.assertEqual(responses[i].status_code, 403)
 
+        # New Remote Author tries to get a Public Post (post1)
+        query2 = urllib.urlencode({"id":str(uuid.uuid4())})
+        response2 = self.client.get('/api/post/%s?%s' % (postIds[0], query2), 
+                                HTTP_ACCEPT = 'application/json')
+
+        self.assertEqual(response2.status_code, 200)
+        resp2 = json.loads(response2.content, object_hook=_decode_dict)["posts"]
+        self.assertEquals(resp2[0]["title"], titles[0])
+
     def testRemoteAuthorGetAllVisiblePosts(self):
         """
         RemoteAuthor3 wants to get all the posts on our node that they can 
-        view.
+        view at
+            /api/author/posts?id={remoteauthorid}
+        Bring friends with only Author2, should only be able to get their
+        friends, FOAF and Public post.
         """
         user2 = User.objects.get(username="utestuser2")
         author2, _ = Author.objects.get_or_create(user=user2)
@@ -710,11 +776,6 @@ class RESTfulTestCase(TestCase):
                             displayName="remoteAuthor3",
                             host="http://127.0.0.1:8001/",
                             url="http://127.0.0.1:8001/author/remoteAuthor3")
-
-        # author2 is friends with remoteAuthor3
-        RemoteRelationship.objects.get_or_create(localAuthor=author2,
-                                           remoteAuthor=remoteAuthor3,
-                                           relationship=2)
 
         query = urllib.urlencode({"id":remoteAuthor3.guid})
         response = self.client.get('/api/author/posts?%s' % query, 
@@ -724,9 +785,23 @@ class RESTfulTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         posts = json.loads(response.content, object_hook=_decode_dict)
 
-        # Two public posts, one friend and one friend of a friend
-        self.assertEqual(len(posts['posts']), 4)
+        # One public posts, one friend and one friend of a friend
+        self.assertEqual(len(posts['posts']), 3)
 
+        # RemoteAuthor2, who follows Author2 should get
+        # their public post. Not Friends, FOAF or Private
+        remoteAuthor2, _ = RemoteAuthor.objects.get_or_create(
+                            displayName="remoteAuthor2")
+
+        query2 = urllib.urlencode({"id":remoteAuthor2.guid})
+        response2 = self.client.get('/api/author/posts?%s' % query2, 
+                                    HTTP_ACCEPT = 'application/json')
+
+        # Response code check
+        self.assertEqual(response2.status_code, 200)
+        posts2 = json.loads(response2.content, object_hook=_decode_dict)
+
+        self.assertEqual(len(posts2['posts']), 1)
 
     def testRemoteAuthorGetAllLocalAuthorPosts(self):
         """
@@ -745,11 +820,6 @@ class RESTfulTestCase(TestCase):
                             host="http://127.0.0.1:8001/",
                             url="http://127.0.0.1:8001/author/remoteAuthor3")
 
-        # author2 is friends with remoteAuthor3
-        RemoteRelationship.objects.get_or_create(localAuthor=author2,
-                                           remoteAuthor=remoteAuthor3,
-                                           relationship=2)
-
         query = urllib.urlencode({"id":remoteAuthor3.guid})
         response = self.client.get('/api/author/%s/posts?%s' % 
                                         (author2.guid, query), 
@@ -757,6 +827,7 @@ class RESTfulTestCase(TestCase):
 
         self.assertEqual(response.status_code, 200)
         posts = json.loads(response.content, object_hook=_decode_dict)
+
         # Friend, Public, FOAF of Author2
         self.assertEqual(len(posts['posts']), 3)
 
