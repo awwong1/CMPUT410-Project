@@ -17,7 +17,7 @@ from post.models import Post, PostVisibilityException, AuthorPost, PostCategory
 from categories.models import Category
 from comments.models import Comment
 from images.models import Image, ImagePost, ImageVisibilityException
-from api.views import postFriendRequest, SERVER_URLS
+from api.views import postFriendRequest
 from api.models import AllowedServer
 
 from rest_framework import status
@@ -296,11 +296,13 @@ def stream(request):
 
         externalPosts = []
         # Get the other server posts:
-        for server in SERVER_URLS:
+        servers = AllowedServer.objects.all()
+
+        for server in servers:
             try:
                 author = Author.objects.get(user=request.user)
                 response = requests.get("{0}api/author/posts?id={1}".format(
-                        server, author.guid))
+                        server.host, author.guid))
                 response.raise_for_status()
                 jsonAllPosts = response.json()['posts']
                 # turn into a dummy post
@@ -447,10 +449,13 @@ def searchOtherServers(searchString):
     authorsFound = []
 
     # BenHoboCo
-    for server in SERVER_URLS:
+    servers = AllowedServer.objects.all()
+
+    for server in servers:
 
         try:
-            response = requests.get("%s/api/authors" % server)
+            #response = requests.get("%s/api/authors" % server.host)
+            response = requests.get("%sapi/search" % server.host)
             response.raise_for_status() # Exception on 4XX/5XX response
 
             jsonAllAuthors = response.json()
@@ -516,25 +521,28 @@ def search(request):
             r = RemoteRelationship.objects.filter(localAuthor=author,
                                                   remoteAuthor=remoteAuthor)
 
+            authorDisplayName = "%s@%s" % (a["displayname"], a["host"])
+
             # These 2 authors have a relationship
             if len(r) > 0:
 
                 if r[0].relationship == 0: # user follow the author
-                    usersAndStatus.append([a["displayname"],
+                    usersAndStatus.append([authorDisplayName,
                                            "Following",
                                            a["id"]])
 
                 elif r[0].relationship == 1: # the author follows the user
                     if r[0].localAuthor == author:
-                        usersAndStatus.append([a["displayname"],
+                        usersAndStatus.append([authorDisplayName,
                                                "Follower",
                                                a["id"]])
                 else: # relationship value should be 2: they are friends
-                    usersAndStatus.append([a["displayname"],
+                    usersAndStatus.append([authorDisplayName,
                                            "Friend",
                                            a["id"]])
+            # These 2 authors have no relationship
             else:
-                usersAndStatus.append([a["displayname"],
+                usersAndStatus.append([authorDisplayName,
                                       "No Relationship",
                                       a["id"]])
 
@@ -617,6 +625,7 @@ def updateRelationship(request, guid):
 
             if currentRelationship == "Friend":
                 # Unfriend
+                postFriendRequest(requestAuthor, remoteAuthor, False)
                 relationship, _ = RemoteRelationship.objects.get_or_create(
                                         localAuthor=requestAuthor,
                                         remoteAuthor=remoteAuthor)
@@ -626,6 +635,7 @@ def updateRelationship(request, guid):
 
             elif currentRelationship == "Following":
                 # Unfollow
+                postFriendRequest(requestAuthor, remoteAuthor, False)
                 relationship, _ = RemoteRelationship.objects.get_or_create(
                                         localAuthor=requestAuthor,
                                         remoteAuthor=remoteAuthor)
