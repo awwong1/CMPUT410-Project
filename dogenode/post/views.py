@@ -22,7 +22,7 @@ import base64
 
 OUR_HOST = "http://127.0.0.1:8000/"
 
-def getJSONPost(viewer_id, post_id, host): 
+def getJSONPost(viewer_id, post_id, host, check_follow=False): 
     """
     Returns a post. The currently authenticated
     user must also have permissions to view the post, else it will not be
@@ -42,28 +42,40 @@ def getJSONPost(viewer_id, post_id, host):
 
     postAuthor = AuthorPost.objects.get(post=post).author
     components = getPostComponents(post)
-
-    if post.visibility == Post.PUBLIC:
-        return (True, post)
+    viewerGuid = viewer_id[0]
 
     # dealing with local authors
-    if len(Author.objects.filter(guid=viewer_id[0])) > 0:
-        return (post.isAllowedToViewPost(Author.objects.get(guid=viewer_id[0])),
+    if len(Author.objects.filter(guid=viewerGuid)) > 0:
+        return (post.isAllowedToViewPost(
+                    Author.objects.get(guid=viewerGuid), check_follow),
                 post)
 
     # dealing with remote authors
-    viewer = RemoteAuthor.objects.get_or_create(guid=viewer_id, host=host)[0]
-    viewerGuid = viewer_id[0]
+    viewers = RemoteAuthor.objects.filter(guid=viewerGuid)
+    if (len(viewers) > 0):
+        viewer = viewers[0]
+    else:
+        viewer = RemoteAuthor.objects.create(guid=viewerGuid, host=host)
+
     viewable = False
     authorFriends = postAuthor.getFriends()
+    authorFollowedBy = postAuthor.getPendingReceivedRequests()
 
-    if post.visibility == Post.SERVERONLY:
+    # Only want to get public posts of people you follow or are friends with
+    if post.visibility == Post.PUBLIC:
+        if not check_follow:
+            return (True, post)
+        elif (viewer in authorFriends["remote"] or
+              viewer in authorFollowedBy["remote"]):
+            return (True, post)
+        else:
+            return (False, post)
+
+    elif post.visibility == Post.SERVERONLY:
         viewable = False
     elif post.visibility == Post.FRIENDS or post.visibility == Post.FOAF:
-        for friend in postAuthor.getFriends()["remote"]:
-            if friend.guid == viewerGuid: 
-                viewable = True
-                break
+        if viewer in authorFriends["remote"]: 
+            viewable = True
     elif post.visibility == Post.FOAF:
         allFriends = authorFriends["remote"] + authorFriends["local"]
         for friend in authorFriends["local"]:
