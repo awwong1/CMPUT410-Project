@@ -105,3 +105,6 @@ MEDIA_ROOT = os.path.abspath(os.path.join(BASE_DIR, 'media'))
 MEDIA_URL = '/images/'
 
 LOGIN_URL = '/login/'
+
+#TODO: find a way to get this value automatically
+OUR_HOST = 'http://127.0.0.1:8000/'

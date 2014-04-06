@@ -1,4 +1,5 @@
 from django.test import TestCase
+from django.conf import settings
 
 from django.contrib.auth.models import User
 
@@ -8,7 +9,6 @@ from author.models import (Author, RemoteAuthor,
                            LocalRelationship, RemoteRelationship)
 from post.models import Post, PostVisibilityException, AuthorPost
 
-from api.views import OURHOST
 
 import urllib
 import json, uuid
@@ -183,8 +183,9 @@ class RESTfulTestCase(TestCase):
 
         self.assertEqual(json.loads(response1.content,
                                     object_hook=_decode_dict),
-            [{"url": "%sauthor/profile/%s" % (OURHOST, str(author5.guid)),
-              "host": OURHOST,
+            [{"url": "%sauthor/profile/%s" % (settings.OUR_HOST,
+                                              str(author5.guid)),
+              "host": settings.OUR_HOST,
               "displayname": user5.username,
               "id": author5.guid}])
 
@@ -263,13 +264,13 @@ class RESTfulTestCase(TestCase):
                 "query":"friendrequest",
                 "author":{
                     "id": author5.guid,
-                    "host": OURHOST,
+                    "host": settings.OUR_HOST,
                     "displayname":"utestuser1"
                 },
                 "friend":{
                     "author":{
                         "id": author6.guid,
-                        "host": OURHOST,
+                        "host": settings.OUR_HOST,
                         "displayname":"utestuser2",
                         "url":"http://127.0.0.1:5454/author/utestuser2"
                     }
@@ -371,7 +372,7 @@ class RESTfulTestCase(TestCase):
         # utestuser6 sends a friend request to remoteUser1
 
         friendRequestData["author"]["id"] = author6.guid
-        friendRequestData["author"]["host"] = OURHOST
+        friendRequestData["author"]["host"] = settings.OUR_HOST
 
         remoteUser1["url"] = "%sauthor/%s" % (remoteUser1["host"],
                                               remoteUser1["id"])
