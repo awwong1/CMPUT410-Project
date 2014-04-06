@@ -31,9 +31,9 @@ def buildFullPost(rawposts):
 
 def buildFullPostContent(post):
     """
-    Bullds up one post dictionary from the Post Object for the post content 
-    for the full response. Adds in the author, comments, categories 
-    and visibility exceptions. Based on example-article.json 
+    Bullds up one post dictionary from the Post Object for the post content
+    for the full response. Adds in the author, comments, categories
+    and visibility exceptions. Based on example-article.json
     """
     # Post object
     postContent = post.as_dict()
@@ -66,3 +66,26 @@ def buildFullPostContent(post):
 
     return postContent
 
+def getPostComponents(post):
+    """
+    Gets all componenets of a post, including images, comments, categories,
+    and visibility exceptions.
+
+    Returns a dictionary containing all the information.
+    """
+    components = {}
+    categoryIds = PostCategory.objects.filter(
+                    post=post).values_list('category', flat=True)
+    postExceptions = PostVisibilityException.objects.filter(post=post)
+    authorIds = [exception.author.guid for exception in postExceptions]
+    imageIds = ImagePost.objects.filter(post=post).values_list(
+                    'image', flat=True)
+
+    components["postAuthor"] = AuthorPost.objects.get(post=post).author
+    components["comments"] = Comment.objects.filter(post_ref=post)
+    components["visibilityExceptions"] = Author.objects.filter(
+        guid__in=authorIds)
+    components["categories"] = Category.objects.filter(id__in=categoryIds)
+    components["images"] = Image.objects.filter(id__in=imageIds)
+
+    return components
