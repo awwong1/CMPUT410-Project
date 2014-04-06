@@ -330,6 +330,13 @@ def __rawPostViewConverter(rawpost):
     """
     Attempt to kludge a raw post into a django template post viewable
     I'm so very sorry
+   
+    the worst method of checking 'states', let's just go back to first year
+    programming and use an integer
+    0 = dogenode
+    1 = benhobo
+    2 = plkr
+    anything else = bust
     """
     postData = {'external':True}
     authData = {}
@@ -338,54 +345,77 @@ def __rawPostViewConverter(rawpost):
     visibilityExceptionsData = {}
     imagesData = {}
     
-    try:
-        #dogenode test external posts settings
-        postData['HTML']=rawpost['HTML']
-        postData['MARKDOWN']=rawpost['MARKDOWN']
-        postData['PLAIN']=rawpost['PLAIN']
-        
-        postData['guid']=rawpost['guid']
-        postData['title']=rawpost['title']
-        postData['description']=rawpost['description']
-        postData['content']=rawpost['content']
-        postData['visibility']=rawpost['visibility']
-        postData['contentType']=rawpost['content-type']
-        postData['origin']=rawpost['origin']
-        postData['pubDate']=rawpost['pubDate']
-        postData['modifiedDate']=rawpost['modifiedDate']
-    except:
-        pass
+    # parse out external posts stuff
+    postState = 0
     
-    try:
-        # dogenode test external author settings
-        authData['displayname']=rawpost['author']['displayname']
-        authData['url']=rawpost['author']['url']
-        authData['host']=rawpost['author']['host']
-        authData['id']=rawpost['author']['id']
-    except:
-        pass
-    
-    try:
-        # dogenode test external comments settings
-        for rawComment in rawpost['comments']:
-            # get nested author
-            rawauth = {}
-            rawauth['displayname'] = rawComment['author']['displayname']
-            rawauth['url'] = rawComment['author']['url']
-            rawauth['host'] = rawComment['author']['host']
-            rawauth['id'] = rawComment['author']['id']
-            # attach with rest of the comment
-            adaptcomment = {}
-            adaptcomment['author']=rawauth
-            adaptcomment['comment']=rawComment['comment']
-            adaptcomment['guid']=rawComment['guid']
-            adaptcomment['pub_date']=rawComment['pub_date']
-            commentsData.append(adaptcomment)
+    if postState == 0:
+        try:
+            #dogenode test external posts settings
+            postData['HTML']=rawpost['HTML']
+            postData['MARKDOWN']=rawpost['MARKDOWN']
+            postData['PLAIN']=rawpost['PLAIN']
+            postData['guid']=rawpost['guid']
+            postData['title']=rawpost['title']
+            postData['description']=rawpost['description']
+            postData['content']=rawpost['content']
+            postData['visibility']=rawpost['visibility']
+            postData['contentType']=rawpost['content-type']
+            postData['origin']=rawpost['origin']
+            postData['pubDate']=rawpost['pubDate']
+            postData['modifiedDate']=rawpost['modifiedDate']
+
+            # dogenode test external author settings
+            authData['displayname']=rawpost['author']['displayname']
+            authData['url']=rawpost['author']['url']
+            authData['host']=rawpost['author']['host']
+            authData['id']=rawpost['author']['id']
             
-    except:
-        pass
-    unifiedpost = (postData, authData, commentsData, categoriesData, 
+            # dogenode test external comments settings
+            for rawComment in rawpost['comments']:
+                # get nested author
+                rawauth = {}
+                rawauth['displayname'] = rawComment['author']['displayname']
+                rawauth['url'] = rawComment['author']['url']
+                rawauth['host'] = rawComment['author']['host']
+                rawauth['id'] = rawComment['author']['id']
+                # attach with rest of the comment
+                adaptcomment = {}
+                adaptcomment['author']=rawauth
+                adaptcomment['comment']=rawComment['comment']
+                adaptcomment['guid']=rawComment['guid']
+                adaptcomment['pub_date']=rawComment['pub_date']
+                commentsData.append(adaptcomment)
+            
+            #print ("doge: succeded parsing post")
+        except Exception as e:
+            print ("doge: failed to parse post,\n{0}".format(e))
+            # postState = 1 # when rest is implemented
+            postState = -1
+        
+    if (postState == 1):
+        #benhobo test external posts settings
+        try:
+            pass #todo
+            #print ("benhobo: succeded parsing post")
+        except Exception as e:
+            print ("benhobo: failed to parse post,\n{0}".format(e))
+            postState = 2
+
+    if (postState == 2):
+        #plkr test external posts settings
+        try:
+            pass #todo
+            #print ("plkr: succeded parsing post")
+        except Exception as e:
+            print( "plkr: failed to parse post,\n{0}".format(e))
+            postState == -1
+    
+    if postState >= 0:
+        unifiedpost = (postData, authData, commentsData, categoriesData, 
                    visibilityExceptionsData, imagesData)
+    else:
+        print("Something didn't parse properly at all!\n\n")
+        unifiedpost = None
     return unifiedpost
 
 def friends(request):
