@@ -169,6 +169,7 @@ def getFriendsFromList(request, guid):
                         content_type="application/json")
 
 #TODO: lots of repeated code, I'll need to refactor this later
+@csrf_exempt
 def sendFriendRequest(request):
 
     response = {"status":"failure", "message":"Internal failure"}

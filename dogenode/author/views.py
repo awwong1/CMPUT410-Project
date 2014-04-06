@@ -527,11 +527,11 @@ def search(request):
 
             #TODO: make sure the url is absolute (includes remote hostname)
 
-            remoteAuthor, _ = RemoteAuthor.objects.get_or_create(
-                                    guid=a["id"],
-                                    displayName=a["displayname"],
-                                    host=a["host"],
-                                    url=a["url"])
+            remoteAuthor, _ = RemoteAuthor.objects.get_or_create(guid=a["id"])
+
+            remoteAuthor.update(displayName=a["displayname"],
+                                host=a["host"],
+                                url=a["url"])
 
             r = RemoteRelationship.objects.filter(localAuthor=author,
                                                   remoteAuthor=remoteAuthor)
