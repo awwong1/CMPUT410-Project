@@ -502,19 +502,23 @@ def search(request):
                     (Q(author1=author) & Q(author2=a))
                    |(Q(author2=author) & Q(author1=a)))
 
+            userStatus = {"displayname": u.username,
+                          "relationship": "No Relationship",
+                          "guid": a.guid,
+                          "host": settings.OUR_HOST}
+
             # These 2 authors have a relationship
             if len(r) > 0:
 
                 if (r[0].relationship): # They are friends
-                    usersAndStatus.append([u.username, "Friend", a.guid])
-
+                    userStatus["relationship"] = "Friend"
                 else:
                     if r[0].author1 == author:
-                        usersAndStatus.append([u.username, "Following", a.guid])
+                        userStatus["relationship"] = "Following"
                     else:
-                        usersAndStatus.append([u.username, "Follower", a.guid])
-            else:
-                usersAndStatus.append([u.username, "No Relationship", a.guid])
+                        userStatus["relationship"] = "Follower"
+
+            usersAndStatus.append(userStatus)
 
         authorsOtherServers = searchOtherServers(username)
 
@@ -534,28 +538,24 @@ def search(request):
 
             authorDisplayName = "%s@%s" % (a["displayname"], a["host"])
 
+            userStatus = {"displayname": authorDisplayName,
+                          "relationship": "No Relationship",
+                          "guid": a["id"],
+                          "host": a["host"]}
+
             # These 2 authors have a relationship
             if len(r) > 0:
 
                 if r[0].relationship == 0: # user follow the author
-                    usersAndStatus.append([authorDisplayName,
-                                           "Following",
-                                           a["id"]])
+                    userStatus["relationship"] = "Following"
 
                 elif r[0].relationship == 1: # the author follows the user
-                    if r[0].localAuthor == author:
-                        usersAndStatus.append([authorDisplayName,
-                                               "Follower",
-                                               a["id"]])
+                    userStatus["relationship"] = "Follower"
+
                 else: # relationship value should be 2: they are friends
-                    usersAndStatus.append([authorDisplayName,
-                                           "Friend",
-                                           a["id"]])
-            # These 2 authors have no relationship
-            else:
-                usersAndStatus.append([authorDisplayName,
-                                      "No Relationship",
-                                      a["id"]])
+                    userStatus["relationship"] = "Friend"
+
+            usersAndStatus.append(userStatus)
 
         context = RequestContext(request, {'searchphrase': username,
                                            'results': usersAndStatus,
