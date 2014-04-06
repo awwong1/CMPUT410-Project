@@ -1,8 +1,10 @@
+from django.conf import settings
 from django.db import models
 from author.models import Author
 from categories.models import Category
 from datetime import *
 from dateutil.tz import *
+from urlparse import urljoin
 
 import uuid
 
@@ -66,6 +68,7 @@ class Post(models.Model):
             'origin' : self.origin,
             'pubDate' : self.__datetimeToJSONString(self.pubDate),
             'modifiedDate' : self.__datetimeToJSONString(self.modifiedDate),
+            'source' : urljoin(settings.OUR_HOST, self.get_absolute_url()),
             'HTML' : self.HTML,
             'PLAIN' : self.PLAIN,
             'MARKDOWN' : self.MARKDOWN

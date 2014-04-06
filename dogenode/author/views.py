@@ -129,9 +129,9 @@ def profile(request, author_id):
 def getRemoteAuthorProfile(context, author_id):
     """
     Gets remote author info from another host to display on our site.
-    If there was a connection problem or author doesn't exist, error 
+    If there was a connection problem or author doesn't exist, error
     message will be displayded (doge_error.html).
-    
+
     TODO XXX: Going to an author's profile should be an ajax request,
               then we can send host with request instead of searching
               through all allowed servers for the author. Also, need
@@ -152,7 +152,7 @@ def getRemoteAuthorProfile(context, author_id):
             context['url'] = data["url"]
             context['userIsAuthor'] = False
             return True
-    return False 
+    return False
 
 def editProfile(request):
     """
@@ -310,7 +310,7 @@ def stream(request):
                     externalPosts.append(jsonPost)
             except Exception as e:
                 print ("failed to get posts from there,\n{0}".format(e))
-        
+
         for externalPost in externalPosts:
             serverPosts.append(__rawPostViewConverter(externalPost))
 
@@ -331,7 +331,7 @@ def __rawPostViewConverter(rawpost):
     """
     Attempt to kludge a raw post into a django template post viewable
     I'm so very sorry
-   
+
     the worst method of checking 'states', let's just go back to first year
     programming and use an integer
     0 = dogenode
@@ -345,10 +345,10 @@ def __rawPostViewConverter(rawpost):
     categoriesData = {}
     visibilityExceptionsData = {}
     imagesData = {}
-    
+
     # parse out external posts stuff
     postState = 0
-    
+
     if postState == 0:
         try:
             #dogenode test external posts settings
@@ -362,6 +362,7 @@ def __rawPostViewConverter(rawpost):
             postData['visibility']=rawpost['visibility']
             postData['contentType']=rawpost['content-type']
             postData['origin']=rawpost['origin']
+            postData['source']=rawpost['source']
             postData['pubDate']=rawpost['pubDate']
             postData['modifiedDate']=rawpost['modifiedDate']
 
@@ -370,7 +371,7 @@ def __rawPostViewConverter(rawpost):
             authData['url']=rawpost['author']['url']
             authData['host']=rawpost['author']['host']
             authData['id']=rawpost['author']['id']
-            
+
             # dogenode test external comments settings
             for rawComment in rawpost['comments']:
                 # get nested author
@@ -386,13 +387,13 @@ def __rawPostViewConverter(rawpost):
                 adaptcomment['guid']=rawComment['guid']
                 adaptcomment['pub_date']=rawComment['pub_date']
                 commentsData.append(adaptcomment)
-            
+
             #print ("doge: succeded parsing post")
         except Exception as e:
             print ("doge: failed to parse post,\n{0}".format(e))
             # postState = 1 # when rest is implemented
             postState = -1
-        
+
     if (postState == 1):
         #benhobo test external posts settings
         try:
@@ -410,9 +411,9 @@ def __rawPostViewConverter(rawpost):
         except Exception as e:
             print( "plkr: failed to parse post,\n{0}".format(e))
             postState == -1
-    
+
     if postState >= 0:
-        unifiedpost = (postData, authData, commentsData, categoriesData, 
+        unifiedpost = (postData, authData, commentsData, categoriesData,
                    visibilityExceptionsData, imagesData)
     else:
         print("Something didn't parse properly at all!\n\n")

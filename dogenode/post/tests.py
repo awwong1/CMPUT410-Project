@@ -174,7 +174,7 @@ class PostTestCase(TestCase):
         request to /posts/
         """
         self.client.login(username="utestuser1", password="testpassword")
-        response = self.client.get('/posts/')
+        response = self.client.get('/posts/', HTTP_ACCEPT='text/html')
 
         # Two posts should be public: post1, and post2
         self.assertEqual(response.status_code, 200)
