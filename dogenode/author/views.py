@@ -395,7 +395,7 @@ def __rawPostViewConverter(rawpost):
                 adaptcomment['author']=rawauth
                 adaptcomment['comment']=rawComment['comment']
                 adaptcomment['guid']=rawComment['guid']
-                adaptcomment['pub_date']=rawComment['pub_date']
+                adaptcomment['pubDate']=rawComment['pubDate']
                 commentsData.append(adaptcomment)
 
             #print ("doge: succeded parsing post")
