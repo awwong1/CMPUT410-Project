@@ -59,10 +59,21 @@
       <div class="panel-footer">
         <div class="row">
           <div class="col-sm-4">
-            by <a href="{% url 'author.views.profile' author.guid %}">
-                <strong>{{ author.user.username }}</strong>
-              </a>
-            on {{ post.pubDate }}
+            by 
+	    {% if post.external %}
+	    External User: <a href="{{ author.url }}">
+	      <strong>
+		{{ author.displayname }}
+	      </strong>
+	    </a>
+	    {% else %}
+	    <a href="{% url 'author.views.profile' author.guid %}">
+              <strong>
+		{{ author.user.username }}
+	      </strong>
+            </a>
+	    {% endif %}
+	    on {{ post.pubDate }}
           </div>
           <div class="col-sm-8 text-right">
             <a href="{{ post.origin }}" class="text-muted">
@@ -75,16 +86,26 @@
         <tbody>
           {% for comment in comments %}
           <tr>
-            <td><small>
-              <a href="{% url 'author.views.profile' comment.author.guid %}">
-                <strong>{{comment.author.user.username}}</strong>
-              </a> on {{comment.pub_date}}:</small> {{comment.comment}}
+            <td>
+	      <small>
+		{% if post.external %}
+		<a href="{{ comment.author.url }}">
+		  External User: <strong>{{comment.author.displayname}}</strong>
+		</a> on {{comment.pub_date}}:
+		{% else %}
+		<a href="{% url 'author.views.profile' comment.author.guid %}">
+                  <strong>{{comment.author.user.username}}</strong>
+		</a>{% endif %}
+		on {{comment.pub_date}}:</small> {{comment.comment}}
             </td>
           </tr>
           {% endfor %}
         </tbody>
       </table>
       <div class="panel-footer">
+        {% if post.external %}
+	<p class="text-muted">Comment posting is disabled for external stream data!</p>
+	{% else %}
         <form id="{{ post.guid }}" role="form"> 
           <div class="form-group">
             <input type="text" class="form-control {{post.guid }}" 
@@ -95,6 +116,7 @@
                 class="makeComment" value="Comment"/>
           </div>
         </form>
+	{% endif %}
       </div>
     </div>
   </div>

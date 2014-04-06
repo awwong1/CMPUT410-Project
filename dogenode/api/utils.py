@@ -49,7 +49,7 @@ def buildFullPostContent(post):
     # Categories
     categoryIds = PostCategory.objects.filter(post=post).values_list(
         'category', flat=True)
-    postContent["categories"] = list(Category.objects.filter(id__in=categoryIds))
+    postContent["categories"] = [c.name for c in Category.objects.filter(id__in=categoryIds)]
 
     # Visibility exceptions: a list of author dictionaries
     postExceptions = PostVisibilityException.objects.filter(post=post)

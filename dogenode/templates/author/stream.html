@@ -147,6 +147,7 @@
                     +    '</strong>'
                     +  '</a> on ' + comments[comment]["pubDate"] + '</small>'
                     + ': ' + comments[comment]["comment"] + '</td></tr>';
+                    + '</td></tr>';
             }
 
            // add new post to stream
@@ -280,10 +281,7 @@
                 }
             });
             return false;
-
         };
-
-
     </script>
 
 <input type="hidden" id="author_guid" value="{{ author_id }}"/>
