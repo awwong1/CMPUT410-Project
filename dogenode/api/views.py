@@ -3,6 +3,7 @@ from django.http import HttpResponse
 from django.db.models import Q
 from django.contrib.auth.models import User
 from django.views.decorators.csrf import csrf_exempt
+from django.conf import settings
 
 from rest_framework import status
 from rest_framework.decorators import api_view
@@ -28,9 +29,6 @@ SERVER_URLS = ['http://127.0.0.1:8001/', #BenHoboCo
                #'http://cs410.cs.ualberta.ca:41051/', #Team5, PLKR
                ]
 
-#TODO: find a way to get this value automatically
-OURHOST = "http://127.0.0.1:8000/"
-
 #TODO: not sure where best to put this POST request (authors/views uses it too)
 def postFriendRequest(localAuthor, remoteAuthor):
 
@@ -39,7 +37,7 @@ def postFriendRequest(localAuthor, remoteAuthor):
                     "query":"friendrequest",
                     "author":{
                         "id":localAuthor.guid,
-                        "host":OURHOST,
+                        "host":settings.OUR_HOST,
                         "displayname":localAuthor.user.username
                     },
                     "friend":{
@@ -82,8 +80,9 @@ def search(request):
     for u in users:
         a = Author.objects.get(user=u)
 
-        authors.append({"url": "%sauthor/profile/%s" % (OURHOST, a.guid),
-                        "host": OURHOST,
+        authors.append({"url": "%sauthor/profile/%s" % (settings.OUR_HOST,
+                                                        a.guid),
+                        "host": settings.OUR_HOST,
                         "displayname": a.user.username,
                         "id": a.guid})
 
@@ -183,10 +182,10 @@ def sendFriendRequest(request):
         author1 = []
         author2 = []
 
-        if jsonData["author"]["host"] == OURHOST:
+        if jsonData["author"]["host"] == settings.OUR_HOST:
             author1 = Author.objects.filter(guid=guid1)
 
-        if jsonData["friend"]["author"]["host"] == OURHOST:
+        if jsonData["friend"]["author"]["host"] == settings.OUR_HOST:
             author2 = Author.objects.filter(guid=guid2)
 
         # Both authors are local
