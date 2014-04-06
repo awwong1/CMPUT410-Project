@@ -362,9 +362,9 @@ def __rawPostViewConverter(rawpost):
     if postState == 0:
         try:
             #dogenode test external posts settings
-            postData['HTML']=rawpost['HTML']
-            postData['MARKDOWN']=rawpost['MARKDOWN']
-            postData['PLAIN']=rawpost['PLAIN']
+            postData['HTML']="text/html"
+            postData['MARKDOWN']="text/x-markdown"
+            postData['PLAIN']="text/plain"
             postData['guid']=rawpost['guid']
             postData['title']=rawpost['title']
             postData['description']=rawpost['description']
