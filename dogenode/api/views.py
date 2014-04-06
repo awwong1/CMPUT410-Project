@@ -23,8 +23,10 @@ import requests
 import urlparse
 
 # List of other servers we are communicating with
-SERVER_URLS = ['http://127.0.0.1:8001/' #BenHoboCo
-              ]
+SERVER_URLS = ['http://127.0.0.1:8001/', #BenHoboCo
+               #'http://cs410.cs.ualberta.ca:41041/', #Team4, BenHoboCo
+               #'http://cs410.cs.ualberta.ca:41051/', #Team5, PLKR
+               ]
 
 #TODO: find a way to get this value automatically
 OURHOST = "http://127.0.0.1:8000/"

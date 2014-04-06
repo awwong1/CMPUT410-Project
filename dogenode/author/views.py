@@ -23,6 +23,7 @@ from api.models import AllowedServer
 from rest_framework import status
 
 import dateutil.parser
+import json
 import markdown
 import re
 import requests
@@ -267,7 +268,7 @@ def stream(request):
         images = []
 
         __queryGithubForEvents(author)
-        rawposts = Post.getAllowedPosts(author, checkFollow=True)
+        rawposts = list(Post.getAllowedPosts(author, checkFollow=True))
 
         for post in rawposts:
             categoryIds = PostCategory.objects.filter(post=post).values_list(
@@ -290,8 +291,29 @@ def stream(request):
                 post.content = markdown.markdown(post.content)
 
         # Stream payload
-        context['posts'] = zip(rawposts, authors, comments, categories,
+        serverPosts = zip(rawposts, authors, comments, categories,
                                visibilityExceptions, images)
+
+        externalPosts = []
+        # Get the other server posts:
+        for server in SERVER_URLS:
+            try:
+                author = Author.objects.get(user=request.user)
+                response = requests.get("{0}api/author/posts?id={1}".format(
+                        server, author.guid))
+                response.raise_for_status()
+                jsonAllPosts = response.json()['posts']
+                # turn into a dummy post
+                for jsonPost in jsonAllPosts:
+                    externalPosts.append(jsonPost)
+            except Exception as e:
+                print ("{0}: failed to get posts from there,\n{1}".format(
+                        server,e))
+        
+        for externalPost in externalPosts:
+            serverPosts.append(__rawPostViewConverter(externalPost))
+
+        context['posts'] = serverPosts
         # Make a Post payload
         context['visibilities'] = Post.VISIBILITY_CHOICES
         context['contentTypes'] = Post.CONTENT_TYPE_CHOICES
@@ -304,6 +326,67 @@ def stream(request):
         if 'text/html' in request.META['HTTP_ACCEPT']:
             return redirect('/login/')
 
+def __rawPostViewConverter(rawpost):
+    """
+    Attempt to kludge a raw post into a django template post viewable
+    I'm so very sorry
+    """
+    postData = {'external':True}
+    authData = {}
+    commentsData = []
+    categoriesData = {}
+    visibilityExceptionsData = {}
+    imagesData = {}
+    
+    try:
+        #dogenode test external posts settings
+        postData['HTML']=rawpost['HTML']
+        postData['MARKDOWN']=rawpost['MARKDOWN']
+        postData['PLAIN']=rawpost['PLAIN']
+        
+        postData['guid']=rawpost['guid']
+        postData['title']=rawpost['title']
+        postData['description']=rawpost['description']
+        postData['content']=rawpost['content']
+        postData['visibility']=rawpost['visibility']
+        postData['contentType']=rawpost['content-type']
+        postData['origin']=rawpost['origin']
+        postData['pubDate']=rawpost['pubDate']
+        postData['modifiedDate']=rawpost['modifiedDate']
+    except:
+        pass
+    
+    try:
+        # dogenode test external author settings
+        authData['displayname']=rawpost['author']['displayname']
+        authData['url']=rawpost['author']['url']
+        authData['host']=rawpost['author']['host']
+        authData['id']=rawpost['author']['id']
+    except:
+        pass
+    
+    try:
+        # dogenode test external comments settings
+        for rawComment in rawpost['comments']:
+            # get nested author
+            rawauth = {}
+            rawauth['displayname'] = rawComment['author']['displayname']
+            rawauth['url'] = rawComment['author']['url']
+            rawauth['host'] = rawComment['author']['host']
+            rawauth['id'] = rawComment['author']['id']
+            # attach with rest of the comment
+            adaptcomment = {}
+            adaptcomment['author']=rawauth
+            adaptcomment['comment']=rawComment['comment']
+            adaptcomment['guid']=rawComment['guid']
+            adaptcomment['pub_date']=rawComment['pub_date']
+            commentsData.append(adaptcomment)
+            
+    except:
+        pass
+    unifiedpost = (postData, authData, commentsData, categoriesData, 
+                   visibilityExceptionsData, imagesData)
+    return unifiedpost
 
 def friends(request):
     """
