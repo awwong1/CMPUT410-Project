@@ -128,7 +128,6 @@ class CommentTestCase(TestCase):
                  str(response.status_code))
         self.assertTemplateUsed(response, 'fragments/post_content.html',
                     "Wrong template returned")
-        print(response)
 
     def testViewsAddComment(self):
         """

@@ -1,5 +1,5 @@
 {% for post, author, comments, categories, visibilityExceptions, images in posts %}
-<div class="row {{ post.guid }}">
+<div class="row">
   <div class="col-md-12">
     <div class="panel panel-default">
       <div class="panel-heading">
@@ -71,7 +71,7 @@
           </div>
         </div>
       </div>
-      <table class="table">
+      <table class="table {{ post.guid }}">
         <tbody>
           {% for comment in comments %}
           <tr>
