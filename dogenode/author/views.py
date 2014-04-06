@@ -374,7 +374,7 @@ def __rawPostViewConverter(rawpost):
             postData['origin']=rawpost['origin']
             postData['source']=rawpost['source']
             postData['pubDate']=rawpost['pubDate']
-            postData['modifiedDate']=rawpost['modifiedDate']
+            # postData['modifiedDate']=rawpost['modifiedDate']
 
             # dogenode test external author settings
             authData['displayname']=rawpost['author']['displayname']
