@@ -307,8 +307,7 @@ def stream(request):
                 for jsonPost in jsonAllPosts:
                     externalPosts.append(jsonPost)
             except Exception as e:
-                print ("{0}: failed to get posts from there,\n{1}".format(
-                        server,e))
+                print ("failed to get posts from there,\n{0}".format(e))
         
         for externalPost in externalPosts:
             serverPosts.append(__rawPostViewConverter(externalPost))
