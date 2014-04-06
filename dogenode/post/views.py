@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.base import ContentFile
 from django.views.decorators.csrf import ensure_csrf_cookie
@@ -18,8 +19,6 @@ import markdown
 import datetime
 import base64
 import requests
-
-OUR_HOST = "http://127.0.0.1:8000/"
 
 def getJSONPost(viewer_id, post_id, host, check_follow=False): 
     """
@@ -81,7 +80,7 @@ def getJSONPost(viewer_id, post_id, host, check_follow=False):
             # TODO: fix for remote cases
             try:
                 response = requests.get("%sapi/friends/%s/%s" % 
-                                            (OUR_HOST,   
+                                            (settings.OUR_HOST,   
                                             str(viewerGuid),
                                             str(postAuthor.guid)))
             except:
