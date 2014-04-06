@@ -3,7 +3,8 @@ from django.contrib import admin
 from django.contrib.auth.models import User
 from django.contrib.auth.admin import UserAdmin
 
-from author.models import Author, LocalRelationship, RemoteRelationship
+from author.models import (Author, RemoteAuthor,
+                           LocalRelationship, RemoteRelationship)
 
 # Register your models here.
 
@@ -31,3 +32,4 @@ admin.site.register(User, UserAdmin)
 admin.site.register(LocalRelationship)
 admin.site.register(RemoteRelationship)
 admin.site.register(Author)
+admin.site.register(RemoteAuthor)

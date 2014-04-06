@@ -229,8 +229,10 @@ class AuthorTestCase(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         self.assertEquals(response.context['searchphrase'], "utestuser2")
-        self.assertEquals(response.context['results'][0][0], "utestuser2")
-        self.assertEquals(response.context['results'][0][1], "Following")
+        self.assertEquals(response.context['results'][0]["displayname"],
+                          "utestuser2")
+        self.assertEquals(response.context['results'][0]["relationship"],
+                          "Following")
 
        # searching for a non existing user 
         response = self.client.post(url, data={'username': "nouser"})
