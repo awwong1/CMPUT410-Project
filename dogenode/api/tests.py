@@ -206,23 +206,23 @@ class RESTfulTestCase(TestCase):
                                 displayName="remoteAuthor2")
 
         response1 = self.client.post(
-                        '/api/friends/%s/%s' % (author1.guid, author2.guid),
+                        '/friends/%s/%s' % (author1.guid, author2.guid),
                         content_type="application/json")
         response2 = self.client.post(
-                        '/api/friends/%s/%s' % (author2.guid, author1.guid),
+                        '/friends/%s/%s' % (author2.guid, author1.guid),
                         content_type="application/json")
         response3 = self.client.post(
-                        '/api/friends/%s/%s' % (author2.guid, author3.guid),
+                        '/friends/%s/%s' % (author2.guid, author3.guid),
                         content_type="application/json")
 
         response4 = self.client.post(
-                    '/api/friends/%s/%s' % (author3.guid, remoteAuthor1.guid),
+                    '/friends/%s/%s' % (author3.guid, remoteAuthor1.guid),
                     content_type="application/json")
         response5 = self.client.post(
-                    '/api/friends/%s/%s' % (remoteAuthor1.guid, author3.guid),
+                    '/friends/%s/%s' % (remoteAuthor1.guid, author3.guid),
                     content_type="application/json")
         response6 = self.client.post(
-                    '/api/friends/%s/%s' % (author2.guid, remoteAuthor2.guid),
+                    '/friends/%s/%s' % (author2.guid, remoteAuthor2.guid),
                     content_type="application/json")
 
         self.assertEqual(json.loads(response1.content),
@@ -277,7 +277,7 @@ class RESTfulTestCase(TestCase):
                 }
         }
 
-        response = self.client.post('/api/friendrequest',
+        response = self.client.post('/friendrequest',
                                      content_type="application/json",
                                      data=json.dumps(friendRequestData))
 
@@ -294,7 +294,7 @@ class RESTfulTestCase(TestCase):
         self.assertEqual(len(localRelationship), 1)
 
         # test the same thing, there should be no change
-        response = self.client.post('/api/friendrequest',
+        response = self.client.post('/friendrequest',
                                      content_type="application/json",
                                      data=json.dumps(friendRequestData))
 
@@ -314,7 +314,7 @@ class RESTfulTestCase(TestCase):
         friendRequestData["author"]["id"] = author6.guid
         friendRequestData["friend"]["author"]["id"] = author5.guid
 
-        response = self.client.post('/api/friendrequest',
+        response = self.client.post('/friendrequest',
                                      content_type="application/json",
                                      data=json.dumps(friendRequestData))
 
@@ -343,7 +343,7 @@ class RESTfulTestCase(TestCase):
 
         friendRequestData["author"] = remoteUser1.copy()
 
-        response = self.client.post('/api/friendrequest',
+        response = self.client.post('/friendrequest',
                                      content_type="application/json",
                                      data=json.dumps(friendRequestData))
 
@@ -379,7 +379,7 @@ class RESTfulTestCase(TestCase):
 
         friendRequestData["friend"]["author"] = remoteUser1.copy()
 
-        response = self.client.post('/api/friendrequest',
+        response = self.client.post('/friendrequest',
                                      content_type="application/json",
                                      data=json.dumps(friendRequestData))
 
@@ -399,7 +399,7 @@ class RESTfulTestCase(TestCase):
 
         friendRequestData["author"]["id"] = author5.guid
 
-        response = self.client.post('/api/friendrequest',
+        response = self.client.post('/friendrequest',
                                      content_type="application/json",
                                      data=json.dumps(friendRequestData))
 
@@ -438,7 +438,7 @@ class RESTfulTestCase(TestCase):
         remoteAuthor1guid = str(remoteAuthor1.guid)
 
         # 3 friends
-        response1 = self.client.post('/api/friends/%s' % author3guid,
+        response1 = self.client.post('/friends/%s' % author3guid,
                      content_type="application/json",
                      data=json.dumps({'query':"friends",
                                       'author':author3guid,
@@ -447,7 +447,7 @@ class RESTfulTestCase(TestCase):
                                                   remoteAuthor1guid]}))
 
         # 1 friend
-        response2 = self.client.post('/api/friends/%s' % author3guid,
+        response2 = self.client.post('/friends/%s' % author3guid,
                      content_type="application/json",
                      data=json.dumps({'query':"friends",
                                       'author':author3guid,
@@ -455,14 +455,14 @@ class RESTfulTestCase(TestCase):
                                                   author3guid]}))
 
         # no friends
-        response3 = self.client.post('/api/friends/%s' % author3guid,
+        response3 = self.client.post('/friends/%s' % author3guid,
                      content_type="application/json",
                      data=json.dumps({'query':"friends",
                                       'author':author3guid,
                                       'authors': [author1guid]}))
 
         # user doesn't exist
-        response4 = self.client.post('/api/friends/0',
+        response4 = self.client.post('/friends/0',
                      content_type="application/json",
                      data=json.dumps({'query':"friends",
                                       'author':0,
