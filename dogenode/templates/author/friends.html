@@ -134,7 +134,8 @@
                 <tr>
                     <td style="display:none;">{{ friend.guid }}</td>
                     <td style="display:none;">{{ friend.host }}</td>
-                    <td><a href="{{ friend.url }}">{{ friend.displayName }}</a>
+                    <td><a href="{{ friend.url }}">
+                        {{ friend.displayName }}@{{ friend.host }}</a>
                     </td>
                     <td>
                         <input class="unfriend" type="submit" value="Unfriend">
@@ -168,7 +169,9 @@
                 <tr>
                     <td style="display:none;">{{ follow.guid }}</td>
                     <td style="display:none;">{{ follow.host }}</td>
-                    <td><a href="{{ follow.url }}">{{ follow.displayName }}</a></td>
+                    <td><a href="{{ follow.url }}">
+                        {{ follow.displayName }}@{{ follow.host }}</a>
+                    </td>
                     <td>
                         <input class="unfollow" type="submit" value="UnFollow">
                     </td>
@@ -205,7 +208,7 @@
                     <td style="display:none;">{{ follower.guid }}</td>
                     <td style="display:none;">{{ follower.host }}</td>
                     <td><a href="{{ follower.url }}">
-                        {{ follower.displayName }}</a>
+                        {{ follower.displayName }}@{{ follower.host }}</a>
                     </td>
                     <td>
                         <input class="befriend" type="submit" value="Befriend"/>
