@@ -66,30 +66,69 @@ def getAllPublicPosts(request):
     """
     if 'application/json' in request.META['HTTP_ACCEPT']:
         return getPublicPosts(request)
-    if 'text/html' in request.META['HTTP_ACCEPT']:
+    if 'text/html' in request.META['HTTP_ACCEPT'] and request.user.is_authenticated():
+        # must be logged in to see stream in fancy html mode, but not get public json
         context = RequestContext(request)
         author = Author.objects.get(user=request.user)
         rawposts = Post.objects.filter(visibility=Post.PUBLIC)
         comments = []
         authors = []
         categories = []
+        visibilityExceptions = []
         images = []
 
         for post in rawposts:
             categoryIds = PostCategory.objects.filter(post=post).values_list(
-                            'category', flat=True)
+                'category', flat=True)
+            authorIds = PostVisibilityException.objects.filter(
+                post=post).value_list('author', flat=True)
             imageIds = ImagePost.objects.filter(post=post).values_list(
-                            'image', flat=True)
-
+                'image', flat=True)
+            
             authors.append(AuthorPost.objects.get(post=post).author)
             comments.append(Comment.objects.filter(post_ref=post))
             categories.append(Category.objects.filter(id__in=categoryIds))
+            visibilityExceptions.append(Author.objects.filter(
+                    guid__in=authorIds))
             images.append(Image.objects.filter(id__in=imageIds))
 
         # Stream payload
-        context['posts'] = zip(rawposts, authors, comments, categories, images)
+        serverPosts = zip(rawposts, authors, comments, categories, 
+                          visibilityExceptions, images)
+        externalPosts = []
+        # Get the other server posts:                                       
+        servers = AllowedServer.objects.all()
+        
+        for server in servers:
+            try:
+                # another hack because what the heck is going on with /api/
+                if server.host == 'http://127.0.0.1:80/':
+                    response = requests.get(
+                        "{0}api/posts".format(server.host))
+                else:
+                    response = requests.get(
+                        "{0}posts".format(server.host))
+                response.raise_for_status()
+                jsonAllPosts = response.json()['posts']
+                # turn into a dummy post                                    
+                for jsonPost in jsonAllPosts:
+                    externalPosts.append(jsonPost)
+            except Exception as e:
+                print ("failed to get posts from {1},\n{0}".format(e, server))
+                
+        for externalPost in externalPosts:
+            parsedPost = rawPostViewConverter(externalPost)
+            if parsedPost != None:
+                serverPosts.append(parsedPost)
+        
+        context['posts'] = serverPosts
+        context['visibilities'] = Post.VISIBILITY_CHOICES
+        context['contentTypes'] = Post.CONTENT_TYPE_CHOICES
         context['author_id'] = author.guid
         return render_to_response('post/public_posts.html', context)
+    
+    elif 'text/html' in request.META['HTTP_ACCEPT']:
+        return redirect('/')
     else:
         return getPublicPosts(request)
 

@@ -278,8 +278,8 @@ def stream(request):
             rawposts = list(Post.getAllowedPosts(author, checkFollow=True))
 
             for post in rawposts:
-                categoryIds = PostCategory.objects.filter(post=post).values_list(
-                                'category', flat=True)
+                categoryIds = PostCategory.objects.filter(
+                    post=post).values_list('category', flat=True)
                 authorIds = PostVisibilityException.objects.filter(
                                 post=post).values_list('author', flat=True)
                 imageIds = ImagePost.objects.filter(post=post).values_list(
@@ -326,7 +326,7 @@ def stream(request):
                     for jsonPost in jsonAllPosts:
                         externalPosts.append(jsonPost)
                 except Exception as e:
-                    print ("failed to get posts from there,\n{0}".format(e))
+                    print ("failed to get posts from {1},\n{0}".format(e, server))
 
             for externalPost in externalPosts:
                 parsedPost = rawPostViewConverter(externalPost)
