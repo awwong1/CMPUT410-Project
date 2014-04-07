@@ -41,6 +41,15 @@
                 var user = $(event.target).parent().parent().children()[0].innerHTML;
                 var host = $(event.target).parent().parent().children()[1].innerHTML;
                 var relationship = $(event.target).parent().parent().children()[3];
+
+               /* Sends an AJAX request to the server to change the relationship
+                 * of 2 authors. Changes the relationship status and button on
+                 * the front end.
+                 *
+                 * Takes as event data:
+                 * {currentRelationship: <"Friend"|"Following"|"Follower">,
+                 *  "host": <http://cs410.cs.ualberta.ca:41011>}
+                 */
                 $.ajax({
                     type: "POST",
                     url: "/author/relationship/" + user + "/",
