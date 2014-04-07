@@ -41,7 +41,7 @@ class Image(models.Model):
         return {
             "id": self.id,
             "name": self.file.name,
-            "url": urljoin(settings.OUR_HOST, self.get_absolute_url()),
+            "url": urljoin(settings.CURRENT_HOST, self.get_absolute_url()),
             "visibility": self.visibility
         }
 

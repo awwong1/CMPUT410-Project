@@ -108,3 +108,9 @@ LOGIN_URL = '/login/'
 
 #TODO: find a way to get this value automatically
 OUR_HOST = 'http://cs410.cs.ualberta.ca:41011/'
+
+try:
+    CURRENT_HOST = socket.gethostname()
+except:
+    CURRENT_HOST = 'localhost'
+
