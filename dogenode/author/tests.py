@@ -110,8 +110,9 @@ class AuthorTestCase(TestCase):
         user = User.objects.get(username="utestuser1")
         self.assertEqual(len(Author.objects.filter(user=user)), 1)
 
+        # author is accepted by default after registering
         author = Author.objects.get(user=user)
-        self.assertEqual(author.accepted, False)
+        self.assertEqual(author.accepted, True)
 
     # Test that following, unfollowing, befriending, unfriending work
     def testRelationships(self):
@@ -161,8 +162,8 @@ class AuthorTestCase(TestCase):
         user1 = User.objects.get(username="utestuser1")
         author1 = Author.objects.get(user=user1)
 
-        url = "/author/profile/" + str(author1.guid) + "/"
-        response = self.client.get(url)
+        url = "/author/" + str(author1.guid) + "/"
+        response = self.client.get(url, HTTP_ACCEPT="text/html")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTemplateUsed(response, "author/profile.html")
         self.assertEquals(response.context['firstName'], "")
