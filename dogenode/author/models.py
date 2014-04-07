@@ -92,7 +92,7 @@ class Author(models.Model):
 def createAuthor(sender, instance, created, **kwargs):
     if created:
         author, _ = Author.objects.get_or_create(user=instance)
-        author.url = author.host + "api" + author.get_absolute_url() 
+        author.url = author.host + author.get_absolute_url() 
         author.save()
 
 post_save.connect(createAuthor, sender=User, dispatch_uid="auto_create_author")
