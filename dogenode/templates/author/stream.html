@@ -244,7 +244,7 @@
                 success: function(response) {
                     addPost(response[0]);
                     addContent(response[0]["content"],
-                               response[0]["contentType"],
+                               response[0]["content-type"],
                                response[0]["guid"]);
                 },
                 error: function(xhr, status, error) {
