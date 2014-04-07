@@ -90,7 +90,7 @@ class Post(models.Model):
             return True
 
         postAuthor = AuthorPost.objects.get(post=self).author
-
+        
         friends = viewer.getFriends()
         followed = viewer.getPendingSentRequests()
         # Check if post was created by the specified viewer
@@ -103,7 +103,8 @@ class Post(models.Model):
         # Check if this post's author is friends with the viewer
         elif postAuthor in friends['local'] or postAuthor in friends['remote']:
             if (self.visibility == Post.FRIENDS or
-                    self.visibility == Post.FOAF):
+                    self.visibility == Post.FOAF or
+                    self.visibility == Post.PUBLIC):
                 return True
             elif self.visibility == Post.SERVERONLY:
                 if postAuthor in friends['local']:
