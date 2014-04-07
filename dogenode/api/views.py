@@ -173,6 +173,7 @@ def getFriendsFromList(request, guid):
 def sendFriendRequest(request):
 
     response = {"status":"failure", "message":"Internal failure"}
+    status = 500
 
     if request.method == 'POST':
 
@@ -208,6 +209,7 @@ def sendFriendRequest(request):
 
                 # author1 already follows or is friends with author2, no change
                 if relationship.author1 == author1:
+                    status = 200
                     response["status"] = "success"
                     response["message"] = ("Already following %s, no change" %
                                             author2.user.username)
@@ -215,15 +217,18 @@ def sendFriendRequest(request):
                 else:
                     relationship.relationship = True
                     relationship.save()
+                    status = 200
                     response["status"] = "success"
                     response["message"] = ("You are now friends with %s" %
                                             author2.user.username)
+
             else:
                 # author1 will follow author2
                 _, _ = LocalRelationship.objects.get_or_create(
                                                    author1=author1,
                                                    author2=author2,
                                                    relationship=False)
+                status = 200
                 response["status"] = "success"
                 response["message"] = ("You are now following %s" %
                                             author2.user.username)
@@ -247,6 +252,7 @@ def sendFriendRequest(request):
 
                 # author1 already follows or is friends with author2, no change
                 if relationship.relationship == (0 or 2):
+                    status = 200
                     response["status"] = "success"
                     response["message"] = ("Already following %s, no change" %
                                     jsonData["friend"]["author"]["displayname"])
@@ -254,6 +260,7 @@ def sendFriendRequest(request):
                 else:
                     relationship.relationship = 2
                     relationship.save()
+                    status = 200
                     response["status"] = "success"
                     response["message"] = ("You are now friends with %s" %
                                     jsonData["friend"]["author"]["displayname"])
@@ -264,6 +271,7 @@ def sendFriendRequest(request):
                                                    localAuthor=author1,
                                                    remoteAuthor=remoteAuthor,
                                                    relationship=0)
+                status = 200
                 response["status"] = "success"
                 response["message"] = ("You are now following %s" %
                                     jsonData["friend"]["author"]["displayname"])
@@ -287,6 +295,7 @@ def sendFriendRequest(request):
 
                 # author1 already follows or is friends with author2, no change
                 if relationship.relationship == (1 or 2):
+                    status = 200
                     response["status"] = "success"
                     response["message"] = ("Already following %s, no change" %
                                             author2.user.username)
@@ -294,6 +303,7 @@ def sendFriendRequest(request):
                 else:
                     relationship.relationship = 2
                     relationship.save()
+                    status = 200
                     response["status"] = "success"
                     response["message"] = ("You are now friends with %s" %
                                             author2.user.username)
@@ -304,6 +314,7 @@ def sendFriendRequest(request):
                                                    remoteAuthor=remoteAuthor,
                                                    relationship=1)
 
+                status = 200
                 response["status"] = "success"
                 response["message"] = ("You are now following %s" %
                                             author2.user.username)
@@ -313,7 +324,7 @@ def sendFriendRequest(request):
         else:
             pass
 
-    return HttpResponse(json.dumps(response),
+    return HttpResponse(json.dumps(response), status=status,
                         content_type="application/json")
 
 @api_view(['GET'])
