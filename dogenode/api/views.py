@@ -177,14 +177,8 @@ def sendFriendRequest(request):
         guid1 = jsonData["author"]["id"]
         guid2 = jsonData["friend"]["author"]["id"]
 
-        author1 = []
-        author2 = []
-
-        if jsonData["author"]["host"] == settings.OUR_HOST:
-            author1 = Author.objects.filter(guid=guid1)
-
-        if jsonData["friend"]["author"]["host"] == settings.OUR_HOST:
-            author2 = Author.objects.filter(guid=guid2)
+        author1 = Author.objects.filter(guid=guid1)
+        author2 = Author.objects.filter(guid=guid2)
 
         # Both authors are local
         if len(author1) > 0 and len(author2) > 0:
