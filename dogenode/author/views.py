@@ -448,6 +448,7 @@ def friends(request):
                        "friends": author.getFriends(),
                        "follows": author.getPendingSentRequests(),
                        "followers": author.getPendingReceivedRequests(),
+                       "our_host": settings.OUR_HOST,
                        "author_id": author.guid })
 
     return render_to_response('author/friends.html', context)
