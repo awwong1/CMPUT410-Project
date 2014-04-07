@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
+from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q
 from django.http import HttpResponse
 from django.shortcuts import (get_object_or_404, render, redirect,
@@ -94,36 +95,46 @@ def profile(request, author_id):
     """
     GET: Returns the profile page / information of an author.
     """
-    if request.user.is_authenticated():
-        viewer = Author.objects.get(user=request.user)
+    if 'text/html' not in request.META['HTTP_ACCEPT']:
         try:
             author = Author.objects.get(guid=author_id)
-        except Author.DoesNotExist:
-            context = RequestContext(request)
-            context['author_id'] = viewer.guid
-            if not getRemoteAuthorProfile(context, author_id):
-                 # Error conncecting with remote server
-                render_to_response('error/doge_error.html', context)
-            render_to_response('author/profile.html', context)
+        except ObjectDoesNotExist:
+            return HttpResponse(json.dumps({"message": "User not found", "status": 404}),
+                                status=404, content_type="application/json")
 
-        user = author.user
-        payload = { } # This is what we send in the RequestContext
-        payload['author_id'] = viewer.guid
-        payload['firstName'] = user.first_name or ""
-        payload['lastName'] = user.last_name or ""
-        payload['username'] = user.username
-        payload['githubUsername'] = author.githubUsername or ""
-        payload['host'] = author.host or ""
-        payload['url'] = author.url or request.build_absolute_uri(author.get_absolute_url())
-        payload['userIsAuthor'] = (user.username == request.user.username)
-        context = RequestContext(request, payload)
-        viewer = Author.objects.get(user=User.objects.get(
-                username=request.user))
-        context['authPosts'] = Post.getViewablePosts(viewer, author)
-
-        return render_to_response('author/profile.html', context)
+        return HttpResponse(json.dumps(author.as_dict()),
+                            content_type="application/json")
     else:
-        return redirect('/login/')
+        if request.user.is_authenticated():
+            viewer = Author.objects.get(user=request.user)
+            try:
+                author = Author.objects.get(guid=author_id)
+            except Author.DoesNotExist:
+                context = RequestContext(request)
+                context['author_id'] = viewer.guid
+                if not getRemoteAuthorProfile(context, author_id):
+                     # Error conncecting with remote server
+                    render_to_response('error/doge_error.html', context)
+                render_to_response('author/profile.html', context)
+
+            user = author.user
+            payload = { } # This is what we send in the RequestContext
+            payload['author_id'] = viewer.guid
+            payload['firstName'] = user.first_name or ""
+            payload['lastName'] = user.last_name or ""
+            payload['username'] = user.username
+            payload['githubUsername'] = author.githubUsername or ""
+            payload['host'] = author.host or ""
+            payload['url'] = author.url or request.build_absolute_uri(author.get_absolute_url())
+            payload['userIsAuthor'] = (user.username == request.user.username)
+            context = RequestContext(request, payload)
+            viewer = Author.objects.get(user=User.objects.get(
+                    username=request.user))
+            context['authPosts'] = Post.getViewablePosts(viewer, author)
+
+            return render_to_response('author/profile.html', context)
+        else:
+            return redirect('/login/')
 
 def getRemoteAuthorProfile(context, author_id):
     """
