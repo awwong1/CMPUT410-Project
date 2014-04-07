@@ -91,38 +91,36 @@ def areFriends(request, guid1, guid2):
     response = {"query":"friends",
                 "friends":"NO"}
 
-    if request.method == 'POST':
+    author1 = Author.objects.filter(guid=guid1)
+    author2 = Author.objects.filter(guid=guid2)
 
-        author1 = Author.objects.filter(guid=guid1)
-        author2 = Author.objects.filter(guid=guid2)
+    # Both authors are local
+    if len(author1) > 0 and len(author2) > 0:
 
-        # Both authors are local
-        if len(author1) > 0 and len(author2) > 0:
+        author1 = author1[0]
+        author2 = author2[0]
 
-            author1 = author1[0]
-            author2 = author2[0]
+        if author2 in author1.getFriends()["local"]:
+            response["friends"] = [guid1, guid2]
 
-            if author2 in author1.getFriends()["local"]:
-                response["friends"] = [guid1, guid2]
+    # author1 is local, author2 is remote
+    elif len(author1) > 0 and len(author2) == 0:
 
-        # author1 is local, author2 is remote
-        elif len(author1) > 0 and len(author2) == 0:
+        author1 = author1[0]
+        remoteFriendGUIDs = [a.guid for a in author1.getFriends()["remote"]]
 
-            author1 = author1[0]
-            remoteFriendGUIDs = [a.guid for a in author1.getFriends()["remote"]]
+        if guid2 in remoteFriendGUIDs:
+            response["friends"] = [guid1, guid2]
 
-            if guid2 in remoteFriendGUIDs:
-                response["friends"] = [guid1, guid2]
+    # author1 is remote, author2 is local
+    elif len(author1) == 0 and len(author2) > 0:
 
-        # author1 is remote, author2 is local
-        elif len(author1) == 0 and len(author2) > 0:
+        author2 = author2[0]
 
-            author2 = author2[0]
+        remoteFriendGUIDs = [a.guid for a in author2.getFriends()["remote"]]
 
-            remoteFriendGUIDs = [a.guid for a in author2.getFriends()["remote"]]
-
-            if guid1 in remoteFriendGUIDs:
-                response["friends"] = [guid1, guid2]
+        if guid1 in remoteFriendGUIDs:
+            response["friends"] = [guid1, guid2]
 
 
     return HttpResponse(json.dumps(response),
