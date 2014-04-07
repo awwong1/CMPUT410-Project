@@ -90,7 +90,6 @@ class Post(models.Model):
             return True
 
         postAuthor = AuthorPost.objects.get(post=self).author
-        
         friends = viewer.getFriends()
         followed = viewer.getPendingSentRequests()
         # Check if post was created by the specified viewer
@@ -112,6 +111,10 @@ class Post(models.Model):
                 # SERVERONLY disallows remote viewers from viewing this post
                 else:
                     return False
+            # Quick 'fix' - If viewer is a FRIEND of the postAuthor BUT the
+            # post is PRIVATE case
+            else:
+                return False
         # Check if this post's author is friends of friends with the viewer,
         # and if the post is set to friends of friends
         elif (viewer.isFriendOfAFriend(postAuthor)
@@ -129,6 +132,8 @@ class Post(models.Model):
                 return False
         else:
             return False
+
+        
 
     # TODO: Apparently I'm supposed to use some kind of Custom Manager for this...
     # See: https://docs.djangoproject.com/en/1.6/topics/db/managers/#django.db.models.Manager
