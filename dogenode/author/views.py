@@ -377,24 +377,38 @@ def searchOtherServers(searchString):
 
     authorsFound = []
 
-    # BenHoboCo
     servers = AllowedServer.objects.all()
 
     for server in servers:
 
-        try:
-            #response = requests.get("%s/api/authors" % server.host)
-            response = requests.get("%sapi/search" % server.host)
-            response.raise_for_status() # Exception on 4XX/5XX response
+        # BenHoboCo
+        if "benhoboco" in server.name.lower():
+            try:
+                response = requests.get("%sapi/authors" % server.host)
+                #response = requests.get("%sapi/search" % server.host)
+                response.raise_for_status() # Exception on 4XX/5XX response
 
-            jsonAllAuthors = response.json()
+                jsonAllAuthors = response.json()
 
-            for author in jsonAllAuthors:
-                if searchString in author["displayname"]:
-                    authorsFound.append(author)
-        # fail silently
-        except requests.exceptions.RequestException:
-            pass
+                for author in jsonAllAuthors:
+                    if searchString in author["displayname"]:
+                        authorsFound.append(author)
+            # fail silently
+            except requests.exceptions.RequestException:
+                pass
+
+        elif "plkr" in server.name.lower():
+            try:
+                response = requests.get("%sapi/search?query=%s" %
+                                                (server.host, searchString))
+                response.raise_for_status() # Exception on 4XX/5XX response
+
+                jsonAllAuthors = response.json()
+
+                authorsFound.extend(jsonAllAuthors)
+            # fail silently
+            except requests.exceptions.RequestException:
+                pass
 
     return authorsFound
 
