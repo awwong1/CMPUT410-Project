@@ -79,7 +79,6 @@ def uploadImage(request):
                                 content_type="application/json")
     else:
         context = RequestContext(request)
-        context['visibilities'] = Image.VISIBILITY_CHOICES
         context['author_id'] = author.guid
 
         return render_to_response('images/upload.html', context)
