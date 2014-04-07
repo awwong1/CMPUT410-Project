@@ -98,7 +98,7 @@
                 <tr> <!-- TODO: remote link to author's page -->
                     <td style="display:none;">{{ ur.guid }}</td>
                     <td style="display:none;">{{ ur.host }}</td>
-                    <td><a href="/author/profile/{{ ur.guid }}">{{ ur.displayname }}</a></td>
+                    <td><a href="{% url 'author.views.profile' ur.guid %}">{{ ur.displayname }}</a></td>
                     <td>{{ ur.relationship }}</td>
                     <td>
                     {% if ur.relationship == "Friend" %}

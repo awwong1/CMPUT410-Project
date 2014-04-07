@@ -115,8 +115,8 @@ def profile(request, author_id):
                 context['author_id'] = viewer.guid
                 if not getRemoteAuthorProfile(context, author_id):
                      # Error conncecting with remote server
-                    render_to_response('error/doge_error.html', context)
-                render_to_response('author/profile.html', context)
+                    return render_to_response('error/doge_error.html', context)
+                return render_to_response('author/profile.html', context)
 
             user = author.user
             payload = { } # This is what we send in the RequestContext
@@ -142,42 +142,20 @@ def getRemoteAuthorProfile(context, author_id):
     Gets remote author info from another host to display on our site.
     If there was a connection problem or author doesn't exist, error
     message will be displayded (doge_error.html).
-
-    TODO XXX: Going to an author's profile should be an ajax request,
-              then we can send host with request instead of searching
-              through all allowed servers for the author. Also, need
-              to find a way to test this.
     """
+    context['firstName'] = ""
+    context['lastName'] = ""
+    context['githubUsername'] = ""
+    context['userIsAuthor'] = False
+
     try:
         remote = RemoteAuthor.objects.get(guid=author_id)
-        context['firstName'] = ""
-        context['lastName'] = ""
         context['username'] = remote.displayName
-        context['githubUsername'] = ""
         context['host'] = remote.host
         context['url'] = remote.url
-        context['userIsAuthor'] = False
+        return True
     except Author.DoesNotExist:
         return False
-
-"""
-    servers = AllowedServer.objects.filter()
-    for server in servers:
-        if server.host[-1] != '/':
-            server.host = server.host + '/'
-        response = requests.get(urljoin(server.host, "api/" + author_id))
-        if response.status_code == status.HTTP_200_OK and response.context is not None:
-            data = json.loads(response.context)
-            context['firstName'] = ""
-            context['lastName'] = ""
-            context['username'] = data["displayname"]
-            context['githubUsername'] = ""
-            context['host'] = data["host"]
-            context['url'] = data["url"]
-            context['userIsAuthor'] = False
-            return True
-    return False
-"""
 
 def editProfile(request):
     """
@@ -425,7 +403,6 @@ def searchOtherServers(searchString):
                 response.raise_for_status() # Exception on 4XX/5XX response
 
                 jsonAllAuthors = response.json()
-
                 for author in jsonAllAuthors:
                     if searchString in author["displayname"]:
                         authorsFound.append(author)
@@ -521,7 +498,6 @@ def search(request):
                           "relationship": "No Relationship",
                           "guid": a["id"],
                           "host": a["host"]}
-
             # These 2 authors have a relationship
             if len(r) > 0:
 
