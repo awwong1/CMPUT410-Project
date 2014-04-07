@@ -12,6 +12,7 @@ from django.utils.safestring import mark_safe
 from django.views.decorators.csrf import ensure_csrf_cookie
 
 from rest_framework import status
+from urlparse import urljoin
 
 from api.models import AllowedServer
 from api.views import *
@@ -151,7 +152,7 @@ def getRemoteAuthorProfile(context, author_id):
     for server in servers:
         if server.host[-1] != '/':
             server.host = server.host + '/'
-        response = urllib2.urlopen(server.host+"api/"+author_id)
+        response = requests.get(urljoin(server.host, "api/" + author_id))
         if response.status_code == status.HTTP_200_OK and response.context is not None:
             data = json.loads(response.context)
             context['firstName'] = ""
