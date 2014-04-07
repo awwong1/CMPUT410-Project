@@ -11,7 +11,7 @@ class Author(models.Model):
                                  unique=True, 
                                  default=uuid.uuid4)
     user = models.OneToOneField(User, primary_key=True)
-    accepted = models.BooleanField(default=False)   
+    accepted = models.BooleanField(default=True)   
     host = models.CharField(max_length=100, default="http://cs410.cs.ualberta:41011/")
     url = models.URLField(blank=True)
     githubUsername = models.CharField(max_length=128, blank=True)

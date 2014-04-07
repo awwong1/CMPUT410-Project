@@ -15,18 +15,18 @@ class Comment(models.Model):
     author = models.ForeignKey('author.Author')
     post_ref = models.ForeignKey('post.Post')
     comment = models.TextField()
-    pub_date = models.DateTimeField(auto_now=True)
+    pubDate = models.DateTimeField(auto_now=True)
     
     def __unicode__(self):
         return "%i: [%s|%s|%s]"%(self.id,self.author,self.comment,
-                                 self.pub_date)
+                                 self.pubDate)
 
     def as_dict(self):
         return {
             "guid": str(self.guid),
             "author": self.author.as_dict(),
             "comment": self.comment,
-            "pubDate": self.__datetimeToJSONString(self.pub_date)
+            "pubDate": self.__datetimeToJSONString(self.pubDate)
         }
 
     def __datetimeToJSONString(self, dt):
