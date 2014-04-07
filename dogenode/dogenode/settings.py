@@ -107,4 +107,4 @@ MEDIA_URL = '/images/'
 LOGIN_URL = '/login/'
 
 #TODO: find a way to get this value automatically
-OUR_HOST = 'http://127.0.0.1:8000/'
+OUR_HOST = 'http://cs410.cs.ualberta.ca:41011/'
