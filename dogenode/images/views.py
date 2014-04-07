@@ -70,12 +70,12 @@ def uploadImage(request):
                 htmlPayload.append(newImage.get_absolute_url())
 
         if 'application/json' in request.META['HTTP_ACCEPT']:
-            return HttpResponse(json.dumps(payload), status=201,
+            return HttpResponse(json.dumps(jsonPayload), status=201,
                                 content_type="application/json")
         elif 'text/html' in request.META['HTTP_ACCEPT']:
             return redirect('/images/')
         else:
-            return HttpResponse(json.dumps(payload), status=201,
+            return HttpResponse(json.dumps(jsonPayload), status=201,
                                 content_type="application/json")
     else:
         context = RequestContext(request)

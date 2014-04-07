@@ -1,5 +1,6 @@
 import os
 from django.conf import settings
+from django.db.models.signals import post_delete
 from django.db import models
 from author.models import Author
 from post.models import Post
@@ -46,6 +47,21 @@ class Image(models.Model):
 
     def get_absolute_url(self):
         return self.file.url
+
+    # After DB delete, delete the image from filesystem, as well as
+    # deleting the author's folder if empty.
+    @staticmethod
+    def post_delete_callback(sender, instance, **kwargs):
+        imagePath = os.path.abspath(os.path.join(
+                                        settings.MEDIA_ROOT, instance.file.name))
+        mediaPath = os.path.abspath(os.path.join(
+                                        settings.MEDIA_ROOT, instance.author.guid))
+
+        try:
+            os.remove(imagePath)
+            os.rmdir(mediaPath)
+        except OSError:
+            pass
 
     # TODO: Need to add admin logic.
     # TODO: Fix SERVERONLY logic
@@ -127,3 +143,6 @@ class ImagePost(models.Model):
 
     def __unicode__(self):
         return "%i: [%s|%s]" % (self.id, str(self.image), str(self.post))
+
+
+post_delete.connect(Image.post_delete_callback, sender=Image)
