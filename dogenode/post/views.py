@@ -1,8 +1,6 @@
 from django.conf import settings
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
-from django.core.exceptions import ObjectDoesNotExist
-from django.core.files.base import ContentFile
 from django.http import HttpResponse
 from django.shortcuts import render, render_to_response, redirect
 from django.template import RequestContext
@@ -16,7 +14,6 @@ from comments.models import Comment
 from images.models import Image, ImagePost, ImageVisibilityException
 from post.models import Post, PostVisibilityException, AuthorPost, PostCategory
 
-import base64
 import datetime
 import markdown
 import requests
