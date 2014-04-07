@@ -106,6 +106,9 @@ class RemoteAuthor(models.Model):
     host = models.CharField(max_length=100, default="http://benhoboco/")
     url = models.URLField(blank=True)
 
+    def __unicode__(self):
+        return self.displayName
+
     # if the attributes for this guid changed, assume it was changed
     # on the remote server; update on our local server
     def update(self, displayName=None, host=None, url=None):
