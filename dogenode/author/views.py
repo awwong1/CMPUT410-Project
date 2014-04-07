@@ -148,6 +148,19 @@ def getRemoteAuthorProfile(context, author_id):
               through all allowed servers for the author. Also, need
               to find a way to test this.
     """
+    try:
+        remote = RemoteAuthor.objects.get(guid=author_id)
+        context['firstName'] = ""
+        context['lastName'] = ""
+        context['username'] = remote.displayName
+        context['githubUsername'] = ""
+        context['host'] = remote.host
+        context['url'] = remote.url
+        context['userIsAuthor'] = False
+    except Author.DoesNotExist:
+        return False
+
+"""
     servers = AllowedServer.objects.filter()
     for server in servers:
         if server.host[-1] != '/':
@@ -164,6 +177,7 @@ def getRemoteAuthorProfile(context, author_id):
             context['userIsAuthor'] = False
             return True
     return False
+"""
 
 def editProfile(request):
     """
@@ -431,7 +445,18 @@ def searchOtherServers(searchString):
             # fail silently
             except requests.exceptions.RequestException:
                 pass
+        else:
+            try:
+                response = requests.get("%sapi/search?query=%s" %
+                                                (server.host, searchString))
+                response.raise_for_status() # Exception on 4XX/5XX response
 
+                jsonAllAuthors = response.json()
+
+                authorsFound.extend(jsonAllAuthors)
+            except requests.exceptions.RequestException:
+                pass
+        
     return authorsFound
 
 def search(request):

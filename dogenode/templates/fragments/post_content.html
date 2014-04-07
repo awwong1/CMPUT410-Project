@@ -61,7 +61,7 @@
           <div class="col-sm-4">
             by 
 	    {% if post.external %}
-	    External User: <a href="{{ author.url }}">
+	    External User: <a href="{% url 'author.views.profile' author.guid %}">
 	      <strong>
 		{{ author.displayname }}
 	      </strong>
@@ -89,7 +89,7 @@
             <td>
 	      <small>
 		{% if post.external %}
-		<a href="{{ comment.author.url }}">
+		<a href="{% url 'author.views.profile' comment.author.guid  %}">
 		  External User: <strong>{{comment.author.displayname}}</strong>
 		</a> 
 		on {{comment.pubDate}}:
