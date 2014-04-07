@@ -54,7 +54,7 @@ def postFriendRequest(localAuthor, remoteAuthor, befriend=True):
         if remoteAuthor.host == server.host:
             try:
                 response = requests.post(
-                            '%sapi/friendrequest' % server.host,
+                            '%sfriendrequest' % server.host,
                              headers=headers,
                              data=json.dumps(postData))
                 response.raise_for_status() # Exception on 4XX/5XX response
