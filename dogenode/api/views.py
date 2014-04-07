@@ -665,7 +665,14 @@ def rawPostViewConverter(rawpost):
         postData['description']=rawpost['description']
         postData['content']=rawpost['content']
         postData['visibility']=rawpost['visibility']
-        postData['contentType']=rawpost['content-type']
+        try:
+            postData['contentType']=rawpost['content-type']
+        except:
+            pass
+        try:
+            postData['contentType']=rawpost['contentType']
+        except:
+            pass
         postData['origin']=rawpost['origin']
         postData['source']=rawpost['source']
         postData['pubDate']=rawpost['pubDate']

@@ -114,8 +114,10 @@ def getAllPublicPosts(request):
                 for jsonPost in jsonAllPosts:
                     externalPosts.append(jsonPost)
             except Exception as e:
-                print ("failed to get posts from {1},\n{0}".format(e, server))
-                
+                # print ("failed to get posts from {1},\n{0}".format(e, server))
+                # May cause IO error, commented out for stability
+                pass
+            
         for externalPost in externalPosts:
             parsedPost = rawPostViewConverter(externalPost)
             if parsedPost != None:
