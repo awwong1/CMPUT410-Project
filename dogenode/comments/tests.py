@@ -61,7 +61,7 @@ class CommentTestCase(TestCase):
         self.assertEquals(comment.post_ref, post1, "Post id does not match")
         self.assertEquals(comment.comment, "comment1", 
                   "Comment (content) does not match")
-        self.assertIsNotNone(comment.pub_date)
+        self.assertIsNotNone(comment.pubDate)
 
     def testGetAllComments(self):
         """
