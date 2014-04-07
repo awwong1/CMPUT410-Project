@@ -81,7 +81,7 @@ def getAllPublicPosts(request):
             categoryIds = PostCategory.objects.filter(post=post).values_list(
                 'category', flat=True)
             authorIds = PostVisibilityException.objects.filter(
-                post=post).value_list('author', flat=True)
+                post=post).values_list('author', flat=True)
             imageIds = ImagePost.objects.filter(post=post).values_list(
                 'image', flat=True)
             
