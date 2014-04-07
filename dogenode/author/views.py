@@ -322,7 +322,9 @@ def stream(request):
                 print ("failed to get posts from there,\n{0}".format(e))
 
         for externalPost in externalPosts:
-            serverPosts.append(__rawPostViewConverter(externalPost))
+            parsedPost = __rawPostViewConverter(externalPost)
+            if parsedPost != None:
+                serverPosts.append(parsedPost)
 
         context['posts'] = serverPosts
         # Make a Post payload
@@ -341,13 +343,6 @@ def __rawPostViewConverter(rawpost):
     """
     Attempt to kludge a raw post into a django template post viewable
     I'm so very sorry
-
-    the worst method of checking 'states', let's just go back to first year
-    programming and use an integer
-    0 = dogenode
-    1 = benhobo
-    2 = plkr
-    anything else = bust
     """
     postData = {'external':True}
     authData = {}
