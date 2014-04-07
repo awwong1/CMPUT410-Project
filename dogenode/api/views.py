@@ -500,14 +500,11 @@ def __createPost(request, post_id, data):
     visibilityExceptionsString = data.get("visibilityExceptions", "")
     categoriesString = data.get("categories", "")
     contentType = data.get("content-type", Post.PLAIN)
-    images = data.get("images")
-
-    # Dealing with no images defined
-    if images is None:
-        images = []
+    imageIdsString = data.get("image-ids", "")
 
     categoryNames = categoriesString.split()
     exceptionUsernames = visibilityExceptionsString.split()
+    imageIds = imageIdsString.split()
     author = Author.objects.get(user=request.user)
     newPost = Post.objects.create(guid=guid, title=title,
                                   description=description,
@@ -517,16 +514,11 @@ def __createPost(request, post_id, data):
     newPost.save()
 
     # If there are also images, handle that too
-    for image in images:
-        # decoding base64 image code from: https://gist.github.com/yprez/7704036
-        # base64 encoded image - decode
-        format, imgstr = image[1].split(';base64,')  # format ~= data:image/X,
-        ext = format.split('/')[-1]  # guess file extension
-        decoded = ContentFile(base64.b64decode(imgstr), name=image[0])
-        newImage = Image.objects.create(author=author, file=decoded,
-                                        visibility=visibility,
-                                        contentType=format)
-        ImagePost.objects.create(image=newImage, post=newPost)
+    images = Image.objects.filter(id__in=imageIds)
+    for i in images:
+        i.visibility = visibility # image adopts visibility of post
+        i.save()
+        ImagePost.objects.get_or_create(image=i, post=newPost)
 
     AuthorPost.objects.create(post=newPost, author=author)
 
@@ -541,9 +533,9 @@ def __createPost(request, post_id, data):
             authorObject = Author.objects.get(user=userObject)
             PostVisibilityException.objects.get_or_create(post=newPost,
                 author=authorObject)
-            for image in images:
+            for i in images:
                 ImageVisibilityException.objects.get_or_create(
-                        image=newImage, author=authorObject)
+                        image=i, author=authorObject)
         except ObjectDoesNotExist:
             pass
 

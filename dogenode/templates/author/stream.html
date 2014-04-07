@@ -39,18 +39,6 @@
 
             // Adding comment button listener
             $(".makeComment").on("click", putComment);
-
-            // Getting multiple file names code from:
-            /// http://stackoverflow.com/questions/10703102/jquery-get-all-filenames-inside-input-file
-
-            $("#image").change(function() {
-                images = [];
-                var files = $("#image").prop("files");
-                var filenames = $.map(files, function(val) { return val.name; });
-                for (var i=0; i < files.length; i++) {
-                    readImage(files[i], filenames[i]);
-                }
-            });
         });
 
         /* Clears fields to make a new post in */
@@ -64,26 +52,6 @@
                 $("#content-type").val('text/plain');
                 // $("#image").replaceWith('<input type="file" id="image" name="image" accept="image/*" multiple="multiple"/>');
                 $("#image").val('');
-        }
-
-        /*
-            Converts image file to base64. Code from:
-            http://jsbin.com/ayazin/2/edit
-
-            Modified to work with jquery using code from:
-            http://stackoverflow.com/questions/14772753/input-type-file-files-selector-not-works-in-jquery
-
-            Returns base64 encoded image, or if no file was specified,
-            returns null.
-        */
-        var images = [];
-        function readImage(img, filename) {
-            var FR= new FileReader();
-            FR.onload = function(e) {
-                 images.push([filename, e.target.result]);
-
-            };
-            FR.readAsDataURL(img);
         }
 
         /* Creates html for a new post */
@@ -241,6 +209,15 @@
 
         var handleMakePost = function() {
             var guid = generateGUID();
+            var imageIds = "";
+
+            $("input:checked").each(
+              function() {
+                imageIds += $(this).val() + " ";
+                /* Do not allow user to associate this image with another post */
+                $(this).parent().remove();
+              });
+
             var postData = {
                 "guid": guid,
                 "title": $("#title").val(),
@@ -251,16 +228,10 @@
                 "visibility": $("#visibility").val(),
                 "visibilityExceptions": $("#visibilityExceptions").val(),
                 "content-type": $("#content-type").val(),
+                "image-ids" : imageIds.trim(),
             };
 
-            // waiting for images to be read and converted
-            while ( images.length < ($("#image"))[0].files.length) {
-                continue;
-            }
-
-            postData["images"] = images;
             var JSONPostData = JSON.stringify(postData);
-            images = [];
 
             clearFields();
             query = "?id="+$("#author_guid").val();
@@ -281,6 +252,7 @@
                     console.log(xhr.responseText);
                 }
             });
+
             return false;
         };
     </script>
@@ -326,9 +298,20 @@
                       </div>
                       <div class="form-group">
                           <label for="image" class="col-sm-3 col-md-2 col-lg-2 control-label">Images:</label>
-                          <div class="col-sm-9 col-md-10 col-lg-10">
-                              <input type="file" id="image" name="image" accept="image/*" multiple="multiple"/>
-                              <span class="help-block">CTRL+Click to select multiple files</span>
+                          <div class="col-sm-9 col-md-10 col-lg-10" id="unlinked-images-checkboxes">
+                          {% if unlinked_images %}
+                            {% for image in unlinked_images %}
+                              <label class="checkbox-inline">
+                                <input type="checkbox" id="unlinked-image-{{ image.id }}"
+                                 name="unlinked-image" value="{{ image.id }}">
+                                  {{ image.name|slice:"37:" }}
+                                </input>
+                                <a href="{{ image.url }}?{% now 'U' %}" target="_blank">View</a>
+                              </label>
+                            {% endfor %}
+                          {% else %}
+                            <p class="form-control-static">Upload some images <a href="{% url 'images.views.uploadImage' %}">here</a>!</p>
+                          {% endif %}
                           </div>
                       </div>
                   </div>

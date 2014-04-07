@@ -284,6 +284,13 @@ def stream(request):
             categories = []
             visibilityExceptions = []
             images = []
+            unlinkedImages = []
+
+            linkedImageIds = ImagePost.objects.all().values_list('image', flat=True)
+            unlinkedImageObjs = Image.objects.filter(Q(author=author), ~Q(id__in=linkedImageIds))
+
+            for u in unlinkedImageObjs:
+                unlinkedImages.append(u.as_dict())
 
             __queryGithubForEvents(author)
             rawposts = list(Post.getAllowedPosts(author, checkFollow=True))
@@ -351,6 +358,7 @@ def stream(request):
             context['visibilities'] = Post.VISIBILITY_CHOICES
             context['contentTypes'] = Post.CONTENT_TYPE_CHOICES
             context['author_id'] = author.guid
+            context['unlinked_images'] = unlinkedImages
 
             if 'text/html' in request.META['HTTP_ACCEPT']:
                 return render_to_response('author/stream.html', context)

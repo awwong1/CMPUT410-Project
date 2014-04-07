@@ -12,6 +12,7 @@
                   {% csrf_token %}
                   <div class="panel-heading">
                       <h4><strong>Upload Images</strong></h4>
+                      <h5>Note: Images will be private until they are linked with a post that is not private.</h5>
                   </div>
                   <div class="panel-body">
                       <div class="form-group">
@@ -23,23 +24,6 @@
                       </div>
                   </div>
                   <div class="panel-footer">
-                      <div class="form-group" id="privacyOptions">
-                          <label for="visibility" class="control-label col-sm-3 col-md-2 col-lg-2">Viewable by:</label>
-                          <div class="col-sm-3 col-md-2 col-lg-2">
-                            <select id="visibility" name="visibility" class="form-control">
-                            {% for option in visibilities %}
-                                <option value="{{ option.0 }}">{{ option.1 }}</option>
-                            {% endfor %}
-                            </select>
-                          </div>
-                          <label for="visibilityExceptions" class="control-label col-sm-1 col-lg-1" style="text-align: center">and</label>
-                          <div class="col-sm-3 col-md-4">
-                              <input type="text" class="form-control"
-                               id="visibilityExceptions"
-                               name="visibilityExceptions"
-                               placeholder="Enter names(s) separated by spaces"/>
-                          </div>
-                      </div>
                       <div class="form-group" id="uploadButton">
                           <div class="col-sm-offset-5 col-sm-1 col-md-offset-6 col-lg-offset-8">
                               <input type="submit" id="upload" value="Upload"/>
