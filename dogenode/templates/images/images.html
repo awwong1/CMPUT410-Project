@@ -1,0 +1,19 @@
+{% extends "user_base.html" %}
+
+{% block body %}
+<div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
+  <div class="row">
+  {% for url in image_urls %}
+    <div class="col-md-4 text-center">
+      <div class="panel panel-default">
+        <div class="panel-body">
+            <a href='{{ url }}?{% now "U" %}' target="_blank">
+                <img class="img-responsive-horizontal" src="{{ url }}?{% now 'U' %}"/>
+            </a>
+          </div>
+      </div>
+    </div>
+  {% endfor %}
+  </div>
+</div>
+{% endblock %}

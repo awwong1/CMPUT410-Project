@@ -1,6 +1,7 @@
 import os, mimetypes
 
 from django.core.files import File
+from django.contrib.auth.models import User
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.shortcuts import render, render_to_response, redirect
 from django.http import HttpResponse
@@ -13,6 +14,8 @@ from django.contrib.auth.decorators import login_required
 
 from author.models import Author
 from images.models import Image, ImageVisibilityException
+
+import json
 
 @login_required
 def getViewableImages(request):
@@ -29,19 +32,57 @@ def getViewableImages(request):
                 viewableImageUrls.append(image.get_absolute_url())
 
         context['image_urls'] = viewableImageUrls
+        context['author_id'] = author.guid
     else:
         images = Image.objects.filter(visibility=Image.PUBLIC)
         context['image_urls'] = [image.get_absolute_url() for image in images]
 
-    return render_to_response('image/images.html', context)
+    return render_to_response('images/images.html', context)
 
 
 @login_required
 def uploadImage(request):
-    if request.method == "GET":
-        return HttpResponse("OK")
+    author = Author.objects.get(user=request.user)
+
+    if request.method == "POST":
+        images = request.FILES.getlist('image')
+        visibility = request.POST.get('visibility', Image.PRIVATE)
+        visibilityExceptionsString = request.POST.get("visibilityExceptions",
+                                                      "")
+        exceptionUsernames = visibilityExceptionsString.split()
+
+        jsonPayload = []
+        htmlPayload = []
+
+        for image in images:
+            newImage = Image.objects.create(author=author, file=image,
+                                            visibility=visibility,
+                                            contentType=image.content_type)
+            if newImage:
+                for u in exceptionUsernames:
+                    exceptionUser = User.objects.get(username=u)
+                    exceptionAuthor = Author.objects.get(user=exceptionUser)
+
+                    ImageVisibilityException.objects.get_or_create(
+                                    image=newImage, author=exceptionAuthor)
+
+                jsonPayload.append(newImage.as_dict())
+                htmlPayload.append(newImage.get_absolute_url())
+
+        if 'application/json' in request.META['HTTP_ACCEPT']:
+            return HttpResponse(json.dumps(payload), status=201,
+                                content_type="application/json")
+        elif 'text/html' in request.META['HTTP_ACCEPT']:
+            return redirect('/images/')
+        else:
+            return HttpResponse(json.dumps(payload), status=201,
+                                content_type="application/json")
     else:
-        return HttpResponse("OK")
+        context = RequestContext(request)
+        context['visibilities'] = Image.VISIBILITY_CHOICES
+        context['author_id'] = author.guid
+
+        return render_to_response('images/upload.html', context)
 
 
 @login_required
