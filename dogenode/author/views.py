@@ -355,79 +355,63 @@ def __rawPostViewConverter(rawpost):
     categoriesData = {}
     visibilityExceptionsData = {}
     imagesData = {}
+    unifiedpost = {}
 
-    # parse out external posts stuff
-    postState = 0
-
-    if postState == 0:
-        try:
-            #dogenode test external posts settings
-            postData['HTML']="text/html"
-            postData['MARKDOWN']="text/x-markdown"
-            postData['PLAIN']="text/plain"
-            postData['guid']=rawpost['guid']
-            postData['title']=rawpost['title']
-            postData['description']=rawpost['description']
-            postData['content']=rawpost['content']
-            postData['visibility']=rawpost['visibility']
-            postData['contentType']=rawpost['content-type']
-            postData['origin']=rawpost['origin']
-            postData['source']=rawpost['source']
-            postData['pubDate']=rawpost['pubDate']
-            # postData['modifiedDate']=rawpost['modifiedDate']
-
-            # dogenode test external author settings
-            authData['displayname']=rawpost['author']['displayname']
-            authData['url']=rawpost['author']['url']
-            authData['host']=rawpost['author']['host']
-            authData['id']=rawpost['author']['id']
-
-            # dogenode test external comments settings
-            for rawComment in rawpost['comments']:
-                # get nested author
-                rawauth = {}
-                rawauth['displayname'] = rawComment['author']['displayname']
+    try:
+        postData['HTML']="text/html"
+        postData['MARKDOWN']="text/x-markdown"
+        postData['PLAIN']="text/plain"
+        postData['guid']=rawpost['guid']
+        postData['title']=rawpost['title']
+        postData['description']=rawpost['description']
+        postData['content']=rawpost['content']
+        postData['visibility']=rawpost['visibility']
+        postData['contentType']=rawpost['content-type']
+        postData['origin']=rawpost['origin']
+        postData['source']=rawpost['source']
+        postData['pubDate']=rawpost['pubDate']
+        
+        authData['displayname']=rawpost['author']['displayname']
+        authData['url']=rawpost['author']['url']
+        authData['host']=rawpost['author']['host']
+        authData['id']=rawpost['author']['id']
+        
+        for rawComment in rawpost['comments']:
+            rawauth = {}
+            rawauth['displayname'] = rawComment['author']['displayname']
+            # Note: author url isn't actually part of spec in samplejson
+            try:
                 rawauth['url'] = rawComment['author']['url']
-                rawauth['host'] = rawComment['author']['host']
-                rawauth['id'] = rawComment['author']['id']
-                # attach with rest of the comment
-                adaptcomment = {}
-                adaptcomment['author']=rawauth
-                adaptcomment['comment']=rawComment['comment']
-                adaptcomment['guid']=rawComment['guid']
+            except:
+                rawauth['url'] = '/'
+            rawauth['host'] = rawComment['author']['host']
+            rawauth['id'] = rawComment['author']['id']
+    
+            # attach with rest of the comment
+            adaptcomment = {}
+            adaptcomment['author']=rawauth
+            adaptcomment['comment']=rawComment['comment']
+            adaptcomment['guid']=rawComment['guid']
+            
+            # this is to get it working with group 6 sempais
+            try:
                 adaptcomment['pubDate']=rawComment['pubDate']
-                commentsData.append(adaptcomment)
+            except:
+                pass
+            try:
+                adaptcomment['pubDate']=rawComment['PubDate']
+            except:
+                pass
+            commentsData.append(adaptcomment)
 
-            #print ("doge: succeded parsing post")
-        except Exception as e:
-            print ("doge: failed to parse post,\n{0}".format(e))
-            # postState = 1 # when rest is implemented
-            postState = -1
-
-    if (postState == 1):
-        #benhobo test external posts settings
-        try:
-            pass #todo
-            #print ("benhobo: succeded parsing post")
-        except Exception as e:
-            print ("benhobo: failed to parse post,\n{0}".format(e))
-            postState = 2
-
-    if (postState == 2):
-        #plkr test external posts settings
-        try:
-            pass #todo
-            #print ("plkr: succeded parsing post")
-        except Exception as e:
-            print( "plkr: failed to parse post,\n{0}".format(e))
-            postState == -1
-
-    if postState >= 0:
         unifiedpost = (postData, authData, commentsData, categoriesData,
                    visibilityExceptionsData, imagesData)
-    else:
-        print("Something didn't parse properly at all!\n\n")
+
+    except Exception as e:
+        print ("doge: failed to parse post,\n{0}".format(e))
         unifiedpost = None
+        print("Something didn't parse properly at all!\n\n")
+
     return unifiedpost
 
 def friends(request):
