@@ -329,7 +329,7 @@ def stream(request):
                     print ("failed to get posts from there,\n{0}".format(e))
 
             for externalPost in externalPosts:
-                parsedPost = __rawPostViewConverter(externalPost)
+                parsedPost = rawPostViewConverter(externalPost)
                 if parsedPost != None:
                     serverPosts.append(parsedPost)
 
@@ -346,76 +346,6 @@ def stream(request):
                 return redirect('/login/')
     else:
         return getStream(request)
-
-def __rawPostViewConverter(rawpost):
-    """
-    Attempt to kludge a raw post into a django template post viewable
-    I'm so very sorry
-    """
-    postData = {'external':True}
-    authData = {}
-    commentsData = []
-    categoriesData = {}
-    visibilityExceptionsData = {}
-    imagesData = {}
-    unifiedpost = {}
-
-    try:
-        postData['HTML']="text/html"
-        postData['MARKDOWN']="text/x-markdown"
-        postData['PLAIN']="text/plain"
-        postData['guid']=rawpost['guid']
-        postData['title']=rawpost['title']
-        postData['description']=rawpost['description']
-        postData['content']=rawpost['content']
-        postData['visibility']=rawpost['visibility']
-        postData['contentType']=rawpost['content-type']
-        postData['origin']=rawpost['origin']
-        postData['source']=rawpost['source']
-        postData['pubDate']=rawpost['pubDate']
-        
-        authData['displayname']=rawpost['author']['displayname']
-        authData['url']=rawpost['author']['url']
-        authData['host']=rawpost['author']['host']
-        authData['id']=rawpost['author']['id']
-        
-        for rawComment in rawpost['comments']:
-            rawauth = {}
-            rawauth['displayname'] = rawComment['author']['displayname']
-            # Note: author url isn't actually part of spec in samplejson
-            try:
-                rawauth['url'] = rawComment['author']['url']
-            except:
-                rawauth['url'] = '/'
-            rawauth['host'] = rawComment['author']['host']
-            rawauth['id'] = rawComment['author']['id']
-    
-            # attach with rest of the comment
-            adaptcomment = {}
-            adaptcomment['author']=rawauth
-            adaptcomment['comment']=rawComment['comment']
-            adaptcomment['guid']=rawComment['guid']
-            
-            # this is to get it working with group 6 sempais
-            try:
-                adaptcomment['pubDate']=rawComment['pubDate']
-            except:
-                pass
-            try:
-                adaptcomment['pubDate']=rawComment['PubDate']
-            except:
-                pass
-            commentsData.append(adaptcomment)
-
-        unifiedpost = (postData, authData, commentsData, categoriesData,
-                   visibilityExceptionsData, imagesData)
-
-    except Exception as e:
-        print ("doge: failed to parse post,\n{0}".format(e))
-        unifiedpost = None
-        print("Something didn't parse properly at all!\n\n")
-
-    return unifiedpost
 
 def friends(request):
     """
