@@ -1,26 +1,25 @@
 from django.conf import settings
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.models import User
+from django.db.models import Q
+from django.http import HttpResponse
 from django.shortcuts import (get_object_or_404, render, redirect,
                               render_to_response)
-from django.http import HttpResponse
 from django.template import RequestContext
-from django.db.models import Q
 from django.utils.html import format_html, format_html_join
 from django.utils.safestring import mark_safe
 from django.views.decorators.csrf import ensure_csrf_cookie
 
-from django.contrib.auth import authenticate, login, logout
-from django.contrib.auth.models import User
+from rest_framework import status
 
+from api.models import AllowedServer
+from api.views import *
 from author.models import (Author, RemoteAuthor,
                            LocalRelationship, RemoteRelationship)
-from post.models import Post, PostVisibilityException, AuthorPost, PostCategory
 from categories.models import Category
 from comments.models import Comment
 from images.models import Image, ImagePost, ImageVisibilityException
-from api.views import postFriendRequest
-from api.models import AllowedServer
-
-from rest_framework import status
+from post.models import Post, PostVisibilityException, AuthorPost, PostCategory
 
 import dateutil.parser
 import json
@@ -210,79 +209,39 @@ def getAuthorPosts(request, author_id):
     to currently authenticated user
 
     """
-    context = RequestContext(request)
-
-    if not request.user.is_authenticated():
-       return render_to_response('login/index.html', context)
-
-    viewer = Author.objects.get(user=request.user)
-    author = Author.objects.get(guid=author_id)
-
-    postIds = AuthorPost.objects.filter(author=author).values_list(
-                'post', flat=True)
-
-    posts = Post.getViewablePosts(viewer, author)
-    comments = []
-    categories = []
-    visibilityExceptions = []
-    images = []
-
-    for post in posts:
-        categoryIds = PostCategory.objects.filter(post = post).values_list(
-                        'category', flat=True)
-        visExceptions = PostVisibilityException.objects.filter(
-                        post=post)
-        authorIds = [e.author.guid for e in visExceptions]
-        imageIds = ImagePost.objects.filter(post=post).values_list(
-                        'image', flat=True)
-
-        comments.append(Comment.objects.filter(post_ref=post))
-        categories.append(Category.objects.filter(id__in=categoryIds))
-        visibilityExceptions.append(Author.objects.filter(
-                                        guid__in=authorIds))
-        images.append(Image.objects.filter(id__in=imageIds))
-
-        # Convert Markdown into HTML for web browser
-        # django.contrib.markup is deprecated in 1.6, so, workaround
-        if post.contentType == post.MARKDOWN:
-            post.content = markdown.markdown(post.content)
-
-    context["posts"] = zip(posts, comments, categories, visibilityExceptions,
-                           images)
-    context["author_id"] = author.guid
-
-    return render_to_response('post/posts.html', context)
-
-def stream(request):
-    """
-    Returns the stream of an author (all posts author can view)
-    If calling the function restfully, call by sending a GET request to /author/posts
-    """
-    if request.user.is_authenticated():
+    if 'application/json' in request.META['HTTP_ACCEPT']:
+        return getAuthorPostsAsJSON(request, author_id)
+    elif 'text/html' in request.META['HTTP_ACCEPT']:
         context = RequestContext(request)
-        author = Author.objects.get(user=request.user)
+
+        if not request.user.is_authenticated():
+           return render_to_response('login/index.html', context)
+
+        viewer = Author.objects.get(user=request.user)
+        author = Author.objects.get(guid=author_id)
+
+        postIds = AuthorPost.objects.filter(author=author).values_list(
+                    'post', flat=True)
+
+        posts = Post.getViewablePosts(viewer, author)
         comments = []
-        authors = []
         categories = []
         visibilityExceptions = []
         images = []
 
-        __queryGithubForEvents(author)
-        rawposts = list(Post.getAllowedPosts(author, checkFollow=True))
-
-        for post in rawposts:
-            categoryIds = PostCategory.objects.filter(post=post).values_list(
+        for post in posts:
+            categoryIds = PostCategory.objects.filter(post = post).values_list(
                             'category', flat=True)
-            authorIds = PostVisibilityException.objects.filter(
-                            post=post).values_list('author', flat=True)
+            visExceptions = PostVisibilityException.objects.filter(
+                            post=post)
+            authorIds = [e.author.guid for e in visExceptions]
             imageIds = ImagePost.objects.filter(post=post).values_list(
                             'image', flat=True)
 
-            authors.append(AuthorPost.objects.get(post=post).author)
             comments.append(Comment.objects.filter(post_ref=post))
             categories.append(Category.objects.filter(id__in=categoryIds))
             visibilityExceptions.append(Author.objects.filter(
-                guid__in=authorIds))
+                                            guid__in=authorIds))
             images.append(Image.objects.filter(id__in=imageIds))
 
             # Convert Markdown into HTML for web browser
@@ -290,64 +249,108 @@ def stream(request):
             if post.contentType == post.MARKDOWN:
                 post.content = markdown.markdown(post.content)
 
-        # Stream payload
-        serverPosts = zip(rawposts, authors, comments, categories,
-                               visibilityExceptions, images)
+        context["posts"] = zip(posts, comments, categories, visibilityExceptions,
+                               images)
+        context["author_id"] = author.guid
 
-        externalPosts = []
-        # Get the other server posts:
-        servers = AllowedServer.objects.all()
-
-        for server in servers:
-            try:
-                author = Author.objects.get(user=request.user)
-                # another hack because what the heck is going on with /api/
-                if server.host == 'http://127.0.0.1:80/':
-                    response = requests.get(
-                        "{0}api/author/posts?id={1}".format(
-                            server.host, author.guid)
-                        )
-                else:
-                    response = requests.get(
-                        "{0}author/posts?id={1}".format(
-                            server.host, author.guid
-                            )
-                        )
-                response.raise_for_status()
-                jsonAllPosts = response.json()['posts']
-                # turn into a dummy post
-                for jsonPost in jsonAllPosts:
-                    externalPosts.append(jsonPost)
-            except Exception as e:
-                print ("failed to get posts from there,\n{0}".format(e))
-
-        for externalPost in externalPosts:
-            serverPosts.append(__rawPostViewConverter(externalPost))
-
-        context['posts'] = serverPosts
-        # Make a Post payload
-        context['visibilities'] = Post.VISIBILITY_CHOICES
-        context['contentTypes'] = Post.CONTENT_TYPE_CHOICES
-        context['author_id'] = author.guid
-
-        if 'text/html' in request.META['HTTP_ACCEPT']:
-            return render_to_response('author/stream.html', context)
-
+        return render_to_response('post/posts.html', context)
     else:
-        if 'text/html' in request.META['HTTP_ACCEPT']:
-            return redirect('/login/')
+        return getAuthorPostsAsJSON(request, author_id)
+
+def stream(request):
+    """
+    Returns the stream of an author (all posts author can view)
+    If calling the function restfully, call by sending a GET request to /author/posts
+    """
+    if 'application/json' in request.META['HTTP_ACCEPT']:
+        return getStream(request)
+    elif 'text/html' in request.META['HTTP_ACCEPT']:
+        if request.user.is_authenticated():
+            context = RequestContext(request)
+            author = Author.objects.get(user=request.user)
+            comments = []
+            authors = []
+            categories = []
+            visibilityExceptions = []
+            images = []
+
+            __queryGithubForEvents(author)
+            rawposts = list(Post.getAllowedPosts(author, checkFollow=True))
+
+            for post in rawposts:
+                categoryIds = PostCategory.objects.filter(post=post).values_list(
+                                'category', flat=True)
+                authorIds = PostVisibilityException.objects.filter(
+                                post=post).values_list('author', flat=True)
+                imageIds = ImagePost.objects.filter(post=post).values_list(
+                                'image', flat=True)
+
+                authors.append(AuthorPost.objects.get(post=post).author)
+                comments.append(Comment.objects.filter(post_ref=post))
+                categories.append(Category.objects.filter(id__in=categoryIds))
+                visibilityExceptions.append(Author.objects.filter(
+                    guid__in=authorIds))
+                images.append(Image.objects.filter(id__in=imageIds))
+
+                # Convert Markdown into HTML for web browser
+                # django.contrib.markup is deprecated in 1.6, so, workaround
+                if post.contentType == post.MARKDOWN:
+                    post.content = markdown.markdown(post.content)
+
+            # Stream payload
+            serverPosts = zip(rawposts, authors, comments, categories,
+                                   visibilityExceptions, images)
+
+            externalPosts = []
+            # Get the other server posts:
+            servers = AllowedServer.objects.all()
+
+            for server in servers:
+                try:
+                    author = Author.objects.get(user=request.user)
+                    # another hack because what the heck is going on with /api/
+                    if server.host == 'http://127.0.0.1:80/':
+                        response = requests.get(
+                            "{0}api/author/posts?id={1}".format(
+                                server.host, author.guid)
+                            )
+                    else:
+                        response = requests.get(
+                            "{0}author/posts?id={1}".format(
+                                server.host, author.guid
+                                )
+                            )
+                    response.raise_for_status()
+                    jsonAllPosts = response.json()['posts']
+                    # turn into a dummy post
+                    for jsonPost in jsonAllPosts:
+                        externalPosts.append(jsonPost)
+                except Exception as e:
+                    print ("failed to get posts from there,\n{0}".format(e))
+
+            for externalPost in externalPosts:
+                parsedPost = __rawPostViewConverter(externalPost)
+                if parsedPost != None:
+                    serverPosts.append(parsedPost)
+
+            context['posts'] = serverPosts
+            # Make a Post payload
+            context['visibilities'] = Post.VISIBILITY_CHOICES
+            context['contentTypes'] = Post.CONTENT_TYPE_CHOICES
+            context['author_id'] = author.guid
+
+            if 'text/html' in request.META['HTTP_ACCEPT']:
+                return render_to_response('author/stream.html', context)
+        else:
+            if 'text/html' in request.META['HTTP_ACCEPT']:
+                return redirect('/login/')
+    else:
+        return getStream(request)
 
 def __rawPostViewConverter(rawpost):
     """
     Attempt to kludge a raw post into a django template post viewable
     I'm so very sorry
-
-    the worst method of checking 'states', let's just go back to first year
-    programming and use an integer
-    0 = dogenode
-    1 = benhobo
-    2 = plkr
-    anything else = bust
     """
     postData = {'external':True}
     authData = {}
@@ -355,79 +358,63 @@ def __rawPostViewConverter(rawpost):
     categoriesData = {}
     visibilityExceptionsData = {}
     imagesData = {}
+    unifiedpost = {}
 
-    # parse out external posts stuff
-    postState = 0
-
-    if postState == 0:
-        try:
-            #dogenode test external posts settings
-            postData['HTML']=rawpost['HTML']
-            postData['MARKDOWN']=rawpost['MARKDOWN']
-            postData['PLAIN']=rawpost['PLAIN']
-            postData['guid']=rawpost['guid']
-            postData['title']=rawpost['title']
-            postData['description']=rawpost['description']
-            postData['content']=rawpost['content']
-            postData['visibility']=rawpost['visibility']
-            postData['contentType']=rawpost['content-type']
-            postData['origin']=rawpost['origin']
-            postData['source']=rawpost['source']
-            postData['pubDate']=rawpost['pubDate']
-            postData['modifiedDate']=rawpost['modifiedDate']
-
-            # dogenode test external author settings
-            authData['displayname']=rawpost['author']['displayname']
-            authData['url']=rawpost['author']['url']
-            authData['host']=rawpost['author']['host']
-            authData['id']=rawpost['author']['id']
-
-            # dogenode test external comments settings
-            for rawComment in rawpost['comments']:
-                # get nested author
-                rawauth = {}
-                rawauth['displayname'] = rawComment['author']['displayname']
+    try:
+        postData['HTML']="text/html"
+        postData['MARKDOWN']="text/x-markdown"
+        postData['PLAIN']="text/plain"
+        postData['guid']=rawpost['guid']
+        postData['title']=rawpost['title']
+        postData['description']=rawpost['description']
+        postData['content']=rawpost['content']
+        postData['visibility']=rawpost['visibility']
+        postData['contentType']=rawpost['content-type']
+        postData['origin']=rawpost['origin']
+        postData['source']=rawpost['source']
+        postData['pubDate']=rawpost['pubDate']
+        
+        authData['displayname']=rawpost['author']['displayname']
+        authData['url']=rawpost['author']['url']
+        authData['host']=rawpost['author']['host']
+        authData['id']=rawpost['author']['id']
+        
+        for rawComment in rawpost['comments']:
+            rawauth = {}
+            rawauth['displayname'] = rawComment['author']['displayname']
+            # Note: author url isn't actually part of spec in samplejson
+            try:
                 rawauth['url'] = rawComment['author']['url']
-                rawauth['host'] = rawComment['author']['host']
-                rawauth['id'] = rawComment['author']['id']
-                # attach with rest of the comment
-                adaptcomment = {}
-                adaptcomment['author']=rawauth
-                adaptcomment['comment']=rawComment['comment']
-                adaptcomment['guid']=rawComment['guid']
-                adaptcomment['pub_date']=rawComment['pub_date']
-                commentsData.append(adaptcomment)
+            except:
+                rawauth['url'] = '/'
+            rawauth['host'] = rawComment['author']['host']
+            rawauth['id'] = rawComment['author']['id']
+    
+            # attach with rest of the comment
+            adaptcomment = {}
+            adaptcomment['author']=rawauth
+            adaptcomment['comment']=rawComment['comment']
+            adaptcomment['guid']=rawComment['guid']
+            
+            # this is to get it working with group 6 sempais
+            try:
+                adaptcomment['pubDate']=rawComment['pubDate']
+            except:
+                pass
+            try:
+                adaptcomment['pubDate']=rawComment['PubDate']
+            except:
+                pass
+            commentsData.append(adaptcomment)
 
-            #print ("doge: succeded parsing post")
-        except Exception as e:
-            print ("doge: failed to parse post,\n{0}".format(e))
-            # postState = 1 # when rest is implemented
-            postState = -1
-
-    if (postState == 1):
-        #benhobo test external posts settings
-        try:
-            pass #todo
-            #print ("benhobo: succeded parsing post")
-        except Exception as e:
-            print ("benhobo: failed to parse post,\n{0}".format(e))
-            postState = 2
-
-    if (postState == 2):
-        #plkr test external posts settings
-        try:
-            pass #todo
-            #print ("plkr: succeded parsing post")
-        except Exception as e:
-            print( "plkr: failed to parse post,\n{0}".format(e))
-            postState == -1
-
-    if postState >= 0:
         unifiedpost = (postData, authData, commentsData, categoriesData,
                    visibilityExceptionsData, imagesData)
-    else:
-        print("Something didn't parse properly at all!\n\n")
+
+    except Exception as e:
+        print ("doge: failed to parse post,\n{0}".format(e))
         unifiedpost = None
+        print("Something didn't parse properly at all!\n\n")
+
     return unifiedpost
 
 def friends(request):
@@ -448,6 +435,7 @@ def friends(request):
                        "friends": author.getFriends(),
                        "follows": author.getPendingSentRequests(),
                        "followers": author.getPendingReceivedRequests(),
+                       "our_host": settings.OUR_HOST,
                        "author_id": author.guid })
 
     return render_to_response('author/friends.html', context)
@@ -502,19 +490,23 @@ def search(request):
                     (Q(author1=author) & Q(author2=a))
                    |(Q(author2=author) & Q(author1=a)))
 
+            userStatus = {"displayname": u.username,
+                          "relationship": "No Relationship",
+                          "guid": a.guid,
+                          "host": settings.OUR_HOST}
+
             # These 2 authors have a relationship
             if len(r) > 0:
 
                 if (r[0].relationship): # They are friends
-                    usersAndStatus.append([u.username, "Friend", a.guid])
-
+                    userStatus["relationship"] = "Friend"
                 else:
                     if r[0].author1 == author:
-                        usersAndStatus.append([u.username, "Following", a.guid])
+                        userStatus["relationship"] = "Following"
                     else:
-                        usersAndStatus.append([u.username, "Follower", a.guid])
-            else:
-                usersAndStatus.append([u.username, "No Relationship", a.guid])
+                        userStatus["relationship"] = "Follower"
+
+            usersAndStatus.append(userStatus)
 
         authorsOtherServers = searchOtherServers(username)
 
@@ -523,39 +515,35 @@ def search(request):
 
             #TODO: make sure the url is absolute (includes remote hostname)
 
-            remoteAuthor, _ = RemoteAuthor.objects.get_or_create(
-                                    guid=a["id"],
-                                    displayName=a["displayname"],
-                                    host=a["host"],
-                                    url=a["url"])
+            remoteAuthor, _ = RemoteAuthor.objects.get_or_create(guid=a["id"])
+
+            remoteAuthor.update(displayName=a["displayname"],
+                                host=a["host"],
+                                url=a["url"])
 
             r = RemoteRelationship.objects.filter(localAuthor=author,
                                                   remoteAuthor=remoteAuthor)
 
             authorDisplayName = "%s@%s" % (a["displayname"], a["host"])
 
+            userStatus = {"displayname": authorDisplayName,
+                          "relationship": "No Relationship",
+                          "guid": a["id"],
+                          "host": a["host"]}
+
             # These 2 authors have a relationship
             if len(r) > 0:
 
                 if r[0].relationship == 0: # user follow the author
-                    usersAndStatus.append([authorDisplayName,
-                                           "Following",
-                                           a["id"]])
+                    userStatus["relationship"] = "Following"
 
                 elif r[0].relationship == 1: # the author follows the user
-                    if r[0].localAuthor == author:
-                        usersAndStatus.append([authorDisplayName,
-                                               "Follower",
-                                               a["id"]])
+                    userStatus["relationship"] = "Follower"
+
                 else: # relationship value should be 2: they are friends
-                    usersAndStatus.append([authorDisplayName,
-                                           "Friend",
-                                           a["id"]])
-            # These 2 authors have no relationship
-            else:
-                usersAndStatus.append([authorDisplayName,
-                                      "No Relationship",
-                                      a["id"]])
+                    userStatus["relationship"] = "Friend"
+
+            usersAndStatus.append(userStatus)
 
         context = RequestContext(request, {'searchphrase': username,
                                            'results': usersAndStatus,
@@ -571,6 +559,7 @@ def updateRelationship(request, guid):
     if request.method == 'POST' and request.is_ajax:
 
         currentRelationship = request.POST["relationship"]
+        host = request.POST["host"]
         requestAuthor = Author.objects.get(user=request.user)
 
         # check if the guid is a local or remote user

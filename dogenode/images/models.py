@@ -1,7 +1,9 @@
 import os
+from django.conf import settings
 from django.db import models
 from author.models import Author
 from post.models import Post
+from urlparse import urljoin
 
 def useAuthorGuid(instance, filename):
     return os.path.join(instance.author.guid, filename)
@@ -38,7 +40,7 @@ class Image(models.Model):
         return {
             "id": self.id,
             "name": self.file.name,
-            "url": self.get_absolute_url(),
+            "url": urljoin(settings.OUR_HOST, self.get_absolute_url()),
             "visibility": self.visibility
         }
 

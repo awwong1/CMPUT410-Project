@@ -1,101 +1,27 @@
 from django.conf import settings
-from django.core.exceptions import ObjectDoesNotExist
-from django.core.files.base import ContentFile
-from django.views.decorators.csrf import ensure_csrf_cookie
-from django.shortcuts import render, render_to_response, redirect
-from django.http import HttpResponse
-from django.template import RequestContext
-
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
+from django.http import HttpResponse
+from django.shortcuts import render, render_to_response, redirect
+from django.template import RequestContext
+from django.views.decorators.csrf import ensure_csrf_cookie
 
-from post.models import Post, PostVisibilityException, AuthorPost, PostCategory
-from images.models import Image, ImagePost, ImageVisibilityException
-from categories.models import Category
+from api.utils import *
+from api.views import *
 from author.models import Author, RemoteAuthor
+from categories.models import Category
 from comments.models import Comment
+from images.models import Image, ImagePost, ImageVisibilityException
+from post.models import Post, PostVisibilityException, AuthorPost, PostCategory
 
-import markdown
 import datetime
-import base64
+import markdown
 import requests
 
-def getJSONPost(viewer_id, post_id, host, check_follow=False): 
-    """
-    Returns a post. The currently authenticated
-    user must also have permissions to view the post, else it will not be
-    shown.
-
-    Return value will be a tuple. The first element will be a boolean,
-    True if the viewer is allowed to see the post, and False if they
-    are not allowed.
-
-    The second element will be the post retrieved. If no post matching
-    the post id given was found, it will be None.
-    """
-    try:
-        post = Post.objects.get(guid=post_id)
-    except Post.DoesNotExist:
-        return (False, None)
-
-    postAuthor = AuthorPost.objects.get(post=post).author
-    components = getPostComponents(post)
-    viewerGuid = viewer_id[0]
-
-    # dealing with local authors
-    if len(Author.objects.filter(guid=viewerGuid)) > 0:
-        return (post.isAllowedToViewPost(
-                    Author.objects.get(guid=viewerGuid), check_follow),
-                post)
-
-    # dealing with remote authors
-    viewers = RemoteAuthor.objects.filter(guid=viewerGuid)
-    if (len(viewers) > 0):
-        viewer = viewers[0]
-    else:
-        viewer = RemoteAuthor.objects.create(guid=viewerGuid, host=host)
-
-    viewable = False
-    authorFriends = postAuthor.getFriends()
-    authorFollowedBy = postAuthor.getPendingReceivedRequests()
-
-    # Only want to get public posts of people you follow or are friends with
-    if post.visibility == Post.PUBLIC:
-        if not check_follow:
-            return (True, post)
-        elif (viewer in authorFriends["remote"] or
-              viewer in authorFollowedBy["remote"]):
-            return (True, post)
-        else:
-            return (False, post)
-
-    elif post.visibility == Post.SERVERONLY:
-        viewable = False
-    elif post.visibility == Post.FRIENDS or post.visibility == Post.FOAF:
-        if viewer in authorFriends["remote"]: 
-            viewable = True
-    elif post.visibility == Post.FOAF:
-        allFriends = authorFriends["remote"] + authorFriends["local"]
-        for friend in authorFriends["local"]:
-            # TODO: fix for remote cases
-            try:
-                response = requests.get("%sapi/friends/%s/%s" % 
-                                            (settings.OUR_HOST,   
-                                            str(viewerGuid),
-                                            str(postAuthor.guid)))
-            except:
-                viewable = False
-                break
-
-            if response.json()["friends"] != "NO":
-                viewable = True
-                break 
-
-    elif post.visibility == Post.PRIVATE:
-        if viewerGuid == postAuthor.guid:
-            viewable = True
-
-    return (viewable, post)
+"""
+NOTE: All API-related functionality resides in api.views, the functions in
+      post.views pass the request on to the proper functions in api.views.
+"""
 
 def getPost(request, post_id):
     """
@@ -105,153 +31,67 @@ def getPost(request, post_id):
     user does not have the permission to view the post, the list will be
     empty.
     """
-    if request.user.is_authenticated():
-        user = request.user
-        author = Author.objects.get(user=request.user)
-        post = Post.objects.get(guid=post_id)
-        if (post.isAllowedToViewPost(author)):
-            context = RequestContext(request)
-            components = getPostComponents(post);
+    if 'application/json' in request.META['HTTP_ACCEPT']:
+        return postSingle(request, post_id)
+    elif 'text/html' in request.META['HTTP_ACCEPT']:
+        if request.user.is_authenticated():
+            user = request.user
+            author = Author.objects.get(user=request.user)
+            post = Post.objects.get(guid=post_id)
+            if (post.isAllowedToViewPost(author)):
+                context = RequestContext(request)
+                components = getPostComponents(post) # From api.utils
 
-            # Convert Markdown into HTML for web browser
-            # django.contrib.markup is deprecated in 1.6, so, workaround
-            if post.contentType == post.MARKDOWN:
-                post.content = markdown.markdown(post.content)
+                # Convert Markdown into HTML for web browser
+                # django.contrib.markup is deprecated in 1.6, so, workaround
+                if post.contentType == post.MARKDOWN:
+                    post.content = markdown.markdown(post.content)
 
-            context['posts'] = [(post, components["postAuthor"], 
-                                components["comments"], 
-                                components["categories"],
-                                components["visibilityExceptions"], 
-                                components["images"])]
-            context['author_id'] = author.guid
+                context['posts'] = [(post, components["postAuthor"],
+                                    components["comments"],
+                                    components["categories"],
+                                    components["visibilityExceptions"],
+                                    components["images"])]
+                context['author_id'] = author.guid
 
-            return render_to_response('post/post.html', context)
+                return render_to_response('post/post.html', context)
+        else:
+            return redirect('/login/')
     else:
-        return redirect('/login/')
-
-def getPostComponents(post):
-    """
-    Gets all componenets of a post, including images, comments, categories,
-    and visibility exceptions.
-
-    Returns a dictionary containing all the information.
-    """
-    components = {}
-    categoryIds = PostCategory.objects.filter(
-                    post=post).values_list('category', flat=True)
-    postExceptions = PostVisibilityException.objects.filter(post=post)
-    authorIds = [exception.author.guid for exception in postExceptions]
-    imageIds = ImagePost.objects.filter(post=post).values_list(
-                    'image', flat=True)
-
-    components["postAuthor"] = AuthorPost.objects.get(post=post).author
-    components["comments"] = Comment.objects.filter(post_ref=post)
-    components["visibilityExceptions"] = Author.objects.filter(
-        guid__in=authorIds)
-    components["categories"] = Category.objects.filter(id__in=categoryIds)
-    components["images"] = Image.objects.filter(id__in=imageIds)
-
-    return components
+        return postSingle(request, post_id)
 
 def getAllPublicPosts(request):
     """
-    Retreives all public posts and displays it on the web browser
+    Retrieves all public posts
     """
-    context = RequestContext(request)
-    author = Author.objects.get(user=request.user)
-    rawposts = Post.objects.filter(visibility=Post.PUBLIC)
-    comments = []
-    authors = []
-    categories = []
-    images = []
-
-    for post in rawposts:
-        categoryIds = PostCategory.objects.filter(post=post).values_list(
-                        'category', flat=True)
-        imageIds = ImagePost.objects.filter(post=post).values_list(
-                        'image', flat=True)
-
-        authors.append(AuthorPost.objects.get(post=post).author)
-        comments.append(Comment.objects.filter(post_ref=post))
-        categories.append(Category.objects.filter(id__in=categoryIds))
-        images.append(Image.objects.filter(id__in=imageIds))
-
-    # Stream payload
-    context['posts'] = zip(rawposts, authors, comments, categories, images)
-    context['author_id'] = author.guid
-    return render_to_response('post/public_posts.html', context)
-
-def createPost(request, post_id, data):
-    """
-    Creates a new post from json representation of a post.
-    """
-    guid = post_id
-    title = data.get("title")
-    description = data.get("description", "")
-    content = data.get("content")
-    visibility = data.get("visibility", Post.PRIVATE)
-    visibilityExceptionsString = data.get("visibilityExceptions", "")
-    categoriesString = data.get("categories", "")
-    contentType = data.get("content-type", Post.PLAIN)
-    images = data.get("images")
-    
-    # Dealing with no images defined
-    if images is None:
+    if 'application/json' in request.META['HTTP_ACCEPT']:
+        return getPublicPosts(request)
+    if 'text/html' in request.META['HTTP_ACCEPT']:
+        context = RequestContext(request)
+        author = Author.objects.get(user=request.user)
+        rawposts = Post.objects.filter(visibility=Post.PUBLIC)
+        comments = []
+        authors = []
+        categories = []
         images = []
 
-    categoryNames = categoriesString.split()
-    exceptionUsernames = visibilityExceptionsString.split()
-    author = Author.objects.get(user=request.user)
-    newPost = Post.objects.create(guid=guid, title=title,
-                                  description=description,
-                                  content=content, visibility=visibility,
-                                  contentType=contentType)
-    newPost.origin = request.build_absolute_uri(newPost.get_absolute_url())
-    newPost.save()
+        for post in rawposts:
+            categoryIds = PostCategory.objects.filter(post=post).values_list(
+                            'category', flat=True)
+            imageIds = ImagePost.objects.filter(post=post).values_list(
+                            'image', flat=True)
 
-    # If there are also images, handle that too
-    for image in images:
-        # decoding base64 image code from: https://gist.github.com/yprez/7704036
-        # base64 encoded image - decode
-        format, imgstr = image[1].split(';base64,')  # format ~= data:image/X,
-        ext = format.split('/')[-1]  # guess file extension
-        decoded = ContentFile(base64.b64decode(imgstr), name=image[0])
-        newImage = Image.objects.create(author=author, file=decoded,
-                                        visibility=visibility,
-                                        contentType=format)
-        ImagePost.objects.create(image=newImage, post=newPost)
+            authors.append(AuthorPost.objects.get(post=post).author)
+            comments.append(Comment.objects.filter(post_ref=post))
+            categories.append(Category.objects.filter(id__in=categoryIds))
+            images.append(Image.objects.filter(id__in=imageIds))
 
-    AuthorPost.objects.create(post=newPost, author=author)
-
-   # I use (abuse) get_or_create to curtail creating duplicates
-    for name in categoryNames:
-        categoryObject, _ = Category.objects.get_or_create(name=name)
-        PostCategory.objects.get_or_create(post=newPost,
-                                           category=categoryObject)
-    for name in exceptionUsernames:
-        try:
-            userObject = User.objects.get(username=name)
-            authorObject = Author.objects.get(user=userObject)
-            PostVisibilityException.objects.get_or_create(post=newPost,
-                author=authorObject)
-            for image in images:
-                ImageVisibilityException.objects.get_or_create(
-                        image=newImage, author=authorObject)
-        except ObjectDoesNotExist:
-            pass
-
-    return newPost
-
-def updatePost(post, data):
-    """ 
-    Completely updates or partially updates a post given post data in
-    json format.
-    """
-    for key, value in data.items():
-        setattr(post, key, value)
-    post.modifiedDate = datetime.datetime.now()
-    post.save()
-    return post
+        # Stream payload
+        context['posts'] = zip(rawposts, authors, comments, categories, images)
+        context['author_id'] = author.guid
+        return render_to_response('post/public_posts.html', context)
+    else:
+        return getPublicPosts(request)
 
 def deletePost(request):
     """

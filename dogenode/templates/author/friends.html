@@ -47,9 +47,11 @@
             function changeRelationship(event) {
                 // Ugly jQuery to get the user guid off the table row
                 var guid = $(event.target).parent().parent().children()[0].innerHTML;
-                var user = $($(event.target).parent().parent().children()[1]).children()[0].innerHTML;
-                var url = $($($(event.target).parent().parent().children()[1]).children()[0]).attr("href");
+                var host = $(event.target).parent().parent().children()[1].innerHTML;
+                var user = $($(event.target).parent().parent().children()[2]).children()[0].innerHTML;
+                var url = $($($(event.target).parent().parent().children()[2]).children()[0]).attr("href");
                 guid = $.trim(guid);
+                host = $.trim(host);
                 user = $.trim(user);
                 url = $.trim(url);
 
@@ -57,7 +59,8 @@
                 $.ajax({
                     type: "POST",
                     url: "/author/relationship/" + guid + "/",
-                    data: {"relationship": relationship},
+                    data: {"relationship": relationship,
+                           "host": host},
                     success: function(request) {
                         $(event.target).parent().parent().remove();
 
@@ -78,6 +81,8 @@
 
                             $("#" + newRowTable + " tr:last").after('<tr>'
                                   + '<td style="display:none;">' + guid
+                                  + '</td>'
+                                  + '<td style="display:none;">' + host
                                   + '</td>'
                                   + '<td><a href="' + url + '">' + user
                                   + '</a></td>' 
@@ -117,6 +122,7 @@
             {% for friend in friends.local %}
                 <tr>
                     <td style="display:none;">{{ friend.guid }}</td>
+                    <td style="display:none;">{{ host }}</td>
                     <td><a href="{% url 'author.views.profile' friend.guid %}">{{ friend }}</a>
                     </td>
                     <td>
@@ -127,6 +133,7 @@
             {% for friend in friends.remote %}
                 <tr>
                     <td style="display:none;">{{ friend.guid }}</td>
+                    <td style="display:none;">{{ friend.host }}</td>
                     <td><a href="{{ friend.url }}">{{ friend.displayName }}</a>
                     </td>
                     <td>
@@ -150,6 +157,7 @@
             {% for follow in follows.local %}
                 <tr>
                     <td style="display:none;">{{ follow.guid }}</td>
+                    <td style="display:none;">{{ host }}</td>
                     <td><a href="{% url 'author.views.profile' follow.guid %}">{{ follow.user.username }}</a></td>
                     <td>
                         <input class="unfollow" type="submit" value="UnFollow">
@@ -159,6 +167,7 @@
             {% for follow in follows.remote %}
                 <tr>
                     <td style="display:none;">{{ follow.guid }}</td>
+                    <td style="display:none;">{{ follow.host }}</td>
                     <td><a href="{{ follow.url }}">{{ follow.displayName }}</a></td>
                     <td>
                         <input class="unfollow" type="submit" value="UnFollow">
@@ -182,6 +191,7 @@
             {% for follower in followers.local %}
                 <tr>
                     <td style="display:none;">{{ follower.guid }}</td>
+                    <td style="display:none;">{{ host }}</td>
                     <td><a href="{% url 'author.views.profile' follower.guid %}">
                         {{ follower }}</a>
                     </td>
@@ -193,6 +203,7 @@
             {% for follower in followers.remote %}
                 <tr>
                     <td style="display:none;">{{ follower.guid }}</td>
+                    <td style="display:none;">{{ follower.host }}</td>
                     <td><a href="{{ follower.url }}">
                         {{ follower.displayName }}</a>
                     </td>

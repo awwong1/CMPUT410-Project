@@ -39,11 +39,13 @@
             $(".changeRelationship").click(function(event) {
                 // Ugly jQuery to get the user and relationship off the table row
                 var user = $(event.target).parent().parent().children()[0].innerHTML;
-                var relationship = $(event.target).parent().parent().children()[2];
+                var host = $(event.target).parent().parent().children()[1].innerHTML;
+                var relationship = $(event.target).parent().parent().children()[3];
                 $.ajax({
                     type: "POST",
                     url: "/author/relationship/" + user + "/",
-                    data: {"relationship": relationship.innerHTML},
+                    data: {"relationship": relationship.innerHTML,
+                           "host": host},
                     success: function(request) {
                         if (relationship.innerHTML === "Friend") {
                             relationship.innerHTML = "Follower";
@@ -85,17 +87,18 @@
             <tbody>
                 {% for ur in results %}
                 <tr> <!-- TODO: remote link to author's page -->
-                    <td style="display:none;">{{ ur.2 }}</td>
-                    <td><a href="/author/profile/{{ ur.2 }}">{{ ur.0 }}</a></td>
-                    <td>{{ ur.1 }}</td>
+                    <td style="display:none;">{{ ur.guid }}</td>
+                    <td style="display:none;">{{ ur.host }}</td>
+                    <td><a href="/author/profile/{{ ur.guid }}">{{ ur.displayname }}</a></td>
+                    <td>{{ ur.relationship }}</td>
                     <td>
-                    {% if ur.1 == "Friend" %}
+                    {% if ur.relationship == "Friend" %}
                         <input class="changeRelationship" type="submit" value="Unfriend" />
-                    {% elif ur.1 == "Following" %}
+                    {% elif ur.relationship == "Following" %}
                         <input class="changeRelationship" type="submit" value="Unfollow" />
-                    {% elif ur.1 == "Follower" %}
+                    {% elif ur.relationship == "Follower" %}
                         <input class="changeRelationship" type="submit" value="Befriend" />
-                    {% elif ur.1 == "No Relationship" %}
+                    {% elif ur.relationship == "No Relationship" %}
                         <input class="changeRelationship" type="submit" value="Follow" />
                     {% endif %}
                     </td>

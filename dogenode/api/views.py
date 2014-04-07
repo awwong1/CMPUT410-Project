@@ -1,27 +1,28 @@
-from django.shortcuts import render
-from django.http import HttpResponse
-from django.db.models import Q
-from django.contrib.auth.models import User
-from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
+from django.contrib.auth.models import User
+from django.core.exceptions import ObjectDoesNotExist
+from django.core.files.base import ContentFile
+from django.db.models import Q
+from django.http import HttpResponse
+from django.shortcuts import render
+from django.views.decorators.csrf import csrf_exempt
 
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from author.models import Author, RemoteAuthor, LocalRelationship, RemoteRelationship
-from post.models import Post, PostVisibilityException, AuthorPost, PostCategory
-from post.views import createPost, updatePost, getJSONPost
-
-from comments.models import Comment
-from categories.models import Category
-from api.utils import *
 from api.models import AllowedServer
+from api.utils import *
+from author.models import Author, RemoteAuthor, LocalRelationship, RemoteRelationship
+from categories.models import Category
+from comments.models import Comment
+from post.models import Post, PostVisibilityException, AuthorPost, PostCategory
 
-import sys
+import base64
 import datetime
 import json
 import requests
+import sys
 import urlparse
 
 #TODO: remove this when we don't need it anymore
@@ -55,20 +56,20 @@ def postFriendRequest(localAuthor, remoteAuthor, befriend=True):
     #TODO: this needs to be customized for each remote server
     servers = AllowedServer.objects.all()
 
-    if remoteAuthor.host == servers[0].host:
-        try:
-            response = requests.post(
-                        '%sapi/authors/%s/friends/' %
-                                 (servers[0].host,
-                                  remoteAuthor.displayName),
-                         headers=headers,
-                         data=json.dumps(postData))
-            response.raise_for_status() # Exception on 4XX/5XX response
+    for server in servers:
 
-        except requests.exceptions.RequestException:
-            #TODO: we should really let the user know the remote server
-            # is down
-            pass
+        if remoteAuthor.host == server.host:
+            try:
+                response = requests.post(
+                            '%sapi/friendrequest' % server.host,
+                             headers=headers,
+                             data=json.dumps(postData))
+                response.raise_for_status() # Exception on 4XX/5XX response
+
+            except requests.exceptions.RequestException:
+                #TODO: we should really let the user know the remote server
+                # is down
+                pass
 
 # Searches local authors whose username contains the query string
 #TODO: there's some repeated code here for searching authors in author/views
@@ -162,7 +163,7 @@ def getFriendsFromList(request, guid):
             allFriendGUIDs = localFriendGUIDs + remoteFriendGUIDs
 
             friends = list(set(allFriendGUIDs) & set(jsonData["authors"]))
-            
+
             response["author"] = guid
             response["friends"] = friends
 
@@ -170,9 +171,11 @@ def getFriendsFromList(request, guid):
                         content_type="application/json")
 
 #TODO: lots of repeated code, I'll need to refactor this later
+@csrf_exempt
 def sendFriendRequest(request):
 
     response = {"status":"failure", "message":"Internal failure"}
+    status = 500
 
     if request.method == 'POST':
 
@@ -208,6 +211,7 @@ def sendFriendRequest(request):
 
                 # author1 already follows or is friends with author2, no change
                 if relationship.author1 == author1:
+                    status = 200
                     response["status"] = "success"
                     response["message"] = ("Already following %s, no change" %
                                             author2.user.username)
@@ -215,15 +219,18 @@ def sendFriendRequest(request):
                 else:
                     relationship.relationship = True
                     relationship.save()
+                    status = 200
                     response["status"] = "success"
                     response["message"] = ("You are now friends with %s" %
                                             author2.user.username)
+
             else:
                 # author1 will follow author2
                 _, _ = LocalRelationship.objects.get_or_create(
                                                    author1=author1,
                                                    author2=author2,
                                                    relationship=False)
+                status = 200
                 response["status"] = "success"
                 response["message"] = ("You are now following %s" %
                                             author2.user.username)
@@ -247,6 +254,7 @@ def sendFriendRequest(request):
 
                 # author1 already follows or is friends with author2, no change
                 if relationship.relationship == (0 or 2):
+                    status = 200
                     response["status"] = "success"
                     response["message"] = ("Already following %s, no change" %
                                     jsonData["friend"]["author"]["displayname"])
@@ -254,6 +262,7 @@ def sendFriendRequest(request):
                 else:
                     relationship.relationship = 2
                     relationship.save()
+                    status = 200
                     response["status"] = "success"
                     response["message"] = ("You are now friends with %s" %
                                     jsonData["friend"]["author"]["displayname"])
@@ -264,6 +273,7 @@ def sendFriendRequest(request):
                                                    localAuthor=author1,
                                                    remoteAuthor=remoteAuthor,
                                                    relationship=0)
+                status = 200
                 response["status"] = "success"
                 response["message"] = ("You are now following %s" %
                                     jsonData["friend"]["author"]["displayname"])
@@ -276,8 +286,7 @@ def sendFriendRequest(request):
 
             remoteAuthor, _ = RemoteAuthor.objects.get_or_create(guid=guid1)
             remoteAuthor.update(jsonData["author"]["displayname"],
-                                jsonData["author"]["host"],
-                                jsonData["author"]["url"])
+                                jsonData["author"]["host"])
 
             relationship = RemoteRelationship.objects.filter(
                                 localAuthor=author2, remoteAuthor=remoteAuthor)
@@ -288,6 +297,7 @@ def sendFriendRequest(request):
 
                 # author1 already follows or is friends with author2, no change
                 if relationship.relationship == (1 or 2):
+                    status = 200
                     response["status"] = "success"
                     response["message"] = ("Already following %s, no change" %
                                             author2.user.username)
@@ -295,6 +305,7 @@ def sendFriendRequest(request):
                 else:
                     relationship.relationship = 2
                     relationship.save()
+                    status = 200
                     response["status"] = "success"
                     response["message"] = ("You are now friends with %s" %
                                             author2.user.username)
@@ -305,6 +316,7 @@ def sendFriendRequest(request):
                                                    remoteAuthor=remoteAuthor,
                                                    relationship=1)
 
+                status = 200
                 response["status"] = "success"
                 response["message"] = ("You are now following %s" %
                                             author2.user.username)
@@ -314,7 +326,7 @@ def sendFriendRequest(request):
         else:
             pass
 
-    return HttpResponse(json.dumps(response),
+    return HttpResponse(json.dumps(response), status=status,
                         content_type="application/json")
 
 @api_view(['GET'])
@@ -352,10 +364,10 @@ def postSingle(request, post_id):
         host = request.META["REMOTE_ADDR"] + request.META["SERVER_NAME"]
         queryParams = urlparse.parse_qs(request.META["QUERY_STRING"])
         viewerId = queryParams["id"]
-        viewable, post = getJSONPost(viewerId, post_id, host)
+        viewable, post = __getJSONPost(viewerId, post_id, host)
 
         if not viewable:
-            return HttpResponse(status=status.HTTP_403_FORBIDDEN) 
+            return HttpResponse(status=status.HTTP_403_FORBIDDEN)
 
         post = buildFullPost(rawpost)
         return HttpResponse(json.dumps({"posts":post}), content_type="application/json")
@@ -376,19 +388,19 @@ def postSingle(request, post_id):
         if len(posts) > 0:
             # Only the author who made the post should be able to edit it
             if AuthorPost.objects.get(post=posts[0]).author.guid == author.guid:
-                newPost = updatePost(posts[0], request.DATA)
+                newPost = __updatePost(posts[0], request.DATA)
             else:
-                return HttpResponse(status=status.HTTP_403_FORBIDDEN) 
+                return HttpResponse(status=status.HTTP_403_FORBIDDEN)
         else:    # post doesn't exist, a new one will be created
-            newPost = createPost(request, post_id, request.DATA)
-   
-        # return new / updated post in body 
+            newPost = __createPost(request, post_id, request.DATA)
+
+        # return new / updated post in body
         jsonPost = json.dumps(buildFullPost(newPost))
         return HttpResponse(jsonPost, status=status.HTTP_201_CREATED,
                             content_type="application/json")
 
 @api_view(['GET', 'POST'])
-def getAuthorPosts(request, requestedAuthorId):
+def getAuthorPostsAsJSON(request, requestedAuthorId):
     """
     Gets all the posts the requesting author can view of the requested author
 
@@ -400,9 +412,19 @@ def getAuthorPosts(request, requestedAuthorId):
         # Extract the requesting author's information to check for visibility
         host = request.META["REMOTE_ADDR"] + request.META["SERVER_NAME"]
         queryParams = urlparse.parse_qs(request.META["QUERY_STRING"])
-        viewerId = queryParams["id"]
-       
-        try: 
+
+        viewerId = None
+        try:
+            viewerId = queryParams["id"]
+        except KeyError:
+            viewerId = [Author.objects.get(user=request.user).guid]
+
+        if not viewerId:
+            return HttpResponse(json.dumps([]),
+                                content_type="application/json",
+                                status_code=400)
+
+        try:
             requestedAuthor = Author.objects.get(guid=requestedAuthorId)
         except Author.DoesNotExist:
             return HttpResponse(status=status.HTTP_404_NOT_FOUND)
@@ -414,40 +436,51 @@ def getAuthorPosts(request, requestedAuthorId):
         rawPosts = []
         for post in postsByAuthor:
 
-            viewable, rawPost = getJSONPost(viewerId, post.guid, host)
+            viewable, rawPost = __getJSONPost(viewerId, post.guid, host)
             if viewable:
                 rawPosts.append(rawPost)
 
         finalPosts = buildFullPost(rawPosts)
-        return HttpResponse(json.dumps({"posts":finalPosts}), 
+        return HttpResponse(json.dumps({"posts":finalPosts}),
                             content_type="application/json")
 
 @api_view(['GET', 'POST'])
 def getStream(request):
     """
-    Get's the currently authenicated author's stream. 
+    Get's the currently authenicated author's stream.
 
     Fulfills
-        http://service/author/posts?id={viewingAuthorId} 
+        http://service/author/posts?id={viewingAuthorId}
         (posts that are visible to the currently authenticated user)
     """
     if request.method == 'GET' or request.method == 'POST':
         # Extract the requesting author's information to check for visibility
         host = request.META["REMOTE_ADDR"] + request.META["SERVER_NAME"]
         queryParams = urlparse.parse_qs(request.META["QUERY_STRING"])
-        viewerId = queryParams["id"]
- 
+        viewerId = None
+
+        try:
+            viewerId = queryParams["id"]
+        except KeyError:
+            viewerId = [Author.objects.get(user=request.user).guid]
+
+        if not viewerId:
+            return HttpResponse(json.dumps([]),
+                                content_type="application/json",
+                                status_code=400)
+
         allPosts = Post.objects.all().order_by('-pubDate')
         rawPosts = []
+
         for post in allPosts:
 
-            viewable, rawPost = getJSONPost(viewerId, post.guid, host, True)
+            viewable, rawPost = __getJSONPost(viewerId, post.guid, host, True)
 
             if viewable:
                 rawPosts.append(rawPost)
 
         finalPosts = buildFullPost(rawPosts)
-        return HttpResponse(json.dumps({"posts":finalPosts}), 
+        return HttpResponse(json.dumps({"posts":finalPosts}),
                             content_type="application/json")
 
     else:
@@ -457,7 +490,7 @@ def getStream(request):
 def authorProfile(request, authorId):
     """
     Gets the author's information. Does not support updating your profile.
-    
+
     Semi-fulfills:
     implement author profiles via http://service/author/userid
     """
@@ -469,3 +502,152 @@ def authorProfile(request, authorId):
     # Get the author's information
     if request.method == 'GET':
         return HttpResponse(json.dumps(author.as_dict()))
+
+def __createPost(request, post_id, data):
+    """
+    Creates a new post from json representation of a post.
+    """
+    guid = post_id
+    title = data.get("title")
+    description = data.get("description", "")
+    content = data.get("content")
+    visibility = data.get("visibility", Post.PRIVATE)
+    visibilityExceptionsString = data.get("visibilityExceptions", "")
+    categoriesString = data.get("categories", "")
+    contentType = data.get("content-type", Post.PLAIN)
+    images = data.get("images")
+
+    # Dealing with no images defined
+    if images is None:
+        images = []
+
+    categoryNames = categoriesString.split()
+    exceptionUsernames = visibilityExceptionsString.split()
+    author = Author.objects.get(user=request.user)
+    newPost = Post.objects.create(guid=guid, title=title,
+                                  description=description,
+                                  content=content, visibility=visibility,
+                                  contentType=contentType)
+    newPost.origin = request.build_absolute_uri(newPost.get_absolute_url())
+    newPost.save()
+
+    # If there are also images, handle that too
+    for image in images:
+        # decoding base64 image code from: https://gist.github.com/yprez/7704036
+        # base64 encoded image - decode
+        format, imgstr = image[1].split(';base64,')  # format ~= data:image/X,
+        ext = format.split('/')[-1]  # guess file extension
+        decoded = ContentFile(base64.b64decode(imgstr), name=image[0])
+        newImage = Image.objects.create(author=author, file=decoded,
+                                        visibility=visibility,
+                                        contentType=format)
+        ImagePost.objects.create(image=newImage, post=newPost)
+
+    AuthorPost.objects.create(post=newPost, author=author)
+
+   # I use (abuse) get_or_create to curtail creating duplicates
+    for name in categoryNames:
+        categoryObject, _ = Category.objects.get_or_create(name=name)
+        PostCategory.objects.get_or_create(post=newPost,
+                                           category=categoryObject)
+    for name in exceptionUsernames:
+        try:
+            userObject = User.objects.get(username=name)
+            authorObject = Author.objects.get(user=userObject)
+            PostVisibilityException.objects.get_or_create(post=newPost,
+                author=authorObject)
+            for image in images:
+                ImageVisibilityException.objects.get_or_create(
+                        image=newImage, author=authorObject)
+        except ObjectDoesNotExist:
+            pass
+
+    return newPost
+
+def __updatePost(post, data):
+    """
+    Completely updates or partially updates a post given post data in
+    json format.
+    """
+    for key, value in data.items():
+        setattr(post, key, value)
+    post.modifiedDate = datetime.datetime.now()
+    post.save()
+    return post
+
+def __getJSONPost(viewer_id, post_id, host, check_follow=False):
+    """
+    Returns a post. The currently authenticated
+    user must also have permissions to view the post, else it will not be
+    shown.
+
+    Return value will be a tuple. The first element will be a boolean,
+    True if the viewer is allowed to see the post, and False if they
+    are not allowed.
+
+    The second element will be the post retrieved. If no post matching
+    the post id given was found, it will be None.
+    """
+    try:
+        post = Post.objects.get(guid=post_id)
+    except Post.DoesNotExist:
+        return (False, None)
+
+    postAuthor = AuthorPost.objects.get(post=post).author
+    components = getPostComponents(post)
+    viewerGuid = viewer_id[0]
+
+    # dealing with local authors
+    if len(Author.objects.filter(guid=viewerGuid)) > 0:
+        return (post.isAllowedToViewPost(
+                    Author.objects.get(guid=viewerGuid), check_follow),
+                post)
+
+    # dealing with remote authors
+    viewers = RemoteAuthor.objects.filter(guid=viewerGuid)
+    if (len(viewers) > 0):
+        viewer = viewers[0]
+    else:
+        viewer = RemoteAuthor.objects.create(guid=viewerGuid, host=host)
+
+    viewable = False
+    authorFriends = postAuthor.getFriends()
+    authorFollowedBy = postAuthor.getPendingReceivedRequests()
+
+    # Only want to get public posts of people you follow or are friends with
+    if post.visibility == Post.PUBLIC:
+        if not check_follow:
+            return (True, post)
+        elif (viewer in authorFriends["remote"] or
+              viewer in authorFollowedBy["remote"]):
+            return (True, post)
+        else:
+            return (False, post)
+
+    elif post.visibility == Post.SERVERONLY:
+        viewable = False
+    elif post.visibility == Post.FRIENDS or post.visibility == Post.FOAF:
+        if viewer in authorFriends["remote"]:
+            viewable = True
+    elif post.visibility == Post.FOAF:
+        allFriends = authorFriends["remote"] + authorFriends["local"]
+        for friend in authorFriends["local"]:
+            # TODO: fix for remote cases
+            try:
+                response = requests.get("%sapi/friends/%s/%s" %
+                                            (settings.OUR_HOST,
+                                            str(viewerGuid),
+                                            str(postAuthor.guid)))
+            except:
+                viewable = False
+                break
+
+            if response.json()["friends"] != "NO":
+                viewable = True
+                break
+
+    elif post.visibility == Post.PRIVATE:
+        if viewerGuid == postAuthor.guid:
+            viewable = True
+
+    return (viewable, post)
