@@ -1,26 +1,28 @@
-from django.shortcuts import render
-from django.http import HttpResponse
-from django.db.models import Q
-from django.contrib.auth.models import User
-from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
+from django.contrib.auth.models import User
+from django.core.exceptions import ObjectDoesNotExist
+from django.core.files.base import ContentFile
+from django.db.models import Q
+from django.http import HttpResponse
+from django.shortcuts import render
+from django.views.decorators.csrf import csrf_exempt
 
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
+from api.models import AllowedServer
+from api.utils import *
 from author.models import Author, RemoteAuthor, LocalRelationship, RemoteRelationship
+from categories.models import Category
+from comments.models import Comment
 from post.models import Post, PostVisibilityException, AuthorPost, PostCategory
 
-from comments.models import Comment
-from categories.models import Category
-from api.utils import *
-from api.models import AllowedServer
-
-import sys
+import base64
 import datetime
 import json
 import requests
+import sys
 import urlparse
 
 #TODO: remove this when we don't need it anymore
@@ -398,7 +400,7 @@ def postSingle(request, post_id):
                             content_type="application/json")
 
 @api_view(['GET', 'POST'])
-def getAuthorPosts(request, requestedAuthorId):
+def getAuthorPostsAsJSON(request, requestedAuthorId):
     """
     Gets all the posts the requesting author can view of the requested author
 
@@ -410,7 +412,17 @@ def getAuthorPosts(request, requestedAuthorId):
         # Extract the requesting author's information to check for visibility
         host = request.META["REMOTE_ADDR"] + request.META["SERVER_NAME"]
         queryParams = urlparse.parse_qs(request.META["QUERY_STRING"])
-        viewerId = queryParams["id"]
+
+        viewerId = None
+        try:
+            viewerId = queryParams["id"]
+        except KeyError:
+            viewerId = [Author.objects.get(user=request.user).guid]
+
+        if not viewerId:
+            return HttpResponse(json.dumps([]),
+                                content_type="application/json",
+                                status_code=400)
 
         try:
             requestedAuthor = Author.objects.get(guid=requestedAuthorId)
@@ -445,10 +457,21 @@ def getStream(request):
         # Extract the requesting author's information to check for visibility
         host = request.META["REMOTE_ADDR"] + request.META["SERVER_NAME"]
         queryParams = urlparse.parse_qs(request.META["QUERY_STRING"])
-        viewerId = queryParams["id"]
+        viewerId = None
+
+        try:
+            viewerId = queryParams["id"]
+        except KeyError:
+            viewerId = [Author.objects.get(user=request.user).guid]
+
+        if not viewerId:
+            return HttpResponse(json.dumps([]),
+                                content_type="application/json",
+                                status_code=400)
 
         allPosts = Post.objects.all().order_by('-pubDate')
         rawPosts = []
+
         for post in allPosts:
 
             viewable, rawPost = __getJSONPost(viewerId, post.guid, host, True)
