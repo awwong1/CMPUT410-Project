@@ -297,15 +297,11 @@ class AuthorTestCase(TestCase):
 
         response = self.client.get("/author/stream/", HTTP_ACCEPT="text/html")
 
-        postIds = AuthorPost.objects.filter(author=author)
-
-        self.assertGreater(len(postIds), 0, "No GitHub posts were found")
-
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTemplateUsed(response, "author/stream.html")
         self.assertGreater(len(response.context["posts"]), 0,
                            "No GitHub posts were sent to the client")
 
         for t in response.context["posts"]:
-            self.assertTrue(t[0].title.startswith("GitHub"),
+            self.assertTrue(t[0]["title"].startswith("GitHub"),
                             "Post title does not start with GitHub")
