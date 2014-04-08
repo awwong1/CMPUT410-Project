@@ -1,17 +1,19 @@
-CMPUT410-Project
-================
+Dogenode
+========
 
 University of Alberta CMPUT410 Project, Winter 2014
 
+Where's the Documentation?
+==========================
 
-COLLABORATION  
-=============  
+Check out our wiki: https://github.com/awwong1/CMPUT410-Project/wiki
 
-Team members:  
+Team Members  
+============  
 
 Aaron Yong, Alexander Wong, Bronte Lee, Stephanie Gil, Tsung Lin Yong   
 
-LICENSE  
+License  
 =======  
 
 Copyright 2014 Aaron Yong, Alexander Wong, Bronte Lee, Stephanie Gil, Tsung Lin Yong   
