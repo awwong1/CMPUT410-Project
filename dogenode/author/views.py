@@ -287,7 +287,12 @@ def stream(request):
             for u in unlinkedImageObjs:
                 unlinkedImages.append(u.as_dict())
 
-            githubTemplateItems = __queryGithubForEvents(author)
+            githubTemplateItems = cache.get('ge-'.join(author.guid)) or []
+
+            # If cache is empty, force a GET request on GitHub
+            if len(githubTemplateItems) == 0:
+                githubTemplateItems = __queryGithubForEvents(author, useETag=False)
+
             rawposts = list(Post.getAllowedPosts(author, checkFollow=True))
 
             for post in rawposts:
