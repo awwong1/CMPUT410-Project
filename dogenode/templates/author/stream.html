@@ -234,7 +234,28 @@
 
             clearFields();
             query = "?id="+$("#author_guid").val();
-            // send ajax request
+
+            /* Send an ajax PUT request to 
+             * http://cs410.cs.ualberta.ca/post/<post_id> 
+             * with the post id in the uri,
+             * and a json representation of the post in the request
+             * body. The post will either be created if it doesn't
+             *
+             * exist yet, or updated if it does exist.
+             * In the response, the new post will be returned in 
+             * the body so it can be dynamically added to the html page.
+             * 
+             * eg. json post
+             * {"guid": "fa9fd4fc-ca64-4a31-adf8-c92f028bdc24",
+             *  "title":"the post",
+             *  "description": "a post",
+             *  "content": "the best post ever!"}
+             *   
+             * Because the inputs the user uses to type in post data,
+             * content and title are required, but if sending a request
+             * using curl or anything that is not the browser, these
+             * fields are not required.
+             */
             $.ajax({
                 type: "PUT",
                 url: location.origin+"/api/post/"+guid+query,
