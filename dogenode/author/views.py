@@ -95,7 +95,7 @@ def register(request):
     return render_to_response('login/register.html', context)
 
 # List of random doge imgs to make as profile image
-doges = ['angrydoge.jpg', 'doge.jpeg', 'happydoge.jpg', 'saddoge.png',
+doges = ['angrydoge.jpg', 'doge.jpeg', 'happydoge.jpg', 'saddoge.PNG',
         'sketchydoge.jpg', 'spoileddoge.jpg', 'wetkoala.jpg']
 def profile(request, author_id):
     """
@@ -293,7 +293,12 @@ def stream(request):
             for u in unlinkedImageObjs:
                 unlinkedImages.append(u.as_dict())
 
-            githubTemplateItems = __queryGithubForEvents(author)
+            githubTemplateItems = cache.get('ge-'.join(author.guid)) or []
+
+            # If cache is empty, force a GET request on GitHub
+            if len(githubTemplateItems) == 0:
+                githubTemplateItems = __queryGithubForEvents(author, useETag=False)
+
             rawposts = list(Post.getAllowedPosts(author, checkFollow=True))
 
             for post in rawposts:
