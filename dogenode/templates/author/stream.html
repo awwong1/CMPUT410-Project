@@ -329,9 +329,8 @@
                                 <a href="{{ image.url }}?{% now 'U' %}" target="_blank">View</a>
                               </label>
                             {% endfor %}
-                          {% else %}
-                            <p class="form-control-static">Upload some images <a href="{% url 'images.views.uploadImage' %}">here</a>!</p>
                           {% endif %}
+                            <p class="form-control-static">Upload some images <a href="{% url 'images.views.uploadImage' %}">here</a>!</p>
                           </div>
                       </div>
                   </div>
