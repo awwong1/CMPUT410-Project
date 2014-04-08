@@ -155,17 +155,6 @@ def getRemoteAuthorProfile(context, author_id):
         context['host'] = remote.host
         context['url'] = remote.url
        
-        # getting all the author's posts
-        url = "author/" + str(remote.guid) + "/posts?id=" + str(context["author_id"])
-        print urljoin(remote.host, url)
-        response = requests.get(urljoin(remote.host, url)) 
-        rawposts = json.loads(response.content)
-        posts = []
-
-        for rawpost in rawposts:
-            posts.append(rawPostViewConverter(rawpost))
-        context["authPosts"] = posts
-
         return True
     except Author.DoesNotExist:
         return False
