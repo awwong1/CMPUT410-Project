@@ -1,0 +1,25 @@
+{% extends "user_base.html" %}
+
+{% block body %}
+<div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
+  <h1 class="section-header"> Oh No! We've encountered som trouble!
+    <span>
+    </span>
+  </h1>
+  
+  <div class="row placeholder">
+    <div class="col-xs-6 col-sm-3 placeholder">
+      <img src="{{STATIC_URL}}images/saddoge.png" class="img-responsive" 
+	   alt="dogey"/>
+    </div>
+    
+    <div class="col-s-6 col-m-4 placeholder">
+      <h4>The Doge Team Is Sorry :(</h4>
+      <p class="text-muted">
+     We are doge sorry :( We'll get our little doges right on that!
+      </p>
+    </div>
+  </div>
+  
+</div>
+{% endblock %}

@@ -30,6 +30,7 @@ import markdown
 import re
 import requests
 import uuid
+import random
 
 def isUserAccepted(user):
     author = Author.objects.filter(user=user)
@@ -93,6 +94,9 @@ def register(request):
 
     return render_to_response('login/register.html', context)
 
+# List of random doge imgs to make as profile image
+doges = ['angrydoge.jpg', 'doge.jpeg', 'happydoge.jpg', 'saddoge.png',
+        'sketchydoge.jpg', 'spoileddoge.jpg', 'wetkoala.jpg']
 def profile(request, author_id):
     """
     GET: Returns the profile page / information of an author.
@@ -114,6 +118,7 @@ def profile(request, author_id):
             except Author.DoesNotExist:
                 context = RequestContext(request)
                 context['author_id'] = viewer.guid
+                context['doge'] = doges[random.randint(0,6)]
                 if not getRemoteAuthorProfile(context, author_id):
                      # Error conncecting with remote server
                     return render_to_response('error/doge_error.html', context)
@@ -133,6 +138,7 @@ def profile(request, author_id):
             viewer = Author.objects.get(user=User.objects.get(
                     username=request.user))
             context['authPosts'] = Post.getViewablePosts(viewer, author)
+            context['doge'] = doges[random.randint(0,6)]
 
             return render_to_response('author/profile.html', context)
         else:
