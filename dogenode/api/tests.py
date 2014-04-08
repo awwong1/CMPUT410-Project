@@ -265,14 +265,14 @@ class RESTfulTestCase(TestCase):
                 "author":{
                     "id": author5.guid,
                     "host": settings.OUR_HOST,
-                    "displayname":"utestuser1"
+                    "displayname":"utestuser5"
                 },
                 "friend":{
                     "author":{
                         "id": author6.guid,
                         "host": settings.OUR_HOST,
-                        "displayname":"utestuser2",
-                        "url":"http://127.0.0.1:5454/author/utestuser2"
+                        "displayname":"utestuser6",
+                        "url":"http://127.0.0.1:5454/author/utestuser6"
                     }
                 }
         }
@@ -312,7 +312,9 @@ class RESTfulTestCase(TestCase):
 
         # utestuser6 befriends utestuser5
         friendRequestData["author"]["id"] = author6.guid
+        friendRequestData["author"]["displayname"] = user6.username
         friendRequestData["friend"]["author"]["id"] = author5.guid
+        friendRequestData["friend"]["author"]["displayname"] = user5.username
 
         response = self.client.post('/friendrequest',
                                      content_type="application/json",
@@ -372,6 +374,7 @@ class RESTfulTestCase(TestCase):
         # utestuser6 sends a friend request to remoteUser1
 
         friendRequestData["author"]["id"] = author6.guid
+        friendRequestData["author"]["displayname"] = user6.username
         friendRequestData["author"]["host"] = settings.OUR_HOST
 
         remoteUser1["url"] = "%sauthor/%s" % (remoteUser1["host"],
@@ -398,6 +401,7 @@ class RESTfulTestCase(TestCase):
         # utestuser5 befriends remoteUser1
 
         friendRequestData["author"]["id"] = author5.guid
+        friendRequestData["author"]["displayname"] = user5.username
 
         response = self.client.post('/friendrequest',
                                      content_type="application/json",
