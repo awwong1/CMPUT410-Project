@@ -357,6 +357,10 @@ def stream(request):
                     serverPosts.append(parsedPost)
 
             context['posts'] = serverPosts + githubTemplateItems
+
+            # In-place sort the posts by most recent pubDate
+            context['posts'].sort(key=lambda x: x[0]['pubDate'], reverse=True)
+
             # Make a Post payload
             context['visibilities'] = Post.VISIBILITY_CHOICES
             context['contentTypes'] = Post.CONTENT_TYPE_CHOICES

@@ -79,6 +79,14 @@ class Post(models.Model):
         ctime = mstDatetime.ctime()
         return ctime[:-4] + "MST " + ctime[-4:] # So dirty
 
+    # This is used for sorting posts, and having the Post object behave like
+    # a dictionary that hasn't been turned into a JSON-ready format.
+    def __getitem__(self, key):
+        try:
+            return getattr(self, key)
+        except AttributeError:
+            raise KeyError
+
     # Pass in an Author object, and this function will check if the Post
     # instance is viewable by the author.
     # Pass in a True checkFollow flag, and this function will return True for
