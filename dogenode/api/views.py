@@ -22,6 +22,7 @@ import base64
 import datetime
 import dateutil.parser
 import json
+import markdown
 import requests
 import sys
 import urlparse
@@ -761,7 +762,6 @@ def rawPostViewConverter(rawpost):
         postData['guid']=rawpost['guid']
         postData['title']=rawpost['title']
         postData['description']=rawpost['description']
-        postData['content']=rawpost['content']
         postData['visibility']=rawpost['visibility']
         try:
             postData['contentType']=rawpost['content-type']
@@ -771,6 +771,15 @@ def rawPostViewConverter(rawpost):
             postData['contentType']=rawpost['contentType']
         except:
             pass
+
+        # Attempt to encode Markdown
+        postData['content']=rawpost['content']
+        try:
+            if postData['contentType'] == postData['MARKDOWN']:
+                postData['content'] = markdown.markdown(postData['content'])
+        except:
+            pass
+
         postData['origin']=rawpost['origin']
         postData['source']=rawpost['source']
         postData['pubDate']=dateutil.parser.parse(rawpost['pubDate'])
