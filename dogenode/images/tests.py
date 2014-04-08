@@ -164,57 +164,46 @@ class ImageTestCase(TestCase):
                         "Returned file name not the same as the one we gave it")
 
     def testUploadMultipleImages(self):
-        # TODO
-        pass
+        """
+        Tests uploading multiple images.
+        """
+        file_obj = StringIO()
+        image = Image.new("RGBA", size=(100,100), color=(0,255,0))
+        file_obj.name = 'singlegreenimage.png'
+        image.save(file_obj, 'png')
+        file_obj.seek(0)
 
-    def testRESTAddImageToPost(self):
-        # TODO fix
-        """
-        Tests adding images to a post via a put request, then retrieving it
-        with a get request.
-        """
-     # Authenicate and put a new post
-        images = []
+        file_obj2 = StringIO()
+        image = Image.new("RGBA", size=(100,100), color=(255,0,0))
+        file_obj2.name = 'singleredimage.png'
+        image.save(file_obj2, 'png')
+        file_obj2.seek(0)
+
+        file_obj3 = StringIO()
+        image = Image.new("RGBA", size=(100,100), color=(0,0,255))
+        file_obj3.name = 'singleblueimage.png'
+        image.save(file_obj3, 'png')
+        file_obj3.seek(0)
+
         user1 = User.objects.get(username="utestuser1")
         author1 = Author.objects.get(user=user1)
         self.client.login(username="utestuser1", password="testpassword")
 
-        file_obj = StringIO()
-        image = Image.new("RGBA", size=(50,50), color=(255,0,0, 0))
-        file_obj.name = 'utestimage4.png'
-        image.save(file_obj, 'png')
-        file_obj.seek(0)
+        imagePostData = {"image": [file_obj, file_obj2, file_obj3]}
 
-        encoded = file_obj.read().encode("base64")
-        images.append([file_obj.name, "data:image/png;base64," + encoded])
+        response = self.client.post("/images/upload/", data=imagePostData,
+                                    HTTP_ACCEPT="application/json")
 
         file_obj.close()
+        file_obj2.close()
+        file_obj3.close()
 
-        query = urllib.urlencode({"id":author1.guid})
-        newPostId = str(uuid.uuid4())
+        self.assertTrue(response.status_code == 200 or 201,
+                         "Multiple image upload responded as not OK: %d" % response.status_code)
 
-        # Make a new post with minimum fields required
-        newPostRequestData = { "title":"title",
-                               "content":"post1",
-                               "images":images}
-        response = self.client.put('/api/post/%s?%s' % (newPostId, query),
-                                    data=json.dumps(newPostRequestData),
-                                    content_type="application/json")
+        responseContent = json.loads(response.content)
 
-        self.assertEqual(response.status_code, 201)
-
-        # Want to get the new post
-        getResponse = self.client.get('/api/post/%s?%s' % (newPostId, query),
-                                    HTTP_ACCEPT = 'application/json')
-
-        self.assertEqual(getResponse.status_code, 200)
-        posts = json.loads(getResponse.content, object_hook=_decode_dict)
-        singlePost = posts["posts"][0]
-
-        # Check if we can retrieve image
-        response = self.client.get(singlePost["images"][0]["url"]+"/")
-        self.assertEqual(response.status_code, 200)
-
-        # Checking if image content (in base64) is equal
-        self.assertEqual(response.content.encode("base64"), encoded)
+        self.assertTrue(responseContent, "No content returned")
+        self.assertTrue(len(responseContent) == 3,
+                        "Response payload says there are more than 3 images: %d" % len(responseContent))
 
