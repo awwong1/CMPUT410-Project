@@ -329,20 +329,17 @@ def stream(request):
             servers = AllowedServer.objects.all()
 
             for server in servers:
+                params = {"id": author.guid}
+                headers = {"accept": "application/json"}
                 try:
-                    author = Author.objects.get(user=request.user)
                     # another hack because what the heck is going on with /api/
                     if server.host == 'http://127.0.0.1:80/':
-                        response = requests.get(
-                            "{0}api/author/posts?id={1}".format(
-                                server.host, author.guid)
-                            )
+                        url = urljoin(server.host, "api/author/posts")
+                        response = requests.get(url, headers=headers, params=params)
                     else:
-                        response = requests.get(
-                            "{0}author/posts?id={1}".format(
-                                server.host, author.guid
-                                )
-                            )
+                        url = urljoin(server.host, "author/posts")
+                        response = requests.get(url, headers=headers, params=params)
+
                     response.raise_for_status()
                     jsonAllPosts = response.json()['posts']
                     # turn into a dummy post

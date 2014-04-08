@@ -46,7 +46,6 @@ def postFriendRequest(localAuthor, remoteAuthor, befriend=True):
                     }
                 }
 
-    #TODO: this needs to be customized for each remote server
     servers = AllowedServer.objects.all()
 
     for server in servers:
@@ -161,7 +160,256 @@ def getFriendsFromList(request, guid):
     return HttpResponse(json.dumps(response),
                         content_type="application/json")
 
-#TODO: lots of repeated code, I'll need to refactor this later
+def updateRelationship(jsonData, response):
+
+    msgs = {"unfriend":
+                {"unchanged":("You already have no relationship with {0},"
+                              " no change"),
+                 "unfriended":"You are no longer friends with {0}",
+                 "unfollowed":"You are no longer following {0}",
+                },
+            "befriend":
+                {"unchanged":"Already following {0}, no change",
+                 "befriended":"You are now friends with {0}",
+                 "followed":"You are now following {0}",
+                }
+           }
+
+
+    # guid1 and author1 refer to the user initiating the friend request
+    # guid2 and author2 refer to the user receiving the friend request
+    guid1 = jsonData["author"]["id"]
+    guid2 = jsonData["friend"]["author"]["id"]
+
+    author1 = Author.objects.filter(guid=guid1)
+    author2 = Author.objects.filter(guid=guid2)
+
+    status = 200
+
+    username = jsonData["friend"]["author"]["displayname"]
+    response["status"] = "success"
+
+    if jsonData["query"] == "unfriend":
+
+        response["message"] = msgs["unfriend"]["unchanged"].format(username)
+
+        # Both authors are local
+        if len(author1) > 0 and len(author2) > 0:
+
+            author1 = author1[0]
+            author2 = author2[0]
+
+            relationship = LocalRelationship.objects.filter(
+                                ((Q(author1=author1) & Q(author2=author2))
+                                |(Q(author2=author1) & Q(author1=author2))))
+
+            if len(relationship) > 0:
+
+                relationship = relationship[0]
+
+                # they are friends
+                if relationship.relationship:
+                    relationship.delete()
+
+                    # author2 still follows author1
+                    LocalRelationship.objects.get_or_create(
+                                                author1=author2,
+                                                author2=author1,
+                                                relationship=False)
+
+                    response["message"] = (msgs["unfriend"]["unfriended"].
+                                                format(username))
+
+                # author1 follows author2
+                elif relationship.author1 == author1:
+                    relationship.delete()
+                    response["message"] = (msgs["unfriend"]["unfollowed"].
+                                                format(username))
+
+        # author1 is local, author2 is remote
+        elif len(author1) > 0 and len(author2) == 0:
+
+            author1 = author1[0]
+
+            remoteAuthor, _ = RemoteAuthor.objects.get_or_create(guid=guid2)
+            remoteAuthor.update(jsonData["friend"]["author"]["displayname"],
+                                jsonData["friend"]["author"]["host"],
+                                jsonData["friend"]["author"]["url"])
+
+            relationship = RemoteRelationship.objects.filter(
+                                localAuthor=author1, remoteAuthor=remoteAuthor)
+
+            if len(relationship) > 0:
+
+                relationship = relationship[0]
+
+                # they are friends
+                if relationship.relationship == 2:
+                    relationship.relationship = 1
+                    relationship.save()
+                    response["message"] = (msgs["unfriend"]["unfriended"].
+                                                format(username))
+                    postFriendRequest(author1, remoteAuthor, False)
+
+                # author1 follows author2
+                elif relationship.relationship == 0:
+                    relationship.delete()
+                    response["message"] = (msgs["unfriend"]["unfollowed"].
+                                                format(username))
+                    postFriendRequest(author1, remoteAuthor, False)
+
+        # author1 is remote, author2 is local
+        elif len(author1) == 0 and len(author2) > 0:
+
+            author2 = author2[0]
+
+            remoteAuthor, _ = RemoteAuthor.objects.get_or_create(guid=guid1)
+            remoteAuthor.update(jsonData["author"]["displayname"],
+                                jsonData["author"]["host"])
+
+            relationship = RemoteRelationship.objects.filter(
+                            localAuthor=author2, remoteAuthor=remoteAuthor)
+
+            if len(relationship) > 0:
+
+                relationship = relationship[0]
+
+                # they are friends
+                if relationship.relationship == 2:
+                    relationship.relationship = 0
+                    relationship.save()
+                    response["message"] = (msgs["unfriend"]["unfriended"].
+                                                format(username))
+
+                # author1 follows author2
+                elif relationship.relationship == 1:
+                    relationship.delete()
+                    response["message"] = (msgs["unfriend"]["unfollowed"].
+                                                format(username))
+
+        # either both authors are remote, or one of the users doesn't exist
+        # we won't support either of these
+        else:
+            pass
+
+    else:
+
+        # Both authors are local
+        if len(author1) > 0 and len(author2) > 0:
+
+            author1 = author1[0]
+            author2 = author2[0]
+
+            relationship = LocalRelationship.objects.filter(
+                                ((Q(author1=author1) & Q(author2=author2))
+                                |(Q(author2=author1) & Q(author1=author2))))
+
+            if len(relationship) > 0:
+
+                relationship = relationship[0]
+
+                # author1 already follows or is friends with author2
+                if relationship.author1 == author1:
+                    response["message"] = (msgs["befriend"]["unchanged"].
+                                                format(username))
+
+                # author2 follows author1, so now make them friends
+                else:
+                    relationship.relationship = True
+                    relationship.save()
+                    response["message"] = (msgs["befriend"]["befriended"].
+                                                format(username))
+
+            else:
+                # author1 will follow author2
+                _, _ = LocalRelationship.objects.get_or_create(
+                                                   author1=author1,
+                                                   author2=author2,
+                                                   relationship=False)
+                response["message"] = (msgs["befriend"]["followed"].
+                                                format(username))
+
+        # author1 is local, author2 is remote
+        elif len(author1) > 0 and len(author2) == 0:
+
+            author1 = author1[0]
+
+            remoteAuthor, _ = RemoteAuthor.objects.get_or_create(guid=guid2)
+            remoteAuthor.update(jsonData["friend"]["author"]["displayname"],
+                                jsonData["friend"]["author"]["host"],
+                                jsonData["friend"]["author"]["url"])
+
+            relationship = RemoteRelationship.objects.filter(
+                                localAuthor=author1,
+                                remoteAuthor=remoteAuthor)
+
+            if len(relationship) > 0:
+
+                relationship = relationship[0]
+
+                # author1 already follows or is friends with author2
+                if relationship.relationship == (0 or 2):
+                    response["message"] = (msgs["befriend"]["unchanged"].
+                                                format(username))
+                # author2 follows author1, so now make them friends
+                else:
+                    relationship.relationship = 2
+                    relationship.save()
+                    response["message"] = (msgs["befriend"]["befriended"].
+                                                format(username))
+                    postFriendRequest(author1, remoteAuthor)
+            else:
+                # author1 will follow author2
+                _, _ = RemoteRelationship.objects.get_or_create(
+                                               localAuthor=author1,
+                                               remoteAuthor=remoteAuthor,
+                                               relationship=0)
+                response["message"] = (msgs["befriend"]["followed"].
+                                                format(username))
+                postFriendRequest(author1, remoteAuthor)
+
+        # author1 is remote, author2 is local
+        elif len(author1) == 0 and len(author2) > 0:
+
+            author2 = author2[0]
+
+            remoteAuthor, _ = RemoteAuthor.objects.get_or_create(guid=guid1)
+            remoteAuthor.update(jsonData["author"]["displayname"],
+                                jsonData["author"]["host"])
+
+            relationship = RemoteRelationship.objects.filter(
+                            localAuthor=author2, remoteAuthor=remoteAuthor)
+
+            if len(relationship) > 0:
+
+                relationship = relationship[0]
+
+                # author1 already follows or is friends with author2
+                if relationship.relationship == (1 or 2):
+                    response["message"] = (msgs["befriend"]["unchanged"].
+                                                format(username))
+                # author2 follows author1, so now make them friends
+                else:
+                    relationship.relationship = 2
+                    relationship.save()
+                    response["message"] = (msgs["befriend"]["befriended"].
+                                                format(username))
+            else:
+                # author1 will follow author2
+                _, c = RemoteRelationship.objects.get_or_create(
+                                               localAuthor=author2,
+                                               remoteAuthor=remoteAuthor,
+                                               relationship=1)
+                response["message"] = (msgs["befriend"]["followed"].
+                                                format(username))
+
+        # either both authors are remote, or one of the users doesn't exist
+        # we won't support either of these
+        else:
+            pass
+
+    return response, status
+
 @csrf_exempt
 def sendFriendRequest(request):
 
@@ -172,313 +420,7 @@ def sendFriendRequest(request):
 
         jsonData = json.loads(request.body)
 
-        # guid1 and author1 refer to the user initiating the friend request
-        # guid2 and author2 refer to the user receiving the friend request
-        guid1 = jsonData["author"]["id"]
-        guid2 = jsonData["friend"]["author"]["id"]
-
-        author1 = Author.objects.filter(guid=guid1)
-        author2 = Author.objects.filter(guid=guid2)
-
-        if jsonData["query"] == "unfriend":
-            # Both authors are local
-            if len(author1) > 0 and len(author2) > 0:
-
-                author1 = author1[0]
-                author2 = author2[0]
-
-                relationship = LocalRelationship.objects.filter(
-                                    ((Q(author1=author1) & Q(author2=author2))
-                                    |(Q(author2=author1) & Q(author1=author2))))
-
-                if len(relationship) > 0:
-
-                    relationship = relationship[0]
-
-                    # they are friends
-                    if relationship.relationship:
-                        relationship.delete()
-
-                        # author2 still follows author1
-                        LocalRelationship.objects.get_or_create(
-                                                    author1=author2,
-                                                    author2=author1,
-                                                    relationship=False)
-
-                        status = 200
-                        response["status"] = "success"
-                        response["message"] = ("You are no longer friends"
-                                               " with %s"
-                                               % author2.user.username)
-
-                    else:
-                        # author1 follows author2
-                        if relationship.author1 == author1:
-                            relationship.delete()
-                            status = 200
-                            response["status"] = "success"
-                            response["message"] = ("You are no longer"
-                                                   " following %s"
-                                                   % author2.user.username)
-                        # author2 follows author1
-                        else:
-                            status = 200
-                            response["status"] = "success"
-                            response["message"] = ("You already have no"
-                                                   " relationship with %s,"
-                                                   " no change" %
-                                                    author2.user.username)
-
-                else:
-                    # author1 already has no relationship with author2
-                    status = 200
-                    response["status"] = "success"
-                    response["message"] = ("You already have no relationship"
-                                           " with %s, no change" %
-                                            author2.user.username)
-
-            # author1 is local, author2 is remote
-            elif len(author1) > 0 and len(author2) == 0:
-
-                author1 = author1[0]
-
-                remoteAuthor, _ = RemoteAuthor.objects.get_or_create(guid=guid2)
-                remoteAuthor.update(jsonData["friend"]["author"]["displayname"],
-                                    jsonData["friend"]["author"]["host"],
-                                    jsonData["friend"]["author"]["url"])
-
-                relationship = RemoteRelationship.objects.filter(
-                                    localAuthor=author1,
-                                    remoteAuthor=remoteAuthor)
-
-                if len(relationship) > 0:
-
-                    relationship = relationship[0]
-
-                    # they are friends
-                    if relationship.relationship == 2:
-                        relationship.relationship = 1
-                        relationship.save()
-                        status = 200
-                        response["status"] = "success"
-                        response["message"] = ("You are no longer friends"
-                                               " with %s" %
-                                    jsonData["friend"]["author"]["displayname"])
-                        postFriendRequest(author1, remoteAuthor, False)
-                    # author1 follows author2
-                    elif relationship.relationship == 0:
-                        relationship.delete()
-                        status = 200
-                        response["status"] = "success"
-                        response["message"] = ("You are no longer"
-                                               " following %s" %
-                                    jsonData["friend"]["author"]["displayname"])
-                        postFriendRequest(author1, remoteAuthor, False)
-                    # author1 already has no relationship with author2
-                    else:
-                        status = 200
-                        response["status"] = "success"
-                        response["message"] = ("You already have no"
-                                               " relationship  with %s,"
-                                               " no change" %
-                                    jsonData["friend"]["author"]["displayname"])
-                else:
-                    # author1 already has no relationship with author2
-                    status = 200
-                    response["status"] = "success"
-                    response["message"] = ("You already have no relationship"
-                                           " with %s, no change" %
-                                    jsonData["friend"]["author"]["displayname"])
-
-            # author1 is remote, author2 is local
-            elif len(author1) == 0 and len(author2) > 0:
-
-                author2 = author2[0]
-
-                remoteAuthor, _ = RemoteAuthor.objects.get_or_create(guid=guid1)
-                remoteAuthor.update(jsonData["author"]["displayname"],
-                                    jsonData["author"]["host"])
-
-                relationship = RemoteRelationship.objects.filter(
-                                localAuthor=author2, remoteAuthor=remoteAuthor)
-
-                if len(relationship) > 0:
-
-                    relationship = relationship[0]
-
-                    # they are friends
-                    if relationship.relationship == 2:
-                        relationship.relationship = 0
-                        relationship.save()
-                        status = 200
-                        response["status"] = "success"
-                        response["message"] = ("You are no longer friends"
-                                               " with %s" %
-                                                author2.user.username)
-                    # author1 follows author2
-                    elif relationship.relationship == 1:
-                        relationship.delete()
-                        status = 200
-                        response["status"] = "success"
-                        response["message"] = ("You are no longer"
-                                               " following %s" %
-                                                author2.user.username)
-                    # author1 already has no relationship with author2
-                    else:
-                        status = 200
-                        response["status"] = "success"
-                        response["message"] = ("You already have no"
-                                               " relationship  with %s,"
-                                               " no change" %
-                                                author2.user.username)
-                else:
-                    # author1 already has no relationship with author2
-                    status = 200
-                    response["status"] = "success"
-                    response["message"] = ("You already have no relationship"
-                                           " with %s, no change" %
-                                            author2.user.username)
-
-            # either both authors are remote, or one of the users doesn't exist
-            # we won't support either of these
-            else:
-                pass
-
-        else:
-            # Both authors are local
-            if len(author1) > 0 and len(author2) > 0:
-
-                author1 = author1[0]
-                author2 = author2[0]
-
-                relationship = LocalRelationship.objects.filter(
-                                    ((Q(author1=author1) & Q(author2=author2))
-                                    |(Q(author2=author1) & Q(author1=author2))))
-
-                if len(relationship) > 0:
-
-                    relationship = relationship[0]
-
-                    # author1 already follows or is friends with author2
-                    if relationship.author1 == author1:
-                        status = 200
-                        response["status"] = "success"
-                        response["message"] = ("Already following %s,"
-                                               "no change" %
-                                                author2.user.username)
-                    # author2 follows author1, so now make them friends
-                    else:
-                        relationship.relationship = True
-                        relationship.save()
-                        status = 200
-                        response["status"] = "success"
-                        response["message"] = ("You are now friends with %s" %
-                                                author2.user.username)
-
-                else:
-                    # author1 will follow author2
-                    _, _ = LocalRelationship.objects.get_or_create(
-                                                       author1=author1,
-                                                       author2=author2,
-                                                       relationship=False)
-                    status = 200
-                    response["status"] = "success"
-                    response["message"] = ("You are now following %s" %
-                                                author2.user.username)
-
-            # author1 is local, author2 is remote
-            elif len(author1) > 0 and len(author2) == 0:
-
-                author1 = author1[0]
-
-                remoteAuthor, _ = RemoteAuthor.objects.get_or_create(guid=guid2)
-                remoteAuthor.update(jsonData["friend"]["author"]["displayname"],
-                                    jsonData["friend"]["author"]["host"],
-                                    jsonData["friend"]["author"]["url"])
-
-                relationship = RemoteRelationship.objects.filter(
-                                    localAuthor=author1,
-                                    remoteAuthor=remoteAuthor)
-
-                if len(relationship) > 0:
-
-                    relationship = relationship[0]
-
-                    # author1 already follows or is friends with author2
-                    if relationship.relationship == (0 or 2):
-                        status = 200
-                        response["status"] = "success"
-                        response["message"] = ("Already following %s,"
-                                               "no change" %
-                                    jsonData["friend"]["author"]["displayname"])
-                    # author2 follows author1, so now make them friends
-                    else:
-                        relationship.relationship = 2
-                        relationship.save()
-                        status = 200
-                        response["status"] = "success"
-                        response["message"] = ("You are now friends with %s" %
-                                    jsonData["friend"]["author"]["displayname"])
-                        postFriendRequest(author1, remoteAuthor)
-                else:
-                    # author1 will follow author2
-                    _, _ = RemoteRelationship.objects.get_or_create(
-                                                   localAuthor=author1,
-                                                   remoteAuthor=remoteAuthor,
-                                                   relationship=0)
-                    status = 200
-                    response["status"] = "success"
-                    response["message"] = ("You are now following %s" %
-                                    jsonData["friend"]["author"]["displayname"])
-                    postFriendRequest(author1, remoteAuthor)
-
-            # author1 is remote, author2 is local
-            elif len(author1) == 0 and len(author2) > 0:
-
-                author2 = author2[0]
-
-                remoteAuthor, _ = RemoteAuthor.objects.get_or_create(guid=guid1)
-                remoteAuthor.update(jsonData["author"]["displayname"],
-                                    jsonData["author"]["host"])
-
-                relationship = RemoteRelationship.objects.filter(
-                                localAuthor=author2, remoteAuthor=remoteAuthor)
-
-                if len(relationship) > 0:
-
-                    relationship = relationship[0]
-
-                    # author1 already follows or is friends with author2
-                    if relationship.relationship == (1 or 2):
-                        status = 200
-                        response["status"] = "success"
-                        response["message"] = ("Already following %s"
-                                               ", no change" %
-                                                author2.user.username)
-                    # author2 follows author1, so now make them friends
-                    else:
-                        relationship.relationship = 2
-                        relationship.save()
-                        status = 200
-                        response["status"] = "success"
-                        response["message"] = ("You are now friends with %s" %
-                                                author2.user.username)
-                else:
-                    # author1 will follow author2
-                    _, c = RemoteRelationship.objects.get_or_create(
-                                                   localAuthor=author2,
-                                                   remoteAuthor=remoteAuthor,
-                                                   relationship=1)
-
-                    status = 200
-                    response["status"] = "success"
-                    response["message"] = ("You are now following %s" %
-                                                author2.user.username)
-
-            # either both authors are remote, or one of the users doesn't exist
-            # we won't support either of these
-            else:
-                pass
+        response, status = updateRelationship(jsonData, response)
 
     return HttpResponse(json.dumps(response), status=status,
                         content_type="application/json")
@@ -628,7 +570,7 @@ def getStream(request):
 
         for post in allPosts:
 
-            viewable, rawPost = __getJSONPost(viewerId, post.guid, host, True)
+            viewable, rawPost = __getJSONPost(viewerId, post.guid, host, check_follow=True)
 
             if viewable:
                 rawPosts.append(rawPost)
