@@ -73,7 +73,7 @@ def uploadImage(request):
             return HttpResponse(json.dumps(jsonPayload), status=201,
                                 content_type="application/json")
         elif 'text/html' in request.META['HTTP_ACCEPT']:
-            return redirect('/images/')
+            return redirect('/author/posts/')
         else:
             return HttpResponse(json.dumps(jsonPayload), status=201,
                                 content_type="application/json")
