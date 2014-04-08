@@ -20,6 +20,7 @@ from post.models import Post, PostVisibilityException, AuthorPost, PostCategory
 
 import base64
 import datetime
+import dateutil.parser
 import json
 import requests
 import sys
@@ -772,7 +773,7 @@ def rawPostViewConverter(rawpost):
             pass
         postData['origin']=rawpost['origin']
         postData['source']=rawpost['source']
-        postData['pubDate']=rawpost['pubDate']
+        postData['pubDate']=dateutil.parser.parse(rawpost['pubDate'])
 
 
         authData['displayname']=rawpost['author']['displayname']
