@@ -836,7 +836,7 @@ def rawPostViewConverter(rawpost):
         authData['displayname']=rawpost['author']['displayname']
         authData['url']=rawpost['author']['url']
         authData['host']=rawpost['author']['host']
-        authData['id']=rawpost['author']['id']
+        authData['guid']=rawpost['author']['id']
 
         for rawComment in rawpost['comments']:
             rawauth = {}
@@ -847,7 +847,7 @@ def rawPostViewConverter(rawpost):
             except:
                 rawauth['url'] = '/'
             rawauth['host'] = rawComment['author']['host']
-            rawauth['id'] = rawComment['author']['id']
+            rawauth['guid'] = rawComment['author']['id']
 
             # attach with rest of the comment
             adaptcomment = {}
