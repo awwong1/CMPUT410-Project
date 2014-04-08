@@ -85,8 +85,8 @@
                                   + '</td>'
                                   + '<td style="display:none;">' + host
                                   + '</td>'
-                                  + '<td>{% url "author.views.profile" ' 
-                                  +  guid + '%}>' + user
+                                  + '<td><a href="{% url "author.views.profile" ' 
+                                  +  guid + '%}">' + user
                                   + '</a></td>' 
                                   + '<td><input class="' + newRowClass 
                                   + '" type="submit" value="' + newRowValue 
