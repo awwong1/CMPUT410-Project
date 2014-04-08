@@ -1,4 +1,5 @@
 from django.db import models
+from django.conf import settings
 
 from django.contrib.auth.models import User
 from django.db.models.signals import post_save
@@ -12,7 +13,7 @@ class Author(models.Model):
                                  default=uuid.uuid4)
     user = models.OneToOneField(User, primary_key=True)
     accepted = models.BooleanField(default=True)   
-    host = models.CharField(max_length=100, default="http://cs410.cs.ualberta:41011/")
+    host = models.CharField(max_length=100, default=settings.OUR_HOST)
     url = models.URLField(blank=True)
     githubUsername = models.CharField(max_length=128, blank=True)
     githubEventsETag = models.CharField(max_length=32, blank=True)
