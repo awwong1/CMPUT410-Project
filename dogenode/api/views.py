@@ -628,7 +628,7 @@ def getStream(request):
 
         for post in allPosts:
 
-            viewable, rawPost = __getJSONPost(viewerId, post.guid, host, True)
+            viewable, rawPost = __getJSONPost(viewerId, post.guid, host, check_follow=True)
 
             if viewable:
                 rawPosts.append(rawPost)
