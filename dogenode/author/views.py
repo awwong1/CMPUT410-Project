@@ -116,7 +116,7 @@ def profile(request, author_id):
                 if not getRemoteAuthorProfile(context, author_id):
                      # Error conncecting with remote server
                     return render_to_response('error/doge_error.html', context)
-                return render_to_response('author/profile.html', context)
+                return render_to_response('author/remote_profile.html', context)
 
             user = author.user
             payload = { } # This is what we send in the RequestContext
