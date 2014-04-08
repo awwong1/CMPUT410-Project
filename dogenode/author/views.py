@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
+from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q
 from django.http import HttpResponse
@@ -297,7 +298,7 @@ def stream(request):
             for u in unlinkedImageObjs:
                 unlinkedImages.append(u.as_dict())
 
-            __queryGithubForEvents(author)
+            githubTemplateItems = __queryGithubForEvents(author)
             rawposts = list(Post.getAllowedPosts(author, checkFollow=True))
 
             for post in rawposts:
@@ -355,7 +356,7 @@ def stream(request):
                 if parsedPost != None:
                     serverPosts.append(parsedPost)
 
-            context['posts'] = serverPosts
+            context['posts'] = serverPosts + githubTemplateItems
             # Make a Post payload
             context['visibilities'] = Post.VISIBILITY_CHOICES
             context['contentTypes'] = Post.CONTENT_TYPE_CHOICES
@@ -643,17 +644,17 @@ def updateRelationship(request, guid):
     return HttpResponse("success!")
 
 
-def __queryGithubForEvents(author):
+def __queryGithubForEvents(author, useETag=True):
     """
     Queries GitHub events for an author, if the author has a GitHub
-    username.  The events are then inserted into the DB if they do not already
-    exist.
+    username.
     """
+    templateItems = []
     if not author.githubUsername:
-        return
+        return templateItems
 
     headers = {"Connection": "close"}
-    if author.githubEventsETag:
+    if author.githubEventsETag and useETag:
         headers["If-None-Match"] = author.githubEventsETag
 
     params = { }
@@ -662,6 +663,7 @@ def __queryGithubForEvents(author):
         params["client_secret"] = settings.GITHUB_CLIENT_SECRET
     except AttributeError:
         # If there are no GitHub API keys, you only get 60 requests an hour
+        print "WARNING: No API key supplied!  You may get nothing from GitHub!"
         pass
 
     response = None
@@ -676,7 +678,7 @@ def __queryGithubForEvents(author):
 
     # Return on no response or reached RateLimit
     if not response or int(response.headers["X-RateLimit-Remaining"]) == 0:
-        return
+        return templateItems
 
     if response.status_code == 200:
         # The ETag helps prevent spamming GitHub servers, and it lets us know
@@ -688,26 +690,30 @@ def __queryGithubForEvents(author):
             events = response.json()
 
             for event in events:
-                postObj, _ = Post.objects.get_or_create(guid=event["id"])
+                post = { }
+                post["guid"] = event["id"]
                 # http://stackoverflow.com/a/199120
-                postObj.title = "GitHub %s" % \
+                post["title"] = "GitHub %s" % \
                                 re.sub(r"(?<=\w)([A-Z])", r" \1",
                                        event["type"])
-                postObj.content = __generateGithubEventContent(event)
-                postObj.visibility = Post.PRIVATE
-                postObj.contentType = Post.HTML
-                postObj.origin = "https://github.com"
-                # http://stackoverflow.com/a/3908349
-                postObj.pubDate = dateutil.parser.parse(event["created_at"])
+                post["content"] = __generateGithubEventContent(event)
+                post["visibility"] = Post.PRIVATE
+                post["contentType"] = Post.HTML
+                post["origin"] = "https://github.com"
+                post["pubDate"] = dateutil.parser.parse(event["created_at"])
 
-                AuthorPost.objects.get_or_create(post=postObj, author=author)
+                templateItems.append((post, author, [], [], [], []))
 
-                postObj.save()
+            cache.set('ge-'.join(author.guid), templateItems, None)
+            return templateItems
         except ValueError:
-            return
+            return templateItems
     else:
-        # Nothing has changed since the last query
-        return
+        if response.status_code != 304:
+            print "WARNING: Status code returned was %d" % response.status_code
+
+        templateItems = cache.get('ge-'.join(author.guid)) or []
+        return templateItems
 
 
 def __generateGithubEventContent(event):
