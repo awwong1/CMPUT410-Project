@@ -33,6 +33,32 @@ class Author(models.Model):
             "url": self.url
         }
 
+    def postGetFriendsFromList(self, author, authorList, host):
+
+        headers = {"Content-type": "application/json"}
+        postData = {
+                        "query": "friends",
+                        "author": author.guid,
+                        "authors": authorList
+                   }
+
+        servers = AllowedServer.objects.all()
+
+        if host in servers:
+
+            try:
+                response = requests.post('%sfriends/%s' % (host, author.guid),
+                                         headers=headers,
+                                         data=json.dumps(postData))
+                response.raise_for_status() # Exception on 4XX/5XX response
+
+                return response.json()["friends"]
+
+            except requests.exceptions.RequestException:
+                pass
+
+        return []
+
     def getFriends(self):
 
         localRelationships = LocalRelationship.objects.filter(
@@ -75,17 +101,29 @@ class Author(models.Model):
         return { "local":  [r.author1 for r in localRelationships],
                  "remote": [r.remoteAuthor for r in remoteRelationships] }
 
-    def isFriendOfAFriend(self, author):
+    def isFriendOfAFriend(self, author, isRemote=False):
 
         selfFriends = self.getFriends()
-        authorFriends = author.getFriends()
-
-        # Flatten the lists
         selfFriendsList = selfFriends["local"] + selfFriends["remote"]
-        authorFriendsList = authorFriends["local"] + authorFriends["remote"]
 
-        if set(selfFriendsList) & set(authorFriendsList):
-            return True
+        if isRemote:
+
+            selfFriendsGUIDs = [f.guid for f in selfFriendsList]
+            authorFriendsGUIDs = self.postGetFriendsFromList(author,
+                                                             selfFriendsGUIDs,
+                                                             author.host)
+
+            if len(authorFriendsGUIDs) > 0:
+                return True
+
+        else:
+
+            authorFriends = author.getFriends()
+            authorFriendsList = (authorFriends["local"] +
+                                 authorFriends["remote"])
+
+            if set(selfFriendsList) & set(authorFriendsList):
+                return True
 
         return False
 
