@@ -92,6 +92,11 @@ def getAllPublicPosts(request):
                     guid__in=authorIds))
             images.append(Image.objects.filter(id__in=imageIds))
 
+            # Convert Markdown into HTML for web browser
+            # django.contrib.markup is deprecated in 1.6, so, workaround
+            if post.contentType == post.MARKDOWN:
+                post.content = markdown.markdown(post.content)
+
         # Stream payload
         serverPosts = zip(rawposts, authors, comments, categories, 
                           visibilityExceptions, images)

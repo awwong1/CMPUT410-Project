@@ -1,54 +1,52 @@
 {% extends "user_base.html" %}
 {% block body %}
-<script src="{{ STATIC_URL }}js/comments.js">
-</script>
-<script>
-
-$(document).ready(function () {
-    /* the CSRF stuff is from:
-     * https://docs.djangoproject.com/en/1.6/ref/contrib/csrf/#ajax
-     * TODO: find a better way to do this cleanly...
-     */
-    function getCookie(name) {
-        var cookieValue = null;
-        if (document.cookie && document.cookie != '') {
-            var cookies = document.cookie.split(';');
-            for (var i = 0; i < cookies.length; i++) {
-                var cookie = jQuery.trim(cookies[i]);
-                // Does this cookie string begin with the name we want?
-                if (cookie.substring(0, name.length + 1) == (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
+    <script src="{{ STATIC_URL }}js/comments.js"></script>
+    <script type="text/javascript">
+        $(document).ready(function () {
+            /* the CSRF stuff is from:
+             * https://docs.djangoproject.com/en/1.6/ref/contrib/csrf/#ajax
+             * TODO: find a better way to do this cleanly...
+             */
+            function getCookie(name) {
+                var cookieValue = null;
+                if (document.cookie && document.cookie != '') {
+                    var cookies = document.cookie.split(';');
+                    for (var i = 0; i < cookies.length; i++) {
+                        var cookie = jQuery.trim(cookies[i]);
+                        // Does this cookie string begin with the name we want?
+                        if (cookie.substring(0, name.length + 1) == (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
                 }
+                return cookieValue;
             }
-        }
-        return cookieValue;
-    }
-    var csrftoken = getCookie('csrftoken');
-    function csrfSafeMethod(method) {
-        // these HTTP methods do not require CSRF protection
-        return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
-    }
-    $.ajaxSetup({
-        crossDomain: false, // obviates need for sameOrigin test
-        beforeSend: function(xhr, settings) {
-            if (!csrfSafeMethod(settings.type)) {
-                xhr.setRequestHeader("X-CSRFToken", csrftoken);
+            var csrftoken = getCookie('csrftoken');
+            function csrfSafeMethod(method) {
+                // these HTTP methods do not require CSRF protection
+                return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
             }
-        }
-    });
+            $.ajaxSetup({
+                crossDomain: false, // obviates need for sameOrigin test
+                beforeSend: function(xhr, settings) {
+                    if (!csrfSafeMethod(settings.type)) {
+                        xhr.setRequestHeader("X-CSRFToken", csrftoken);
+                    }
+                }
+            });
 
-    // Adding comment button listener
-    $(".makeComment").on("click", putComment);
-    
-});
-</script>
-<div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
-  <h1 class="content-title">All Public Posts</h1>
-  {% if posts %}
-  {% include 'fragments/post_content.html' %}
-  {% else %}
-  <h3 class="text-muted">You have no public posts to view!</h3>
-  {% endif %}
-</div>
+            // Adding comment button listener
+            $(".makeComment").on("click", putComment);
+
+        });
+    </script>
+    <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
+      <h1 class="content-title">All Public Posts</h1>
+      {% if posts %}
+      {% include 'fragments/post_content.html' %}
+      {% else %}
+      <h3 class="text-muted">You have no public posts to view!</h3>
+      {% endif %}
+    </div>
 {% endblock %}
